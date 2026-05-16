@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estimation travaux étang – Devis gratuit en ligne | Curage Vandaele</title>
+  <meta name="description" content="Estimez gratuitement le coût de vos travaux d'entretien d'étang : curage, faucardage, défenses de berges. Outil en ligne avec carte Géoportail. Demande de devis en 5 minutes." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.curagevandaele.fr/estimation.html" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── STEPPER ── */
+    .stepper-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 2.5rem;
+      counter-reset: step;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+      cursor: pointer;
+    }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 60%;
+      right: -40%;
+      height: 2px;
+      background: var(--gray-200);
+      z-index: 0;
+      transition: background .4s;
+    }
+    .step-item.done:not(:last-child)::after { background: var(--green-500); }
+    .step-item.active:not(:last-child)::after { background: var(--blue-200, #bfdbfe); }
+
+    .step-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      font-weight: 700;
+      z-index: 1;
+      position: relative;
+      transition: all .3s;
+      border: 3px solid transparent;
+    }
+    .step-item.active .step-circle {
+      background: var(--blue-500);
+      color: #fff;
+      border-color: var(--blue-200, #bfdbfe);
+    }
+    .step-item.done .step-circle {
+      background: var(--green-500);
+      color: #fff;
+    }
+    .step-label {
+      font-size: .72rem;
+      color: var(--gray-400);
+      margin-top: .35rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    .step-item.active .step-label { color: var(--blue-600); }
+    .step-item.done .step-label { color: var(--green-500); }
+
+    /* ── PANELS ── */
+    .est-panel { display: none; }
+    .est-panel.active { display: block; }
+
+    /* ── TRAVAUX TOGGLES ── */
+    .travaux-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 600px) { .travaux-grid { grid-template-columns: 1fr 1fr; } }
+
+    .travail-toggle input[type="checkbox"] {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+    .travail-toggle label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+      padding: 1.1rem .75rem;
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      text-align: center;
+      user-select: none;
+    }
+    .travail-toggle label .t-icon { font-size: 1.8rem; line-height: 1; }
+    .travail-toggle input:checked + label {
+      border-color: var(--blue-500);
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+    .travail-toggle label:hover {
+      border-color: var(--blue-300, #93c5fd);
+      background: var(--gray-50);
+    }
+
+    /* ── DETAIL SECTIONS ── */
+    .detail-section {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .detail-section.visible { display: block; }
+    .detail-section-title {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 1.25rem;
+    }
+    .detail-section-title .ico { font-size: 1.4rem; }
+
+    /* ── RANGE SLIDER ── */
+    .range-wrap { display: flex; align-items: center; gap: 1rem; }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--gray-200);
+      outline: none;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--blue-500);
+      cursor: pointer;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 6px rgba(37,99,235,.4);
+    }
+    .range-val {
+      min-width: 60px;
+      text-align: right;
+      font-weight: 700;
+      color: var(--blue-600);
+      font-size: .95rem;
+    }
+
+    /* ── AUTOCOMPLETE ADRESSE ── */
+    .autocomplete-wrap {
+      position: relative;
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--white);
+      border: 1.5px solid var(--blue-400);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      z-index: 500;
+      max-height: 280px;
+      overflow-y: auto;
+      margin: 0;
+      padding: .35rem 0;
+      list-style: none;
+      display: none;
+    }
+    .autocomplete-dropdown.open { display: block; }
+    .autocomplete-dropdown li {
+      padding: .65rem 1rem;
+      cursor: pointer;
+      font-size: .9rem;
+      color: var(--gray-800);
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+      border-bottom: 1px solid var(--gray-100);
+      transition: background var(--transition);
+      line-height: 1.4;
+    }
+    .autocomplete-dropdown li:last-child { border-bottom: none; }
+    .autocomplete-dropdown li:hover,
+    .autocomplete-dropdown li.focused {
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+    .autocomplete-dropdown li .ac-icon {
+      font-size: 1rem;
+      margin-top: .1rem;
+      flex-shrink: 0;
+      opacity: .6;
+    }
+    .autocomplete-dropdown li .ac-main { font-weight: 600; }
+    .autocomplete-dropdown li .ac-sub {
+      font-size: .8rem;
+      color: var(--gray-500);
+      font-weight: 400;
+    }
+    .autocomplete-loading {
+      padding: .75rem 1rem;
+      color: var(--gray-400);
+      font-size: .875rem;
+      font-style: italic;
+    }
+
+    /* ── MAP ── */
+    .map-container {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 2px solid var(--gray-200);
+      margin-bottom: 1rem;
+      position: relative;
+      background: #e8f4f8;
+    }
+    #geoportail-map {
+      width: 100%;
+      height: 360px;
+      border: none;
+      display: block;
+    }
+    .map-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      background: rgba(14,30,60,.7);
+      backdrop-filter: blur(2px);
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+      transition: opacity .3s;
+      pointer-events: auto;
+    }
+    .map-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .map-overlay h4 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+    }
+    .map-overlay p { font-size: .875rem; color: rgba(255,255,255,.8); max-width: 340px; }
+    .map-tools {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .5rem;
+    }
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .4rem .85rem;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--gray-700);
+      transition: all var(--transition);
+    }
+    .map-btn:hover { border-color: var(--blue-500); color: var(--blue-600); }
+    .map-instruction {
+      font-size: .8rem;
+      color: var(--gray-500);
+      font-style: italic;
+    }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+      background: linear-gradient(160deg, #1a3a6b 0%, #1e4d9e 60%, #0891b2 100%);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      color: #fff;
+      position: sticky;
+      top: calc(var(--nav-h) + 1rem);
+    }
+    .result-card h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid rgba(255,255,255,.2);
+    }
+    .result-lines { min-height: 60px; }
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .45rem 0;
+      font-size: .875rem;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .result-line:last-child { border-bottom: none; }
+    .result-line-label { color: rgba(255,255,255,.75); }
+    .result-line-val { font-weight: 700; }
+    .result-empty {
+      font-size: .85rem;
+      color: rgba(255,255,255,.5);
+      font-style: italic;
+      padding: .5rem 0;
+    }
+    .result-total {
+      margin-top: 1.25rem;
+      padding: 1.25rem;
+      background: rgba(255,255,255,.12);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+    .result-total-label {
+      font-size: .72rem;
+      color: rgba(255,255,255,.65);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .3rem;
+    }
+    .result-total-amount {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 800;
+    }
+    .result-total-note {
+      font-size: .72rem;
+      color: rgba(255,255,255,.5);
+      margin-top: .2rem;
+    }
+    .result-actions { margin-top: 1.25rem; display: flex; flex-direction: column; gap: .6rem; }
+
+    /* ── CONFIRMATION ── */
+    .confirm-panel {
+      text-align: center;
+      padding: 3rem 2rem;
+      display: none;
+    }
+    .confirm-panel.active { display: block; }
+    .confirm-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .confirm-panel h2 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: .75rem;
+    }
+    .confirm-panel p { color: var(--gray-500); max-width: 500px; margin-inline: auto; line-height: 1.7; }
+
+    /* ── ESTIMATION LAYOUT ── */
+    .estimation-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .estimation-layout { grid-template-columns: 1fr; }
+      .result-card { position: static; }
+    }
+
+    /* ── NAV BUTTONS ── */
+    .panel-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    /* ── FORM SECTION TITLE ── */
+    .form-section-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 1rem;
+      padding-bottom: .6rem;
+      border-bottom: 2px solid var(--gray-100);
+    }
+
+    /* ── RADIO BUTTONS ── */
+    .radio-group { display: flex; flex-direction: column; gap: .5rem; }
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .65rem 1rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: .9rem;
+      color: var(--gray-700);
+    }
+    .radio-option input { width: auto; flex-shrink: 0; accent-color: var(--blue-500); }
+    .radio-option:has(input:checked) {
+      border-color: var(--blue-500);
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+    .radio-option:hover { border-color: var(--blue-300, #93c5fd); }
+  </style>
+</head>
+<body>
+
+<header class="site-header" id="site-header">
+  <nav class="navbar container">
+    <a href="index.html" class="logo">
+      <span class="logo-icon">💧</span>
+      <span class="logo-text">Curage <strong>Vandaele</strong></span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html" class="nav-link">Accueil</a></li>
+      <li><a href="services.html" class="nav-link">Services</a></li>
+      <li><a href="chantiers.html" class="nav-link">Chantiers</a></li>
+      <li><a href="conseils.html" class="nav-link">Conseils étangs</a></li>
+      <li><a href="estimation.html" class="nav-link nav-cta active">Estimation gratuite</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="index.html">Accueil</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Estimation travaux</span>
+    </nav>
+    <h1>Estimez vos travaux gratuitement</h1>
+    <p>Renseignez les informations sur votre étang et obtenez une fourchette de prix indicative en quelques minutes.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <!-- Stepper -->
+    <div class="stepper-wrap" id="stepper">
+      <div class="step-item active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Localisation</div>
+      </div>
+      <div class="step-item" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Type de travaux</div>
+      </div>
+      <div class="step-item" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Détails</div>
+      </div>
+      <div class="step-item" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Vos coordonnées</div>
+      </div>
+    </div>
+
+    <div class="estimation-layout">
+
+      <!-- FORMULAIRE -->
+      <div class="est-form-wrap">
+
+        <!-- ===== PANEL 1 – LOCALISATION ===== -->
+        <div class="est-panel active" id="panel-1">
+          <div class="contact-form" style="padding:2rem;">
+            <div class="form-section-title">📍 Localisation de l'étang</div>
+
+            <div class="form-group">
+              <label for="adresse">Adresse ou commune de l'étang *</label>
+              <div class="autocomplete-wrap">
+                <input type="text" id="adresse" placeholder="Ex : 12 chemin des étangs, 62400 Béthune" autocomplete="off" aria-autocomplete="list" aria-controls="adresse-dropdown" />
+                <ul class="autocomplete-dropdown" id="adresse-dropdown" role="listbox" aria-label="Suggestions d'adresse"></ul>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Localiser et mesurer l'étang sur la carte</label>
+              <div class="map-tools">
+                <button class="map-btn" id="btn-open-map" type="button">🗺️ Ouvrir sur Géoportail</button>
+                <button class="map-btn" id="btn-mesure-surface" type="button">📐 Mesurer la surface</button>
+                <button class="map-btn" id="btn-mesure-perimetre" type="button">📏 Mesurer le périmètre</button>
+              </div>
+              <div class="map-container">
+                <iframe
+                  id="geoportail-map"
+                  title="Carte Géoportail IGN"
+                  src="about:blank"
+                  allowfullscreen
+                ></iframe>
+                <div class="map-overlay" id="map-overlay">
+                  <h4>🗺️ Carte Géoportail IGN</h4>
+                  <p>Cliquez sur « Ouvrir sur Géoportail » pour charger la carte satellite et mesurer votre étang directement.</p>
+                  <button class="btn btn-primary" id="btn-load-map" type="button">Charger la carte</button>
+                </div>
+              </div>
+              <p class="map-instruction">💡 Utilisez les outils de mesure de Géoportail pour calculer la surface et le périmètre de votre étang, puis reportez les valeurs ci-dessous.</p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="surface">Surface estimée de l'étang (ha)</label>
+                <input type="number" id="surface" min="0.01" max="100" step="0.01" placeholder="Ex : 0.5" />
+                <p class="form-hint">1 ha = 10 000 m²</p>
+              </div>
+              <div class="form-group">
+                <label for="perimetre">Périmètre des berges (m linéaires)</label>
+                <input type="number" id="perimetre" min="0" max="10000" step="1" placeholder="Ex : 300" />
+                <p class="form-hint">Tour complet de l'étang</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="acces">Accès au site</label>
+              <select id="acces">
+                <option value="">-- Sélectionner --</option>
+                <option value="facile">Facile – chemin carrossable jusqu'au bord</option>
+                <option value="moyen">Moyen – chemin étroit ou terrain difficile</option>
+                <option value="difficile">Difficile – pas de chemin, zone marécageuse</option>
+              </select>
+            </div>
+
+            <div class="panel-nav">
+              <div></div>
+              <button class="btn btn-primary" type="button" onclick="goToPanel(2)">
+                Étape suivante
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PANEL 2 – TYPE DE TRAVAUX ===== -->
+        <div class="est-panel" id="panel-2">
+          <div class="contact-form" style="padding:2rem;">
+            <div class="form-section-title">🔧 Type de travaux souhaités</div>
+            <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.5rem;">Sélectionnez un ou plusieurs types de travaux. Vous pourrez préciser les détails à l'étape suivante.</p>
+
+            <div class="travaux-grid">
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-curage" name="travaux" value="curage" />
+                <label for="t-curage">
+                  <span class="t-icon">🚜</span>
+                  Curage
+                </label>
+              </div>
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-faucardage" name="travaux" value="faucardage" />
+                <label for="t-faucardage">
+                  <span class="t-icon">🌿</span>
+                  Faucardage
+                </label>
+              </div>
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-berges" name="travaux" value="berges" />
+                <label for="t-berges">
+                  <span class="t-icon">🪨</span>
+                  Défenses de berges
+                </label>
+              </div>
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-dragage" name="travaux" value="dragage" />
+                <label for="t-dragage">
+                  <span class="t-icon">⚓</span>
+                  Dragage
+                </label>
+              </div>
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-batillage" name="travaux" value="batillage" />
+                <label for="t-batillage">
+                  <span class="t-icon">🌊</span>
+                  Batillage
+                </label>
+              </div>
+              <div class="travail-toggle">
+                <input type="checkbox" id="t-diagnostic" name="travaux" value="diagnostic" />
+                <label for="t-diagnostic">
+                  <span class="t-icon">🔍</span>
+                  Diagnostic
+                </label>
+              </div>
+            </div>
+
+            <div class="disclaimer">
+              ℹ️ Vous ne savez pas exactement ce dont vous avez besoin ? Cochez « Diagnostic » et nous ferons une visite technique gratuite pour vous conseiller.
+            </div>
+
+            <div class="panel-nav">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(1)">← Retour</button>
+              <button class="btn btn-primary" type="button" onclick="goToPanel(3)">
+                Étape suivante
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PANEL 3 – DÉTAILS ===== -->
+        <div class="est-panel" id="panel-3">
+          <div class="contact-form" style="padding:2rem;">
+            <div class="form-section-title">📋 Détails des travaux</div>
+
+            <!-- CURAGE details -->
+            <div class="detail-section" id="detail-curage">
+              <div class="detail-section-title"><span class="ico">🚜</span> Curage d'étang</div>
+
+              <div class="form-group">
+                <label>Profondeur actuelle de vase (cm)</label>
+                <div class="range-wrap">
+                  <input type="range" id="prof-vase" min="0" max="150" value="40" step="5" />
+                  <span class="range-val" id="prof-vase-val">40 cm</span>
+                </div>
+                <p class="form-hint">Mesurez en enfonçant une tige verticalement jusqu'à la résistance du fond dur.</p>
+              </div>
+
+              <div class="form-group">
+                <label>% de la surface concernée par le curage</label>
+                <div class="range-wrap">
+                  <input type="range" id="pct-curage" min="10" max="100" value="100" step="10" />
+                  <span class="range-val" id="pct-curage-val">100 %</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="destination-vase">Destination de la vase extraite</label>
+                <select id="destination-vase">
+                  <option value="sur-place">Épandage sur terrain adjacent (le client dispose d'un terrain)</option>
+                  <option value="evacuation">Évacuation par nos soins (surcoût)</option>
+                  <option value="valorisation">Valorisation agricole (à définir)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- FAUCARDAGE details -->
+            <div class="detail-section" id="detail-faucardage">
+              <div class="detail-section-title"><span class="ico">🌿</span> Faucardage</div>
+
+              <div class="form-group">
+                <label>% de la surface couverte par les végétaux</label>
+                <div class="range-wrap">
+                  <input type="range" id="pct-fauc" min="5" max="100" value="30" step="5" />
+                  <span class="range-val" id="pct-fauc-val">30 %</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Espèces présentes</label>
+                <div style="display:flex; flex-direction:column; gap:.4rem;">
+                  <label class="radio-option"><input type="checkbox" id="fauc-roseaux" /> Roseaux (Phragmites)</label>
+                  <label class="radio-option"><input type="checkbox" id="fauc-jussie" /> Jussie (espèce invasive)</label>
+                  <label class="radio-option"><input type="checkbox" id="fauc-nenuphars" /> Nénuphars</label>
+                  <label class="radio-option"><input type="checkbox" id="fauc-autres" /> Autres / Inconnues</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- BERGES details -->
+            <div class="detail-section" id="detail-berges">
+              <div class="detail-section-title"><span class="ico">🪨</span> Défenses de berges</div>
+
+              <div class="form-group">
+                <label>Longueur de berges à protéger (mètres linéaires)</label>
+                <div class="range-wrap">
+                  <input type="range" id="lg-berges" min="0" max="2000" value="100" step="10" />
+                  <span class="range-val" id="lg-berges-val">100 ml</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Type de protection envisagée</label>
+                <div class="radio-group">
+                  <label class="radio-option"><input type="radio" name="type-berge" value="enrochement" /> 🪨 Enrochement naturel</label>
+                  <label class="radio-option"><input type="radio" name="type-berge" value="palplanche" /> 🏗️ Palplanches (bois / PVC / acier)</label>
+                  <label class="radio-option"><input type="radio" name="type-berge" value="gabion" /> 📦 Gabions</label>
+                  <label class="radio-option"><input type="radio" name="type-berge" value="vegetal" /> 🌱 Génie végétal (fascines, boutures)</label>
+                  <label class="radio-option"><input type="radio" name="type-berge" value="conseil" /> ❓ Je ne sais pas – laissez-nous conseiller</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- DRAGAGE details -->
+            <div class="detail-section" id="detail-dragage">
+              <div class="detail-section-title"><span class="ico">⚓</span> Dragage</div>
+
+              <div class="form-group">
+                <label>Volume estimé à draguer (m³)</label>
+                <div class="range-wrap">
+                  <input type="range" id="vol-dragage" min="100" max="50000" value="2000" step="100" />
+                  <span class="range-val" id="vol-dragage-val">2 000 m³</span>
+                </div>
+                <p class="form-hint">Si vous ne savez pas, indiquez la surface et la profondeur de vase et nous estimerons le volume.</p>
+              </div>
+            </div>
+
+            <!-- BATILLAGE details -->
+            <div class="detail-section" id="detail-batillage">
+              <div class="detail-section-title"><span class="ico">🌊</span> Protection batillage</div>
+
+              <div class="form-group">
+                <label>Longueur à protéger (mètres linéaires)</label>
+                <div class="range-wrap">
+                  <input type="range" id="lg-batillage" min="0" max="1000" value="50" step="10" />
+                  <span class="range-val" id="lg-batillage-val">50 ml</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DIAGNOSTIC details -->
+            <div class="detail-section" id="detail-diagnostic">
+              <div class="detail-section-title"><span class="ico">🔍</span> Diagnostic & conseil</div>
+              <p style="color:var(--gray-600); font-size:.9rem;">
+                Le diagnostic comprend une visite technique sur site, une analyse de l'état du plan d'eau et de ses berges, et un rapport de préconisations avec chiffrage indicatif des travaux. Déplacement gratuit pour les projets importants.
+              </p>
+            </div>
+
+            <!-- Infos complémentaires -->
+            <div class="form-group" style="margin-top:1.5rem;">
+              <label for="infos-sup">Informations complémentaires</label>
+              <textarea id="infos-sup" rows="3" placeholder="Précisez tout détail utile : contraintes d'accès, nature du sol, urgence, etc."></textarea>
+            </div>
+
+            <div class="panel-nav">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(2)">← Retour</button>
+              <button class="btn btn-primary" type="button" onclick="goToPanel(4)">
+                Étape suivante
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PANEL 4 – COORDONNÉES ===== -->
+        <div class="est-panel" id="panel-4">
+          <div class="contact-form" style="padding:2rem;">
+            <div class="form-section-title">👤 Vos coordonnées</div>
+            <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.5rem;">Pour recevoir votre estimation détaillée et être contacté par notre équipe.</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="c-prenom">Prénom *</label>
+                <input type="text" id="c-prenom" required placeholder="Jean" />
+              </div>
+              <div class="form-group">
+                <label for="c-nom">Nom *</label>
+                <input type="text" id="c-nom" required placeholder="Dupont" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="c-email">Email *</label>
+                <input type="email" id="c-email" required placeholder="jean@exemple.fr" />
+              </div>
+              <div class="form-group">
+                <label for="c-tel">Téléphone *</label>
+                <input type="tel" id="c-tel" required placeholder="06 XX XX XX XX" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="c-profil">Vous êtes</label>
+              <select id="c-profil">
+                <option value="particulier">Particulier (propriétaire d'étang)</option>
+                <option value="association">Association (pêche, chasse…)</option>
+                <option value="collectivite">Collectivité (commune, communauté de communes)</option>
+                <option value="agriculteur">Agriculteur / Exploitation agricole</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="c-delai">Délai envisagé pour les travaux</label>
+              <select id="c-delai">
+                <option value="urgent">Urgent – dès que possible</option>
+                <option value="3mois">Dans les 3 prochains mois</option>
+                <option value="6mois">Dans les 6 prochains mois</option>
+                <option value="1an">Dans l'année</option>
+                <option value="indefini">Non défini – en cours de réflexion</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex; align-items:flex-start; gap:.5rem; font-weight:400; cursor:pointer;">
+                <input type="checkbox" id="c-rgpd" style="margin-top:.2rem; width:auto; flex-shrink:0;" />
+                <span style="font-size:.85rem; color:var(--gray-600);">J'accepte que mes données soient utilisées par Curage Vandaele dans le cadre de ma demande de devis. Conformément au RGPD, vous pouvez exercer vos droits en nous contactant.</span>
+              </label>
+            </div>
+
+            <div class="panel-nav">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(3)">← Retour</button>
+              <button class="btn btn-primary btn-lg" type="button" id="btn-submit" onclick="submitEstimation()">
+                Envoyer ma demande
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONFIRMATION -->
+        <div class="confirm-panel" id="confirm-panel">
+          <div class="confirm-icon">✅</div>
+          <h2>Demande envoyée !</h2>
+          <p>Merci pour votre demande d'estimation. Notre équipe l'a bien reçue et vous recontactera dans les <strong>48h ouvrées</strong> pour affiner le chiffrage et, si vous le souhaitez, convenir d'une visite sur site.</p>
+          <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+            <a href="index.html" class="btn btn-outline">Retour à l'accueil</a>
+            <a href="conseils.html" class="btn btn-primary">Lire nos conseils</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RESULT CARD -->
+      <aside>
+        <div class="result-card" id="result-card">
+          <h3>📊 Votre estimation indicative</h3>
+
+          <div class="result-lines" id="result-lines">
+            <p class="result-empty">Sélectionnez vos travaux pour voir l'estimation apparaître ici.</p>
+          </div>
+
+          <div class="result-total">
+            <div class="result-total-label">Estimation totale (fourchette)</div>
+            <div class="result-total-amount" id="result-total-amount">– €</div>
+            <div class="result-total-note">Hors TVA · Indicatif · Visite confirmatoire</div>
+          </div>
+
+          <div class="result-actions">
+            <button class="btn btn-white" type="button" onclick="goToPanel(4)" id="btn-devis-card">
+              Envoyer ma demande de devis
+            </button>
+          </div>
+
+          <div style="margin-top:1.25rem; font-size:.75rem; color:rgba(255,255,255,.5); line-height:1.6;">
+            ⚠️ Ces fourchettes sont données à titre indicatif. Le prix définitif dépend des conditions réelles du chantier (accès, nature du sol, volumes exacts…). Seule une visite sur site permet d'établir un devis précis.
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="logo"><span class="logo-icon">💧</span><span class="logo-text">Curage <strong>Vandaele</strong></span></div>
+      <p>Entreprise familiale fondée en 1953, transmise sur trois générations. Spécialiste du curage d'étangs et de l'entretien des plans d'eau partout en France.</p>
+    </div>
+    <div class="footer-nav">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="chantiers.html">Chantiers</a></li>
+        <li><a href="conseils.html">Conseils étangs</a></li>
+        <li><a href="estimation.html">Estimation travaux</a></li>
+      </ul>
+    </div>
+    <div class="footer-services">
+      <h4>Nos services</h4>
+      <ul>
+        <li><a href="services.html#curage">Curage d'étang</a></li>
+        <li><a href="services.html#faucardage">Faucardage</a></li>
+        <li><a href="services.html#berges">Défenses de berges</a></li>
+        <li><a href="services.html#dragage">Dragage</a></li>
+      </ul>
+    </div>
+    <div class="footer-contact">
+      <h4>Contact</h4>
+      <p><a href="tel:+33672514714">06 72 51 47 14</a></p>
+      <p><a href="mailto:vandaelemarcel@orange.fr">vandaelemarcel@orange.fr</a></p>
+      <p>Tortefontaine (62) · Arbanats (33)</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <p>© 2025 Curage Vandaele – Tous droits réservés | <a href="mentions-legales.html">Mentions légales</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/estimation.js"></script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nos Chantiers – Réalisations curage, faucardage, berges | Curage Vandaele</title>
+  <meta name="description" content="Découvrez les chantiers réalisés par Curage Vandaele : curage d'étangs, faucardage, défenses de berges dans les Hauts-de-France. Photos et détails de chaque réalisation." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.curagevandaele.fr/chantiers.html" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .chantiers-full-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.75rem;
+    }
+    .chantier-card-full {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition);
+    }
+    .chantier-card-full:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .chantier-card-full .chantier-img {
+      height: 220px;
+    }
+    .chantier-card-full .chantier-body { padding: 1.5rem; }
+    .chantier-card-full h3 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: .35rem;
+    }
+    .chantier-card-full .lieu {
+      font-size: .82rem;
+      color: var(--blue-500);
+      font-weight: 600;
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+    }
+    .chantier-card-full p {
+      color: var(--gray-500);
+      font-size: .9rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .chantier-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .spec-chip {
+      background: var(--gray-100);
+      color: var(--gray-600);
+      padding: .25rem .65rem;
+      border-radius: 100px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    /* gradient backgrounds for variety */
+    .bg-c1 { background: linear-gradient(135deg,#1e3a5f,#2d6a4f); }
+    .bg-c2 { background: linear-gradient(135deg,#2d5016,#1a6b3a); }
+    .bg-c3 { background: linear-gradient(135deg,#4a2c17,#1a3a6b); }
+    .bg-c4 { background: linear-gradient(135deg,#0d2040,#0891b2); }
+    .bg-c5 { background: linear-gradient(135deg,#2d1b69,#1a3a6b); }
+    .bg-c6 { background: linear-gradient(135deg,#14532d,#166534); }
+    .bg-c7 { background: linear-gradient(135deg,#7c2d12,#92400e); }
+    .bg-c8 { background: linear-gradient(135deg,#1e1b4b,#312e81); }
+  </style>
+</head>
+<body>
+
+<header class="site-header" id="site-header">
+  <nav class="navbar container">
+    <a href="index.html" class="logo">
+      <span class="logo-icon">💧</span>
+      <span class="logo-text">Curage <strong>Vandaele</strong></span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html" class="nav-link">Accueil</a></li>
+      <li><a href="services.html" class="nav-link">Services</a></li>
+      <li><a href="chantiers.html" class="nav-link active">Chantiers</a></li>
+      <li><a href="conseils.html" class="nav-link">Conseils étangs</a></li>
+      <li><a href="estimation.html" class="nav-link nav-cta">Estimation gratuite</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <a href="index.html">Accueil</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Chantiers</span>
+    </nav>
+    <h1>Nos réalisations</h1>
+    <p>Quelques exemples de chantiers réalisés ces dernières années dans les Hauts-de-France et les régions voisines.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <!-- Filtres -->
+    <div class="filters" role="group" aria-label="Filtrer par type de travaux">
+      <button class="filter-btn active" data-filter="all">Tous les chantiers</button>
+      <button class="filter-btn" data-filter="curage">Curage</button>
+      <button class="filter-btn" data-filter="faucardage">Faucardage</button>
+      <button class="filter-btn" data-filter="berges">Défenses de berges</button>
+      <button class="filter-btn" data-filter="dragage">Dragage</button>
+    </div>
+
+    <div class="chantiers-full-grid">
+
+      <article class="chantier-card-full" data-cat="curage">
+        <div class="chantier-img bg-c4">
+          <span class="chantier-badge">Curage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Dammartin-sur-Tigeaux (77)</div>
+          <h3>Curage des douves d'un château</h3>
+          <p>Plus de 2 000 m³ de vases extraites. L'utilisation de la drague aspiratrice a permis de ne pas endommager les berges ni la végétation patrimoniale bordant les douves.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">📦 2 000 m³</span>
+            <span class="spec-chip">⚙️ Drague aspiratrice</span>
+            <span class="spec-chip">📅 2021</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="faucardage">
+        <div class="chantier-img bg-c2">
+          <span class="chantier-badge">Faucardage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Somme (80)</div>
+          <h3>Fauchage de roseaux et touradons</h3>
+          <p>Intervention pour le compte du Conservatoire des Espaces Naturels. Machine équipée de chenilles larges permettant d'accéder aux zones les plus inaccessibles des marais.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">🌿 Roseaux + Touradons</span>
+            <span class="spec-chip">🏛️ Conservatoire EN</span>
+            <span class="spec-chip">⚙️ Chenilles larges</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="curage">
+        <div class="chantier-img bg-c1">
+          <span class="chantier-badge">Curage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Frelinghin (Nord, 59)</div>
+          <h3>Curage d'une lagune quasi asséchée</h3>
+          <p>L'étang était presque à sec. Après le passage de la drague aspiratrice, l'étang a retrouvé 2 mètres de profondeur et une qualité d'eau nettement améliorée.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">💧 +2 m profondeur</span>
+            <span class="spec-chip">⚙️ Drague aspiratrice</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="curage">
+        <div class="chantier-img bg-c5">
+          <span class="chantier-badge">Curage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Albert (Somme, 80)</div>
+          <h3>Curage d'étang à sec</h3>
+          <p>Curage d'un étang mis à sec à l'aide d'engins équipés de chenilles spéciales marais. Technique adaptée aux terrains meubles et gorgés d'eau pour éviter l'enlisement du matériel.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">⚙️ Chenilles marais</span>
+            <span class="spec-chip">🔓 Mise à sec</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="faucardage">
+        <div class="chantier-img bg-c7">
+          <span class="chantier-badge">Faucardage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Wail (Pas-de-Calais, 62)</div>
+          <h3>Suppression de nénuphars</h3>
+          <p>Arrachage et extraction de nénuphars couvrant une large portion du plan d'eau. Intervention mécanique depuis la berge et par bateau faucardeur pour les zones profondes.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">🌸 Nénuphars</span>
+            <span class="spec-chip">⚙️ Bateau faucardeur</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="berges">
+        <div class="chantier-img bg-c3">
+          <span class="chantier-badge">Défenses de berges</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Pas-de-Calais (62)</div>
+          <h3>Enrochement – Étang de chasse</h3>
+          <p>Protection de berges fortement érodées par pose de blocs calcaires, géotextile et végétalisation adaptée. Résultat immédiat sur la stabilisation des rives.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">🪨 Enrochement</span>
+            <span class="spec-chip">🌱 Végétalisation</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="dragage">
+        <div class="chantier-img bg-c8">
+          <span class="chantier-badge">Dragage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Hauts-de-France</div>
+          <h3>Location de drague avec chauffeur</h3>
+          <p>Mise à disposition de matériel de dévasement (drague aspiratrice, pelle amphibie) avec chauffeur qualifié pour maîtres d'ouvrage publics et privés.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">🚜 Matériel spécialisé</span>
+            <span class="spec-chip">👷 Avec chauffeur</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chantier-card-full" data-cat="curage">
+        <div class="chantier-img bg-c6">
+          <span class="chantier-badge">Curage</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 Gironde (33)</div>
+          <h3>Entretien plan d'eau – Agence Sud-Ouest</h3>
+          <p>Intervention depuis notre agence d'Arbanats (Gironde) sur un plan d'eau privé. Curage et remise en état des berges pour un propriétaire souhaitant relancer l'activité piscicole.</p>
+          <div class="chantier-specs">
+            <span class="spec-chip">🐟 Remise en pêche</span>
+            <span class="spec-chip">📍 Agence SW</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center; margin-top:3rem; padding: 3rem; background: var(--blue-50); border-radius: var(--radius-xl); border: 1px solid var(--blue-100);">
+      <h2 style="font-family:var(--font-display); font-size:1.6rem; font-weight:700; color:var(--gray-900); margin-bottom:.75rem;">Votre chantier pourrait être ici</h2>
+      <p style="color:var(--gray-500); margin-bottom:1.5rem; max-width:500px; margin-inline:auto;">Estimez vos travaux en ligne et recevez une fourchette de prix personnalisée en quelques minutes.</p>
+      <a href="estimation.html" class="btn btn-primary btn-lg">Estimer mes travaux gratuitement</a>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="logo"><span class="logo-icon">💧</span><span class="logo-text">Curage <strong>Vandaele</strong></span></div>
+      <p>Entreprise familiale fondée en 1953, transmise sur trois générations. Spécialiste du curage d'étangs et de l'entretien des plans d'eau partout en France.</p>
+    </div>
+    <div class="footer-nav">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="chantiers.html">Chantiers</a></li>
+        <li><a href="conseils.html">Conseils étangs</a></li>
+        <li><a href="estimation.html">Estimation travaux</a></li>
+      </ul>
+    </div>
+    <div class="footer-services">
+      <h4>Nos services</h4>
+      <ul>
+        <li><a href="services.html#curage">Curage d'étang</a></li>
+        <li><a href="services.html#faucardage">Faucardage</a></li>
+        <li><a href="services.html#berges">Défenses de berges</a></li>
+        <li><a href="services.html#dragage">Dragage</a></li>
+      </ul>
+    </div>
+    <div class="footer-contact">
+      <h4>Contact</h4>
+      <p><a href="tel:+33672514714">06 72 51 47 14</a></p>
+      <p><a href="mailto:vandaelemarcel@orange.fr">vandaelemarcel@orange.fr</a></p>
+      <p>Tortefontaine (62) · Arbanats (33)</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <p>© 2025 Curage Vandaele – Tous droits réservés | <a href="mentions-legales.html">Mentions légales</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
