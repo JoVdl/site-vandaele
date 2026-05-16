@@ -273,16 +273,6 @@ let acDebounce = null;
 let acFocusIndex = -1;
 let acResults = [];
 
-function geoUrl(lng, lat, z = 17) {
-  return `https://www.geoportail.gouv.fr/embed/visu.html?c=${lng},${lat}&z=${z}&l0=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2::GEOPORTAIL:OGC:WMTS(1;h)&l1=ORTHOIMAGERY.ORTHOPHOTOS::GEOPORTAIL:OGC:WMTS(1)&permalink=yes&toolbar=true`;
-}
-
-function geoUrlExternal(lng, lat, z = 17) {
-  return `https://www.geoportail.gouv.fr/carte?c=${lng},${lat}&z=${z}&l0=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2::GEOPORTAIL:OGC:WMTS(1;h)&l1=ORTHOIMAGERY.ORTHOPHOTOS::GEOPORTAIL:OGC:WMTS(1)&permalink=yes`;
-}
-
-const GEO_DEFAULT = geoUrl(2.5, 47, 6);
-const GEO_DEFAULT_EXT = geoUrlExternal(2.5, 47, 6);
 
 function renderDropdown(features) {
   acResults = features;
@@ -322,10 +312,9 @@ function selectResult(idx) {
   adresseDropdown.classList.remove('open');
   adresseDropdown.innerHTML = '';
   acResults = [];
-  // Centrer la carte si elle est déjà chargée
-  if (mapFrame && mapFrame.src && mapFrame.src !== 'about:blank' && !mapFrame.src.startsWith('about')) {
-    mapFrame.src = geoUrl(selectedCoords[0], selectedCoords[1], 16);
-    mapOverlay && mapOverlay.classList.add('hidden');
+  // Centrer la carte Leaflet sur l'adresse choisie
+  if (typeof window.centerMapOn === 'function') {
+    window.centerMapOn(selectedCoords[0], selectedCoords[1]);
   }
 }
 
@@ -389,46 +378,122 @@ if (adresseInput) {
   });
 }
 
-// ── CARTE GÉOPORTAIL ──────────────────────────────────────────
-const btnLoadMap = document.getElementById('btn-load-map');
-const btnOpenMap = document.getElementById('btn-open-map');
-const btnMesureSurface = document.getElementById('btn-mesure-surface');
-const btnMesurePerimetre = document.getElementById('btn-mesure-perimetre');
-const mapOverlay = document.getElementById('map-overlay');
-const mapFrame = document.getElementById('geoportail-map');
+// ── CARTE LEAFLET ─────────────────────────────────────────────
+const mapEl = document.getElementById('leaflet-map');
+if (mapEl && typeof L !== 'undefined') {
 
-function loadMap() {
-  const src = selectedCoords
-    ? geoUrl(selectedCoords[0], selectedCoords[1], 16)
-    : GEO_DEFAULT;
-  mapFrame.src = src;
-  mapOverlay && mapOverlay.classList.add('hidden');
+  const map = L.map('leaflet-map', { zoomControl: true }).setView([46.8, 2.3], 6);
+
+  const satellite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Imagery © Esri', maxZoom: 19 }
+  ).addTo(map);
+
+  const ignOrtho = L.tileLayer(
+    'https://wxs.ign.fr/essentiels/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+    '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+    '&FORMAT=image%2Fjpeg&STYLE=normal',
+    { attribution: '© IGN Géoportail', maxZoom: 21 }
+  );
+
+  const planOSM = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '© OpenStreetMap contributors', maxZoom: 19 }
+  );
+
+  L.control.layers(
+    { 'Satellite (Esri)': satellite, 'Orthophoto IGN': ignOrtho, 'Plan OSM': planOSM },
+    null, { position: 'topright' }
+  ).addTo(map);
+
+  const drawnItems = new L.FeatureGroup().addTo(map);
+
+  const drawPolygon = new L.Draw.Polygon(map, {
+    allowIntersection: false,
+    showArea: true,
+    shapeOptions: { color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.15, weight: 2 },
+    metric: true, feet: false,
+  });
+
+  const drawPolyline = new L.Draw.Polyline(map, {
+    shapeOptions: { color: '#16a34a', weight: 3 },
+    metric: true, feet: false,
+  });
+
+  const btnSurface = document.getElementById('btn-draw-surface');
+  const btnBerges  = document.getElementById('btn-draw-berges');
+  const btnReset   = document.getElementById('btn-draw-reset');
+  const infoBar    = document.getElementById('map-info-bar');
+
+  function setMode(mode) {
+    drawPolygon.disable();
+    drawPolyline.disable();
+    btnSurface && btnSurface.classList.remove('active-surface');
+    btnBerges  && btnBerges.classList.remove('active-berges');
+
+    if (mode === 'surface') {
+      drawPolygon.enable();
+      btnSurface && btnSurface.classList.add('active-surface');
+      if (infoBar) infoBar.innerHTML = '📐 Cliquez pour placer des points autour de l\'étang. Double-cliquez pour fermer le polygone.';
+    } else if (mode === 'berges') {
+      drawPolyline.enable();
+      btnBerges && btnBerges.classList.add('active-berges');
+      if (infoBar) infoBar.innerHTML = '📏 Cliquez pour tracer le long des berges à traiter. Double-cliquez pour terminer.';
+    }
+  }
+
+  if (btnSurface) btnSurface.addEventListener('click', () => setMode('surface'));
+  if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
+  if (btnReset)   btnReset.addEventListener('click', () => {
+    drawnItems.clearLayers();
+    drawPolygon.disable(); drawPolyline.disable();
+    btnSurface && btnSurface.classList.remove('active-surface');
+    btnBerges  && btnBerges.classList.remove('active-berges');
+    if (infoBar) infoBar.innerHTML = 'ℹ️ Dessin effacé. Choisissez un mode pour recommencer.';
+  });
+
+  map.on(L.Draw.Event.CREATED, e => {
+    drawnItems.clearLayers();
+    drawnItems.addLayer(e.layer);
+
+    if (e.layerType === 'polygon') {
+      const lls = e.layer.getLatLngs()[0];
+      const areaM2 = L.GeometryUtil.geodesicArea(lls);
+      const areaHa = (areaM2 / 10000).toFixed(4);
+      let perim = 0;
+      for (let i = 0; i < lls.length; i++) perim += lls[i].distanceTo(lls[(i + 1) % lls.length]);
+      perim = Math.round(perim);
+
+      const surfEl  = document.getElementById('surface');
+      const perimEl = document.getElementById('perimetre');
+      if (surfEl)  { surfEl.value  = areaHa; state.surface   = parseFloat(areaHa); }
+      if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
+      computeEstimation();
+
+      if (infoBar) infoBar.innerHTML =
+        `✅ Surface : <strong>${parseFloat(areaHa).toLocaleString('fr')} ha</strong> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
+      setTimeout(() => setMode('surface'), 300);
+    }
+
+    if (e.layerType === 'polyline') {
+      const lls = e.layer.getLatLngs();
+      let dist = 0;
+      for (let i = 0; i < lls.length - 1; i++) dist += lls[i].distanceTo(lls[i + 1]);
+      dist = Math.round(dist);
+      const perimEl = document.getElementById('perimetre');
+      if (perimEl) { perimEl.value = dist; state.perimetre = dist; }
+      computeEstimation();
+      if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
+      setTimeout(() => setMode('berges'), 300);
+    }
+  });
+
+  // Exposé pour l'autocomplete : centrer la carte sur l'adresse choisie
+  window.centerMapOn = (lng, lat) => map.setView([lat, lng], 17);
+
+  // Mode par défaut
+  setMode('surface');
 }
-
-if (btnLoadMap) btnLoadMap.addEventListener('click', loadMap);
-
-if (btnOpenMap) btnOpenMap.addEventListener('click', () => {
-  const url = selectedCoords
-    ? geoUrlExternal(selectedCoords[0], selectedCoords[1], 16)
-    : GEO_DEFAULT_EXT;
-  window.open(url, '_blank');
-});
-
-if (btnMesureSurface) btnMesureSurface.addEventListener('click', () => {
-  const url = selectedCoords
-    ? geoUrlExternal(selectedCoords[0], selectedCoords[1], 16)
-    : GEO_DEFAULT_EXT;
-  window.open(url, '_blank');
-  showToast('💡 Dans Géoportail : Outils → Mesures → Aire / Surface', '');
-});
-
-if (btnMesurePerimetre) btnMesurePerimetre.addEventListener('click', () => {
-  const url = selectedCoords
-    ? geoUrlExternal(selectedCoords[0], selectedCoords[1], 16)
-    : GEO_DEFAULT_EXT;
-  window.open(url, '_blank');
-  showToast('💡 Dans Géoportail : Outils → Mesures → Distance / Périmètre', '');
-});
 
 // ── SOUMISSION ────────────────────────────────────────────────
 function submitEstimation() {

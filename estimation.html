@@ -9,6 +9,9 @@
   <link rel="canonical" href="https://www.curagevandaele.fr/estimation.html" />
   <link rel="stylesheet" href="css/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <style>
     /* ── STEPPER ── */
     .stepper-wrap {
@@ -228,74 +231,62 @@
       font-style: italic;
     }
 
-    /* ── MAP ── */
+    /* ── MAP LEAFLET ── */
     .map-container {
       border-radius: var(--radius-lg);
       overflow: hidden;
       border: 2px solid var(--gray-200);
-      margin-bottom: 1rem;
+      margin-bottom: .75rem;
       position: relative;
-      background: #e8f4f8;
     }
-    #geoportail-map {
+    #leaflet-map {
       width: 100%;
-      height: 360px;
-      border: none;
-      display: block;
+      height: 400px;
     }
-    .map-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 1rem;
-      background: rgba(14,30,60,.7);
-      backdrop-filter: blur(2px);
-      color: #fff;
-      text-align: center;
-      padding: 2rem;
-      transition: opacity .3s;
-      pointer-events: auto;
-    }
-    .map-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .map-overlay h4 {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: .25rem;
-    }
-    .map-overlay p { font-size: .875rem; color: rgba(255,255,255,.8); max-width: 340px; }
-    .map-tools {
+    .map-mode-tabs {
       display: flex;
       gap: .5rem;
       flex-wrap: wrap;
       margin-bottom: .5rem;
     }
-    .map-btn {
+    .map-tab {
       display: inline-flex;
       align-items: center;
       gap: .35rem;
-      padding: .4rem .85rem;
+      padding: .45rem .9rem;
       border: 1.5px solid var(--gray-300);
       border-radius: var(--radius-sm);
-      font-size: .8rem;
+      font-size: .82rem;
       font-weight: 600;
       cursor: pointer;
       background: var(--white);
       color: var(--gray-700);
       transition: all var(--transition);
     }
-    .map-btn:hover { border-color: var(--blue-500); color: var(--blue-600); }
+    .map-tab:hover { border-color: var(--blue-400); color: var(--blue-600); }
+    .map-tab.active-surface { background: var(--blue-500); border-color: var(--blue-500); color: #fff; }
+    .map-tab.active-berges  { background: var(--green-500); border-color: var(--green-500); color: #fff; }
+    .map-info-bar {
+      background: var(--blue-50);
+      border: 1px solid var(--blue-100);
+      border-radius: var(--radius-sm);
+      padding: .5rem .9rem;
+      font-size: .82rem;
+      color: var(--blue-700);
+      margin-bottom: .5rem;
+      font-weight: 500;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
     .map-instruction {
       font-size: .8rem;
       color: var(--gray-500);
       font-style: italic;
     }
+    /* Override Leaflet draw tooltips */
+    .leaflet-draw-tooltip { font-size: .8rem !important; }
 
     /* ── RESULT CARD ── */
     .result-card {
@@ -504,38 +495,35 @@
             </div>
 
             <div class="form-group">
-              <label>Localiser et mesurer l'étang sur la carte</label>
-              <div class="map-tools">
-                <button class="map-btn" id="btn-open-map" type="button">🗺️ Ouvrir sur Géoportail</button>
-                <button class="map-btn" id="btn-mesure-surface" type="button">📐 Mesurer la surface</button>
-                <button class="map-btn" id="btn-mesure-perimetre" type="button">📏 Mesurer le périmètre</button>
+              <label>Dessinez l'étang sur la carte satellite</label>
+
+              <div class="map-mode-tabs">
+                <button class="map-tab active-surface" id="btn-draw-surface" type="button">📐 Tracer la surface</button>
+                <button class="map-tab" id="btn-draw-berges" type="button">📏 Tracer les berges</button>
+                <button class="map-tab" id="btn-draw-reset" type="button">🗑️ Effacer</button>
               </div>
+
+              <div class="map-info-bar" id="map-info-bar">
+                ℹ️ Cliquez sur la carte pour placer des points. Double-cliquez pour terminer.
+              </div>
+
               <div class="map-container">
-                <iframe
-                  id="geoportail-map"
-                  title="Carte Géoportail IGN"
-                  src="about:blank"
-                  allowfullscreen
-                ></iframe>
-                <div class="map-overlay" id="map-overlay">
-                  <h4>🗺️ Carte Géoportail IGN</h4>
-                  <p>Cliquez sur « Ouvrir sur Géoportail » pour charger la carte satellite et mesurer votre étang directement.</p>
-                  <button class="btn btn-primary" id="btn-load-map" type="button">Charger la carte</button>
-                </div>
+                <div id="leaflet-map"></div>
               </div>
-              <p class="map-instruction">💡 Utilisez les outils de mesure de Géoportail pour calculer la surface et le périmètre de votre étang, puis reportez les valeurs ci-dessous.</p>
+
+              <p class="map-instruction">💡 Tracez le contour de l'étang → surface et périmètre se calculent automatiquement. Vous pouvez aussi saisir les valeurs manuellement ci-dessous.</p>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="surface">Surface estimée de l'étang (ha)</label>
-                <input type="number" id="surface" min="0.01" max="100" step="0.01" placeholder="Ex : 0.5" />
-                <p class="form-hint">1 ha = 10 000 m²</p>
+                <label for="surface">Surface de l'étang (ha)</label>
+                <input type="number" id="surface" min="0.01" max="100" step="0.0001" placeholder="Ex : 0.5 · ou tracez sur la carte" />
+                <p class="form-hint">Calculée depuis la carte · modifiable manuellement · 1 ha = 10 000 m²</p>
               </div>
               <div class="form-group">
-                <label for="perimetre">Périmètre des berges (m linéaires)</label>
-                <input type="number" id="perimetre" min="0" max="10000" step="1" placeholder="Ex : 300" />
-                <p class="form-hint">Tour complet de l'étang</p>
+                <label for="perimetre">Périmètre des berges (m)</label>
+                <input type="number" id="perimetre" min="0" max="10000" step="1" placeholder="Ex : 300 · ou tracez sur la carte" />
+                <p class="form-hint">Calculé depuis la carte · modifiable manuellement</p>
               </div>
             </div>
 
@@ -908,6 +896,8 @@
   </div>
 </footer>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="js/main.js"></script>
 <script src="js/estimation.js"></script>
 </body>
