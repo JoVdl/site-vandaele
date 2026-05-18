@@ -505,7 +505,9 @@ if (mapEl && typeof L !== 'undefined') {
 }
 
 // ── SOUMISSION ────────────────────────────────────────────────
-function submitEstimation() {
+const WEB3FORMS_KEY = 'd6047275-07ab-4b26-8be7-3b39b661f43b';
+
+async function submitEstimation() {
   const prenom = document.getElementById('c-prenom')?.value?.trim();
   const nom    = document.getElementById('c-nom')?.value?.trim();
   const email  = document.getElementById('c-email')?.value?.trim();
@@ -521,12 +523,54 @@ function submitEstimation() {
     return;
   }
 
-  // Masquer le formulaire et afficher la confirmation
-  document.querySelectorAll('.est-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('confirm-panel').classList.add('active');
-  document.querySelector('.result-card').style.display = 'none';
-  document.getElementById('stepper').style.display = 'none';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const btn = document.getElementById('btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Envoi en cours…'; }
+
+  // Résumé de l'estimation pour le mail
+  const travaux = [...state.travaux].join(', ') || 'Non précisé';
+  const estimation = document.getElementById('result-total-amount')?.textContent || 'Non calculée';
+
+  const body = {
+    access_key:  WEB3FORMS_KEY,
+    subject:     `Demande d'estimation – ${prenom} ${nom}`,
+    from_name:   'Site Curage Vandaele',
+    redirect:    'false',
+    // Champs métier
+    Prénom:      prenom,
+    Nom:         nom,
+    Email:       email,
+    Téléphone:   tel,
+    'Type de travaux': travaux,
+    'Surface (ha)':    state.surface  || 'Non mesurée',
+    'Périmètre (ml)':  state.perimetre || 'Non mesuré',
+    'Accès chantier':  state.acces,
+    'Estimation indicative': estimation,
+    'Adresse chantier': document.getElementById('adresse')?.value || 'Non renseignée',
+  };
+
+  try {
+    const res  = await fetch('https://api.web3forms.com/submit', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Afficher écran de confirmation
+      document.querySelectorAll('.est-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('confirm-panel').classList.add('active');
+      document.querySelector('.result-card').style.display = 'none';
+      document.getElementById('stepper').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      showToast('Erreur lors de l\'envoi. Appelez-nous au 06 72 51 47 14.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
+    }
+  } catch {
+    showToast('Erreur réseau. Appelez-nous au 06 72 51 47 14.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
+  }
 }
 
 // ── TOAST (réutilise celle de main.js ou fallback) ────────────

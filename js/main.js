@@ -33,10 +33,39 @@ document.querySelectorAll('.nav-link').forEach(a => {
 // ── CONTACT FORM ──
 const contactForm = document.getElementById('contact-form');
 if (contactForm) {
-  contactForm.addEventListener('submit', e => {
+  contactForm.addEventListener('submit', async e => {
     e.preventDefault();
-    showToast('Message envoyé ! Nous vous répondrons sous 48h.', 'success');
-    contactForm.reset();
+    const btn = contactForm.querySelector('[type=submit]');
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+
+    const key = contactForm.querySelector('[name=access_key]').value;
+    if (!key || key === 'VOTRE_CLE_WEB3FORMS') {
+      showToast('Clé Web3Forms manquante — configurez-la dans index.html', 'error');
+      btn.disabled = false;
+      btn.textContent = original;
+      return;
+    }
+
+    try {
+      const res  = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: new FormData(contactForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Message envoyé ! Nous vous répondrons sous 48 h.', 'success');
+        contactForm.reset();
+      } else {
+        showToast('Erreur lors de l\'envoi. Appelez-nous directement.', 'error');
+      }
+    } catch {
+      showToast('Erreur réseau. Appelez-nous au 06 72 51 47 14.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = original;
   });
 }
 
@@ -67,6 +96,30 @@ function showToast(msg, type = '') {
     setTimeout(() => t.remove(), 400);
   }, 4000);
 }
+
+// ── RGPD COOKIE BANNER ──
+(function () {
+  if (localStorage.getItem('cookies_choice')) return;
+  const banner = document.getElementById('cookie-banner');
+  if (!banner) return;
+  setTimeout(() => banner.classList.add('visible'), 600);
+
+  document.getElementById('cookie-accept').addEventListener('click', () => {
+    localStorage.setItem('cookies_choice', 'accepted');
+    banner.classList.remove('visible');
+    document.body.classList.remove('cookie-visible');
+  });
+  document.getElementById('cookie-refuse').addEventListener('click', () => {
+    localStorage.setItem('cookies_choice', 'refused');
+    banner.classList.remove('visible');
+    document.body.classList.remove('cookie-visible');
+  });
+
+  document.body.classList.add('cookie-visible');
+  banner.addEventListener('transitionend', () => {
+    if (!banner.classList.contains('visible')) document.body.classList.remove('cookie-visible');
+  });
+})();
 
 // ── SCROLL ANIMATIONS ──
 const observer = new IntersectionObserver((entries) => {

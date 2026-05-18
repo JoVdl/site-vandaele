@@ -1244,3 +1244,137 @@ textarea { resize: vertical; min-height: 100px; }
   .hero-stats { flex-direction: column; }
   .stat-divider { display: none; }
 }
+
+/* ── RGPD COOKIE BANNER ── */
+#cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--gray-900);
+  color: var(--gray-200);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.3);
+  transform: translateY(100%);
+  transition: transform .4s cubic-bezier(.4,0,.2,1);
+}
+#cookie-banner.visible { transform: translateY(0); }
+#cookie-banner p { flex: 1; font-size: .875rem; line-height: 1.5; margin: 0; min-width: 240px; }
+#cookie-banner a { color: var(--blue-400); text-decoration: underline; }
+.cookie-actions { display: flex; gap: .75rem; flex-shrink: 0; }
+.cookie-actions button {
+  padding: .5rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity var(--transition);
+}
+.cookie-actions button:hover { opacity: .85; }
+#cookie-accept { background: var(--blue-500); color: #fff; }
+#cookie-refuse { background: var(--gray-700); color: var(--gray-200); }
+
+/* ── FLOATING PHONE BUTTON ── */
+.fab-phone {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: var(--green-500);
+  color: #fff;
+  padding: .75rem 1.25rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: .95rem;
+  box-shadow: 0 6px 24px rgba(22,163,74,.4);
+  text-decoration: none;
+  transition: transform var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
+}
+.fab-phone:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(22,163,74,.5);
+}
+.fab-phone svg { width: 20px; height: 20px; flex-shrink: 0; }
+/* shrink to icon only on very small screens */
+@media (max-width: 400px) {
+  .fab-phone span { display: none; }
+  .fab-phone { padding: .85rem; border-radius: 50%; }
+}
+/* push up when cookie banner is visible */
+.cookie-visible .fab-phone { bottom: calc(1.5rem + 80px); }
+
+/* ── TESTIMONIALS ── */
+.testimonials {
+  padding: 5rem 0;
+  background: var(--gray-50);
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+.testimonial-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.testimonial-stars { color: #f59e0b; font-size: 1.1rem; letter-spacing: 2px; }
+.testimonial-text {
+  font-size: 1rem;
+  color: var(--gray-700);
+  line-height: 1.7;
+  flex: 1;
+  font-style: italic;
+}
+.testimonial-author { display: flex; align-items: center; gap: .75rem; }
+.testimonial-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--blue-100);
+  color: var(--blue-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.testimonial-name { font-weight: 600; color: var(--gray-900); font-size: .95rem; }
+.testimonial-location { font-size: .8rem; color: var(--gray-500); }
+@media (max-width: 900px) {
+  .testimonials-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .testimonials-grid { grid-template-columns: 1fr; }
+}
+
+/* ── prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ── Firefox range thumb ── */
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue-500);
+  border: none;
+  cursor: pointer;
+}
