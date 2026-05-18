@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    CURAGE VANDAELE – MAIN JS
    ============================================================ */
 
@@ -61,7 +61,7 @@ if (contactForm) {
         showToast('Erreur lors de l\'envoi. Appelez-nous directement.', 'error');
       }
     } catch {
-      showToast('Erreur réseau. Appelez-nous au 06 72 51 47 14.', 'error');
+      showToast('Erreur réseau. Appelez-nous au 06 32 44 11 17.', 'error');
     }
 
     btn.disabled = false;

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    CURAGE VANDAELE – ESTIMATION TOOL
    ============================================================ */
 
@@ -564,11 +564,11 @@ async function submitEstimation() {
       document.getElementById('stepper').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      showToast('Erreur lors de l\'envoi. Appelez-nous au 06 72 51 47 14.', 'error');
+      showToast('Erreur lors de l\'envoi. Appelez-nous au 06 32 44 11 17.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
     }
   } catch {
-    showToast('Erreur réseau. Appelez-nous au 06 72 51 47 14.', 'error');
+    showToast('Erreur réseau. Appelez-nous au 06 32 44 11 17.', 'error');
     if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
   }
 }
