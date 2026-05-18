@@ -6,20 +6,21 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --blue-900: #0a1628;
-  --blue-800: #0d2040;
-  --blue-700: #1a3a6b;
-  --blue-600: #1e4d9e;
-  --blue-500: #2563eb;
-  --blue-400: #3b82f6;
-  --blue-100: #dbeafe;
-  --blue-50:  #eff6ff;
+  /* Palette brand Vandaele Environnement – teal #266E7B + vert #56B57A */
+  --blue-900: #0c2428;
+  --blue-800: #163a40;
+  --blue-700: #1e5060;
+  --blue-600: #266E7B;
+  --blue-500: #2d8a9e;
+  --blue-400: #3da8b8;
+  --blue-100: #d0edf2;
+  --blue-50:  #e8f6f9;
 
-  --teal-500: #0891b2;
-  --teal-400: #06b6d4;
+  --teal-500: #3da8b8;
+  --teal-400: #56c4d4;
 
-  --green-500: #16a34a;
-  --green-400: #22c55e;
+  --green-500: #3d9e63;
+  --green-400: #56B57A;
 
   --gray-900: #111827;
   --gray-800: #1f2937;
@@ -137,14 +138,14 @@ ul { list-style: none; }
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--nav-h);
-  background: rgba(10,22,40,.92);
+  background: rgba(12,36,40,.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,.08);
   transition: background var(--transition);
 }
 .site-header.scrolled {
-  background: rgba(10,22,40,.98);
+  background: rgba(12,36,40,.98);
   box-shadow: var(--shadow-md);
 }
 
@@ -165,6 +166,13 @@ ul { list-style: none; }
 }
 .logo-icon { font-size: 1.5rem; }
 .logo-text strong { color: var(--blue-400); }
+.logo-img {
+  height: 46px;
+  width: auto;
+  display: block;
+}
+/* footer logo (dark background) – same SVG, same filter */
+.site-footer .logo-img { height: 52px; }
 
 .nav-links {
   display: flex;
