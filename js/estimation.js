@@ -1,69 +1,91 @@
-﻿/* ============================================================
+/* ============================================================
    CURAGE VANDAELE – ESTIMATION TOOL
    ============================================================ */
 
-// ── TARIFS DE BASE (fourchettes min/max en €) ──────────────────
-// Unités : curage = €/m³, faucardage = €/ml ou €/m², berges = €/ml
+// ── TARIFS (fourchettes min/max en €) ─────────────────────────
 const TARIFS = {
-  curage: {
-    // prix par m³ de vase extraite selon difficulté d'accès
-    facile:    { min: 8,  max: 16 },
-    moyen:     { min: 12, max: 22 },
-    difficile: { min: 18, max: 32 },
-    // surcoût évacuation vase (€/m³)
-    evacuation: { min: 4, max: 8 },
-  },
-  faucardage: {
-    // prix par ml de berge traitée
-    facile:    { min: 6,  max: 12 },
-    moyen:     { min: 9,  max: 16 },
-    difficile: { min: 14, max: 24 },
-    // majorations espèces invasives
-    jussie: 1.4, // ×1.4
-  },
-  berges: {
-    enrochement: { min: 120, max: 280 }, // €/ml
-    palplanche:  { min: 180, max: 380 },
-    gabion:      { min: 100, max: 200 },
-    vegetal:     { min: 40,  max: 90  },
-    conseil:     { min: 120, max: 280 },
-  },
-  dragage: {
-    // €/m³
-    facile:    { min: 18, max: 35 },
-    moyen:     { min: 25, max: 50 },
-    difficile: { min: 35, max: 70 },
-  },
-  batillage: {
-    // €/ml
-    facile:    { min: 80,  max: 160 },
-    moyen:     { min: 110, max: 200 },
-    difficile: { min: 140, max: 260 },
-  },
-  diagnostic: {
-    // forfait
-    min: 0, max: 0, label: 'Gratuit (inclus dans le devis)',
-  },
-  // mobilisation engin (fixe, ajouté une fois)
   mobilisation: { min: 800, max: 2000 },
+
+  hydrocurage: {
+    // €/ml selon accès
+    facile:    { min: 18, max: 30 },
+    moyen:     { min: 28, max: 48 },
+    difficile: { min: 40, max: 70 },
+  },
+
+  curage: {
+    // €/m³ de vase extraite selon accès
+    facile:    { min: 12, max: 22 },
+    moyen:     { min: 18, max: 32 },
+    difficile: { min: 28, max: 50 },
+    evacuation: { min: 5, max: 10 },
+  },
+
+  faucardage: {
+    // €/ha de surface traitée selon accès
+    facile:    { min: 700,  max: 1200 },
+    moyen:     { min: 900,  max: 1600 },
+    difficile: { min: 1300, max: 2200 },
+    jussie: 1.4,
+  },
+
+  berges: {
+    // €/ml selon type de protection
+    enrochement: { min: 150, max: 280 },
+    palplanche:  { min: 200, max: 400 },
+    gabion:      { min: 120, max: 220 },
+    vegetal:     { min: 50,  max: 100 },
+    conseil:     { min: 150, max: 280 },
+  },
+
+  'broyage-forestier': {
+    // €/ha selon densité de végétation
+    legere:  { min: 900,  max: 1600 },
+    moyenne: { min: 1500, max: 2800 },
+    dense:   { min: 2500, max: 4500 },
+  },
+
+  'broyage-roseaux': {
+    sans: {
+      facile:    { min: 500, max: 800  },
+      moyen:     { min: 700, max: 1100 },
+      difficile: { min: 900, max: 1500 },
+    },
+    avec: {
+      facile:    { min: 1000, max: 1600 },
+      moyen:     { min: 1200, max: 2000 },
+      difficile: { min: 1600, max: 2800 },
+    },
+  },
+
+  diagnostic: { min: 0, max: 0 },
 };
 
 // ── ÉTAT ──────────────────────────────────────────────────────
 let currentPanel = 1;
 const state = {
-  surface: 0,       // ha
-  perimetre: 0,     // ml
+  surface: 0,
+  perimetre: 0,
   acces: 'moyen',
   travaux: new Set(),
-  profVase: 40,     // cm
-  pctCurage: 100,   // %
+  // Hydrocurage
+  lgHydrocurage: 100,
+  // Curage mécanique
+  profVase: 40,
+  pctCurage: 100,
   destinationVase: 'sur-place',
-  pctFauc: 30,      // %
+  // Faucardage
+  pctFauc: 30,
   faucJussie: false,
-  lgBerges: 100,    // ml
+  // Berges
+  lgBerges: 100,
   typeBerge: 'conseil',
-  volDragage: 2000, // m³
-  lgBatillage: 50,  // ml
+  // Broyage forestier
+  surfBroyageForestier: 1.0,
+  densiteBroyage: 'moyenne',
+  // Broyage roseaux
+  surfBroyageRoseaux: 1.0,
+  avecRamassage: false,
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
@@ -73,7 +95,6 @@ function goToPanel(n) {
   const target = document.getElementById('panel-' + n);
   if (target) target.classList.add('active');
 
-  // Update stepper UI
   document.querySelectorAll('.step-item').forEach(item => {
     const s = parseInt(item.dataset.step);
     item.classList.remove('active', 'done');
@@ -82,17 +103,14 @@ function goToPanel(n) {
   });
 
   currentPanel = n;
-
-  // Sync detail sections when entering panel 3
   if (n === 3) syncDetailSections();
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
   computeEstimation();
 }
 
 // ── SYNC DETAIL SECTIONS ──────────────────────────────────────
 function syncDetailSections() {
-  ['curage', 'faucardage', 'berges', 'dragage', 'batillage', 'diagnostic'].forEach(t => {
+  ['hydrocurage', 'curage', 'faucardage', 'berges', 'broyage-forestier', 'broyage-roseaux', 'diagnostic'].forEach(t => {
     const sec = document.getElementById('detail-' + t);
     if (sec) sec.classList.toggle('visible', state.travaux.has(t));
   });
@@ -119,12 +137,13 @@ function bindRange(id, stateKey, displayId, fmt) {
   });
 }
 
-bindRange('prof-vase', 'profVase', 'prof-vase-val', v => v + ' cm');
-bindRange('pct-curage', 'pctCurage', 'pct-curage-val', v => v + ' %');
-bindRange('pct-fauc', 'pctFauc', 'pct-fauc-val', v => v + ' %');
-bindRange('lg-berges', 'lgBerges', 'lg-berges-val', v => parseInt(v).toLocaleString('fr') + ' ml');
-bindRange('vol-dragage', 'volDragage', 'vol-dragage-val', v => parseInt(v).toLocaleString('fr') + ' m³');
-bindRange('lg-batillage', 'lgBatillage', 'lg-batillage-val', v => v + ' ml');
+bindRange('lg-hydrocurage',         'lgHydrocurage',         'lg-hydrocurage-val',         v => parseInt(v).toLocaleString('fr') + ' ml');
+bindRange('prof-vase',              'profVase',               'prof-vase-val',               v => v + ' cm');
+bindRange('pct-curage',             'pctCurage',              'pct-curage-val',              v => v + ' %');
+bindRange('pct-fauc',               'pctFauc',                'pct-fauc-val',                v => v + ' %');
+bindRange('lg-berges',              'lgBerges',               'lg-berges-val',               v => parseInt(v).toLocaleString('fr') + ' ml');
+bindRange('surf-broyage-forestier', 'surfBroyageForestier',   'surf-broyage-forestier-val',  v => parseFloat(v).toFixed(1) + ' ha');
+bindRange('surf-broyage-roseaux',   'surfBroyageRoseaux',     'surf-broyage-roseaux-val',    v => parseFloat(v).toFixed(1) + ' ha');
 
 // ── INPUTS ────────────────────────────────────────────────────
 function bindInput(id, stateKey, parse) {
@@ -135,7 +154,7 @@ function bindInput(id, stateKey, parse) {
     computeEstimation();
   });
 }
-bindInput('surface', 'surface', v => parseFloat(v) || 0);
+bindInput('surface',   'surface',   v => parseFloat(v) || 0);
 bindInput('perimetre', 'perimetre', v => parseFloat(v) || 0);
 
 const accesEl = document.getElementById('acces');
@@ -151,6 +170,13 @@ document.querySelectorAll('input[name="type-berge"]').forEach(r => {
   r.addEventListener('change', () => { state.typeBerge = r.value; computeEstimation(); });
 });
 
+document.querySelectorAll('input[name="densite-broyage"]').forEach(r => {
+  r.addEventListener('change', () => { state.densiteBroyage = r.value; computeEstimation(); });
+});
+
+const ramassageEl = document.getElementById('avec-ramassage');
+if (ramassageEl) ramassageEl.addEventListener('change', () => { state.avecRamassage = ramassageEl.checked; computeEstimation(); });
+
 // ── CALCUL ESTIMATION ─────────────────────────────────────────
 function computeEstimation() {
   const acces = state.acces || 'moyen';
@@ -158,20 +184,30 @@ function computeEstimation() {
   let totalMin = 0, totalMax = 0;
   let hasTravaux = false;
 
-  // Mobilisation (ajoutée si au moins un vrai chantier)
-  const realTravaux = ['curage', 'faucardage', 'berges', 'dragage', 'batillage'];
+  const realTravaux = ['hydrocurage', 'curage', 'faucardage', 'berges', 'broyage-forestier', 'broyage-roseaux'];
   const hasReal = realTravaux.some(t => state.travaux.has(t));
 
   if (hasReal) {
     totalMin += TARIFS.mobilisation.min;
     totalMax += TARIFS.mobilisation.max;
-    lines.push({ label: 'Mobilisation engin', val: fmt(TARIFS.mobilisation.min, TARIFS.mobilisation.max) });
+    lines.push({ label: 'Mobilisation engin', val: fmtRange(TARIFS.mobilisation.min, TARIFS.mobilisation.max) });
   }
 
-  // CURAGE
+  // HYDROCURAGE
+  if (state.travaux.has('hydrocurage')) {
+    hasTravaux = true;
+    const lg = state.lgHydrocurage;
+    const t = TARIFS.hydrocurage[acces];
+    const cMin = lg * t.min;
+    const cMax = lg * t.max;
+    totalMin += cMin; totalMax += cMax;
+    lines.push({ label: `Hydrocurage (${lg.toLocaleString('fr')} ml)`, val: fmtRange(cMin, cMax) });
+  }
+
+  // CURAGE MÉCANIQUE
   if (state.travaux.has('curage')) {
     hasTravaux = true;
-    const surf = state.surface > 0 ? state.surface : 0.5; // ha
+    const surf = state.surface > 0 ? state.surface : 0.5;
     const surfM2 = surf * 10000 * (state.pctCurage / 100);
     const profM = state.profVase / 100;
     const volM3 = surfM2 * profM;
@@ -183,23 +219,22 @@ function computeEstimation() {
       cMax += volM3 * TARIFS.curage.evacuation.max;
     }
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Curage (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmt(cMin, cMax) });
+    lines.push({ label: `Curage mécanique (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
   }
 
   // FAUCARDAGE
   if (state.travaux.has('faucardage')) {
     hasTravaux = true;
-    const perim = state.perimetre > 0 ? state.perimetre : 200;
-    const lgFauc = perim * (state.pctFauc / 100);
+    const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
     const t = TARIFS.faucardage[acces];
-    let cMin = lgFauc * t.min;
-    let cMax = lgFauc * t.max;
+    let cMin = surf * t.min;
+    let cMax = surf * t.max;
     if (state.faucJussie) { cMin *= TARIFS.faucardage.jussie; cMax *= TARIFS.faucardage.jussie; }
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Faucardage (~${Math.round(lgFauc)} ml)`, val: fmt(cMin, cMax) });
+    lines.push({ label: `Faucardage (~${surf.toFixed(2)} ha)`, val: fmtRange(cMin, cMax) });
   }
 
-  // BERGES
+  // DÉFENSES DE BERGES
   if (state.travaux.has('berges')) {
     hasTravaux = true;
     const lg = state.lgBerges;
@@ -207,35 +242,37 @@ function computeEstimation() {
     const cMin = lg * t.min;
     const cMax = lg * t.max;
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Défenses berges (${lg} ml)`, val: fmt(cMin, cMax) });
+    lines.push({ label: `Défenses berges (${lg.toLocaleString('fr')} ml)`, val: fmtRange(cMin, cMax) });
   }
 
-  // DRAGAGE
-  if (state.travaux.has('dragage')) {
+  // BROYAGE FORESTIER
+  if (state.travaux.has('broyage-forestier')) {
     hasTravaux = true;
-    const vol = state.volDragage;
-    const t = TARIFS.dragage[acces];
-    const cMin = vol * t.min;
-    const cMax = vol * t.max;
+    const surf = state.surfBroyageForestier;
+    const t = TARIFS['broyage-forestier'][state.densiteBroyage] || TARIFS['broyage-forestier'].moyenne;
+    const cMin = surf * t.min;
+    const cMax = surf * t.max;
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Dragage (~${vol.toLocaleString('fr')} m³)`, val: fmt(cMin, cMax) });
+    lines.push({ label: `Broyage forestier (${surf.toLocaleString('fr')} ha)`, val: fmtRange(cMin, cMax) });
   }
 
-  // BATILLAGE
-  if (state.travaux.has('batillage')) {
+  // BROYAGE DE ROSEAUX
+  if (state.travaux.has('broyage-roseaux')) {
     hasTravaux = true;
-    const lg = state.lgBatillage;
-    const t = TARIFS.batillage[acces];
-    const cMin = lg * t.min;
-    const cMax = lg * t.max;
+    const surf = state.surfBroyageRoseaux;
+    const key = state.avecRamassage ? 'avec' : 'sans';
+    const t = TARIFS['broyage-roseaux'][key][acces];
+    const cMin = surf * t.min;
+    const cMax = surf * t.max;
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Protection batillage (${lg} ml)`, val: fmt(cMin, cMax) });
+    const label = state.avecRamassage ? 'Roseaux + ramassage' : 'Broyage roseaux';
+    lines.push({ label: `${label} (${surf.toLocaleString('fr')} ha)`, val: fmtRange(cMin, cMax) });
   }
 
   // DIAGNOSTIC
   if (state.travaux.has('diagnostic')) {
     hasTravaux = true;
-    lines.push({ label: 'Diagnostic & visite', val: 'Gratuit' });
+    lines.push({ label: 'Diagnostic & visite technique', val: 'Gratuit' });
   }
 
   // Render
@@ -256,10 +293,10 @@ function computeEstimation() {
     </div>`
   ).join('');
 
-  totalEl.textContent = fmt(totalMin, totalMax);
+  totalEl.textContent = fmtRange(totalMin, totalMax);
 }
 
-function fmt(min, max) {
+function fmtRange(min, max) {
   if (min === 0 && max === 0) return 'Gratuit';
   const f = v => Math.round(v).toLocaleString('fr') + ' €';
   return f(min) + ' – ' + f(max);
@@ -268,11 +305,10 @@ function fmt(min, max) {
 // ── AUTOCOMPLETE ADRESSE (API Base Adresse Nationale) ─────────
 const adresseInput = document.getElementById('adresse');
 const adresseDropdown = document.getElementById('adresse-dropdown');
-let selectedCoords = null; // [lng, lat] de l'adresse choisie
+let selectedCoords = null;
 let acDebounce = null;
 let acFocusIndex = -1;
 let acResults = [];
-
 
 function renderDropdown(features) {
   acResults = features;
@@ -308,11 +344,10 @@ function selectResult(idx) {
   if (!f) return;
   const label = f.properties.label;
   adresseInput.value = label;
-  selectedCoords = f.geometry.coordinates; // [lng, lat]
+  selectedCoords = f.geometry.coordinates;
   adresseDropdown.classList.remove('open');
   adresseDropdown.innerHTML = '';
   acResults = [];
-  // Centrer la carte Leaflet sur l'adresse choisie
   if (typeof window.centerMapOn === 'function') {
     window.centerMapOn(selectedCoords[0], selectedCoords[1]);
   }
@@ -413,12 +448,12 @@ if (mapEl && typeof L !== 'undefined') {
   const drawPolygon = new L.Draw.Polygon(map, {
     allowIntersection: false,
     showArea: true,
-    shapeOptions: { color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.15, weight: 2 },
+    shapeOptions: { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 },
     metric: true, feet: false,
   });
 
   const drawPolyline = new L.Draw.Polyline(map, {
-    shapeOptions: { color: '#16a34a', weight: 3 },
+    shapeOptions: { color: '#56B57A', weight: 3 },
     metric: true, feet: false,
   });
 
@@ -490,16 +525,12 @@ if (mapEl && typeof L !== 'undefined') {
     }
   });
 
-  // Exposé pour l'autocomplete : centrer la carte sur l'adresse choisie
   window.centerMapOn = (lng, lat) => {
     map.setView([lat, lng], 17);
     map.invalidateSize();
   };
 
-  // Mode par défaut
   setMode('surface');
-
-  // Fix blank map : forcer le recalcul de la taille après rendu
   setTimeout(() => map.invalidateSize(), 100);
   setTimeout(() => map.invalidateSize(), 400);
 }
@@ -526,7 +557,6 @@ async function submitEstimation() {
   const btn = document.getElementById('btn-submit');
   if (btn) { btn.disabled = true; btn.textContent = 'Envoi en cours…'; }
 
-  // Résumé de l'estimation pour le mail
   const travaux = [...state.travaux].join(', ') || 'Non précisé';
   const estimation = document.getElementById('result-total-amount')?.textContent || 'Non calculée';
 
@@ -535,17 +565,42 @@ async function submitEstimation() {
     subject:     `Demande d'estimation – ${prenom} ${nom}`,
     from_name:   'Site Curage Vandaele',
     redirect:    'false',
-    // Champs métier
     Prénom:      prenom,
     Nom:         nom,
     Email:       email,
     Téléphone:   tel,
-    'Type de travaux': travaux,
-    'Surface (ha)':    state.surface  || 'Non mesurée',
-    'Périmètre (ml)':  state.perimetre || 'Non mesuré',
-    'Accès chantier':  state.acces,
-    'Estimation indicative': estimation,
-    'Adresse chantier': document.getElementById('adresse')?.value || 'Non renseignée',
+    Profil:      document.getElementById('c-profil')?.value || '',
+    Délai:       document.getElementById('c-delai')?.value || '',
+    'Adresse chantier':       document.getElementById('adresse')?.value || 'Non renseignée',
+    'Surface (ha)':           state.surface  || 'Non mesurée',
+    'Périmètre (ml)':         state.perimetre || 'Non mesuré',
+    'Accès chantier':         state.acces,
+    'Type de travaux':        travaux,
+    'Estimation indicative':  estimation,
+    ...(state.travaux.has('hydrocurage') ? {
+      'Hydrocurage – longueur (ml)': state.lgHydrocurage,
+    } : {}),
+    ...(state.travaux.has('curage') ? {
+      'Curage – prof. vase (cm)':   state.profVase,
+      'Curage – % surface':         state.pctCurage,
+      'Curage – destination vase':  state.destinationVase,
+    } : {}),
+    ...(state.travaux.has('faucardage') ? {
+      'Faucardage – % couverture':  state.pctFauc,
+      'Faucardage – jussie':        state.faucJussie ? 'Oui' : 'Non',
+    } : {}),
+    ...(state.travaux.has('berges') ? {
+      'Berges – longueur (ml)':     state.lgBerges,
+      'Berges – type':              state.typeBerge,
+    } : {}),
+    ...(state.travaux.has('broyage-forestier') ? {
+      'Broyage forestier – surface (ha)': state.surfBroyageForestier,
+      'Broyage forestier – densité':      state.densiteBroyage,
+    } : {}),
+    ...(state.travaux.has('broyage-roseaux') ? {
+      'Broyage roseaux – surface (ha)':    state.surfBroyageRoseaux,
+      'Broyage roseaux – avec ramassage':  state.avecRamassage ? 'Oui' : 'Non',
+    } : {}),
   };
 
   try {
@@ -557,7 +612,6 @@ async function submitEstimation() {
     const data = await res.json();
 
     if (data.success) {
-      // Afficher écran de confirmation
       document.querySelectorAll('.est-panel').forEach(p => p.classList.remove('active'));
       document.getElementById('confirm-panel').classList.add('active');
       document.querySelector('.result-card').style.display = 'none';
@@ -565,15 +619,14 @@ async function submitEstimation() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       showToast('Erreur lors de l\'envoi. Appelez-nous au 06 32 44 11 17.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande'; }
     }
   } catch {
     showToast('Erreur réseau. Appelez-nous au 06 32 44 11 17.', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande de devis'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande'; }
   }
 }
 
-// ── TOAST (réutilise celle de main.js ou fallback) ────────────
 function showToast(msg, type) {
   const t = document.createElement('div');
   t.className = 'toast' + (type ? ' toast--' + type : '');
@@ -583,5 +636,4 @@ function showToast(msg, type) {
   setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4500);
 }
 
-// Init
 computeEstimation();

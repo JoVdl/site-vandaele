@@ -107,7 +107,7 @@
       transition: background .4s;
     }
     .step-item.done:not(:last-child)::after { background: var(--green-500); }
-    .step-item.active:not(:last-child)::after { background: var(--blue-200, #bfdbfe); }
+    .step-item.active:not(:last-child)::after { background: var(--blue-100); }
 
     .step-circle {
       width: 36px;
@@ -128,7 +128,7 @@
     .step-item.active .step-circle {
       background: var(--blue-500);
       color: #fff;
-      border-color: var(--blue-200, #bfdbfe);
+      border-color: var(--blue-100);
     }
     .step-item.done .step-circle {
       background: var(--green-500);
@@ -183,7 +183,7 @@
       color: var(--blue-700);
     }
     .travail-toggle label:hover {
-      border-color: var(--blue-300, #93c5fd);
+      border-color: var(--blue-100);
       background: var(--gray-50);
     }
 
@@ -229,7 +229,7 @@
       background: var(--blue-500);
       cursor: pointer;
       border: 3px solid #fff;
-      box-shadow: 0 2px 6px rgba(37,99,235,.4);
+      box-shadow: 0 2px 6px rgba(61,158,98,.4);
     }
     .range-val {
       min-width: 60px;
@@ -400,7 +400,7 @@
 
     /* ── RESULT CARD ── */
     .result-card {
-      background: linear-gradient(160deg, #1a3a6b 0%, #1e4d9e 60%, #0891b2 100%);
+      background: linear-gradient(160deg, #0a1f12 0%, #1e5c34 60%, #3d9e62 100%);
       border-radius: var(--radius-xl);
       padding: 2rem;
       color: #fff;
@@ -529,7 +529,7 @@
       background: var(--blue-50);
       color: var(--blue-700);
     }
-    .radio-option:hover { border-color: var(--blue-300, #93c5fd); }
+    .radio-option:hover { border-color: var(--blue-100); }
   </style>
 </head>
 <body>
@@ -664,10 +664,17 @@
 
             <div class="travaux-grid">
               <div class="travail-toggle">
+                <input type="checkbox" id="t-hydrocurage" name="travaux" value="hydrocurage" />
+                <label for="t-hydrocurage">
+                  <span class="t-icon">💧</span>
+                  Hydrocurage
+                </label>
+              </div>
+              <div class="travail-toggle">
                 <input type="checkbox" id="t-curage" name="travaux" value="curage" />
                 <label for="t-curage">
                   <span class="t-icon">🚜</span>
-                  Curage
+                  Curage mécanique
                 </label>
               </div>
               <div class="travail-toggle">
@@ -685,17 +692,17 @@
                 </label>
               </div>
               <div class="travail-toggle">
-                <input type="checkbox" id="t-dragage" name="travaux" value="dragage" />
-                <label for="t-dragage">
-                  <span class="t-icon">⚓</span>
-                  Dragage
+                <input type="checkbox" id="t-broyage-forestier" name="travaux" value="broyage-forestier" />
+                <label for="t-broyage-forestier">
+                  <span class="t-icon">🌲</span>
+                  Broyage forestier
                 </label>
               </div>
               <div class="travail-toggle">
-                <input type="checkbox" id="t-batillage" name="travaux" value="batillage" />
-                <label for="t-batillage">
-                  <span class="t-icon">🌊</span>
-                  Batillage
+                <input type="checkbox" id="t-broyage-roseaux" name="travaux" value="broyage-roseaux" />
+                <label for="t-broyage-roseaux">
+                  <span class="t-icon">🌾</span>
+                  Broyage de roseaux
                 </label>
               </div>
               <div class="travail-toggle">
@@ -726,10 +733,22 @@
           <div class="contact-form" style="padding:2rem;">
             <div class="form-section-title">📋 Détails des travaux</div>
 
-            <!-- CURAGE details -->
-            <div class="detail-section" id="detail-curage">
-              <div class="detail-section-title"><span class="ico">🚜</span> Curage d'étang</div>
+            <!-- HYDROCURAGE details -->
+            <div class="detail-section" id="detail-hydrocurage">
+              <div class="detail-section-title"><span class="ico">💧</span> Hydrocurage</div>
+              <div class="form-group">
+                <label>Longueur à traiter (mètres linéaires)</label>
+                <div class="range-wrap">
+                  <input type="range" id="lg-hydrocurage" min="10" max="2000" value="100" step="10" />
+                  <span class="range-val" id="lg-hydrocurage-val">100 ml</span>
+                </div>
+                <p class="form-hint">Fossés, drains, canaux — nettoyage par injection eau haute pression et aspiration des dépôts.</p>
+              </div>
+            </div>
 
+            <!-- CURAGE MÉCANIQUE details -->
+            <div class="detail-section" id="detail-curage">
+              <div class="detail-section-title"><span class="ico">🚜</span> Curage mécanique</div>
               <div class="form-group">
                 <label>Profondeur actuelle de vase (cm)</label>
                 <div class="range-wrap">
@@ -738,19 +757,17 @@
                 </div>
                 <p class="form-hint">Mesurez en enfonçant une tige verticalement jusqu'à la résistance du fond dur.</p>
               </div>
-
               <div class="form-group">
-                <label>% de la surface concernée par le curage</label>
+                <label>% de la surface concernée</label>
                 <div class="range-wrap">
                   <input type="range" id="pct-curage" min="10" max="100" value="100" step="10" />
                   <span class="range-val" id="pct-curage-val">100 %</span>
                 </div>
               </div>
-
               <div class="form-group">
                 <label for="destination-vase">Destination de la vase extraite</label>
                 <select id="destination-vase">
-                  <option value="sur-place">Épandage sur terrain adjacent (le client dispose d'un terrain)</option>
+                  <option value="sur-place">Épandage sur terrain adjacent</option>
                   <option value="evacuation">Évacuation par nos soins (surcoût)</option>
                   <option value="valorisation">Valorisation agricole (à définir)</option>
                 </select>
@@ -760,7 +777,6 @@
             <!-- FAUCARDAGE details -->
             <div class="detail-section" id="detail-faucardage">
               <div class="detail-section-title"><span class="ico">🌿</span> Faucardage</div>
-
               <div class="form-group">
                 <label>% de la surface couverte par les végétaux</label>
                 <div class="range-wrap">
@@ -768,12 +784,11 @@
                   <span class="range-val" id="pct-fauc-val">30 %</span>
                 </div>
               </div>
-
               <div class="form-group">
                 <label>Espèces présentes</label>
                 <div style="display:flex; flex-direction:column; gap:.4rem;">
                   <label class="radio-option"><input type="checkbox" id="fauc-roseaux" /> Roseaux (Phragmites)</label>
-                  <label class="radio-option"><input type="checkbox" id="fauc-jussie" /> Jussie (espèce invasive)</label>
+                  <label class="radio-option"><input type="checkbox" id="fauc-jussie" /> Jussie (espèce invasive +40%)</label>
                   <label class="radio-option"><input type="checkbox" id="fauc-nenuphars" /> Nénuphars</label>
                   <label class="radio-option"><input type="checkbox" id="fauc-autres" /> Autres / Inconnues</label>
                 </div>
@@ -783,15 +798,13 @@
             <!-- BERGES details -->
             <div class="detail-section" id="detail-berges">
               <div class="detail-section-title"><span class="ico">🪨</span> Défenses de berges</div>
-
               <div class="form-group">
                 <label>Longueur de berges à protéger (mètres linéaires)</label>
                 <div class="range-wrap">
-                  <input type="range" id="lg-berges" min="0" max="2000" value="100" step="10" />
+                  <input type="range" id="lg-berges" min="10" max="2000" value="100" step="10" />
                   <span class="range-val" id="lg-berges-val">100 ml</span>
                 </div>
               </div>
-
               <div class="form-group">
                 <label>Type de protection envisagée</label>
                 <div class="radio-group">
@@ -804,38 +817,50 @@
               </div>
             </div>
 
-            <!-- DRAGAGE details -->
-            <div class="detail-section" id="detail-dragage">
-              <div class="detail-section-title"><span class="ico">⚓</span> Dragage</div>
-
+            <!-- BROYAGE FORESTIER details -->
+            <div class="detail-section" id="detail-broyage-forestier">
+              <div class="detail-section-title"><span class="ico">🌲</span> Broyage forestier</div>
               <div class="form-group">
-                <label>Volume estimé à draguer (m³)</label>
+                <label>Surface à broyer (ha)</label>
                 <div class="range-wrap">
-                  <input type="range" id="vol-dragage" min="100" max="50000" value="2000" step="100" />
-                  <span class="range-val" id="vol-dragage-val">2 000 m³</span>
+                  <input type="range" id="surf-broyage-forestier" min="0.1" max="20" value="1" step="0.1" />
+                  <span class="range-val" id="surf-broyage-forestier-val">1.0 ha</span>
                 </div>
-                <p class="form-hint">Si vous ne savez pas, indiquez la surface et la profondeur de vase et nous estimerons le volume.</p>
+              </div>
+              <div class="form-group">
+                <label>Densité de la végétation</label>
+                <div class="radio-group">
+                  <label class="radio-option"><input type="radio" name="densite-broyage" value="legere" /> 🌿 Légère – arbustes &lt; 5 cm de diamètre</label>
+                  <label class="radio-option"><input type="radio" name="densite-broyage" value="moyenne" checked /> 🌳 Moyenne – arbres 5 à 20 cm</label>
+                  <label class="radio-option"><input type="radio" name="densite-broyage" value="dense" /> 🌲 Dense – arbres &gt; 20 cm, forêt épaisse</label>
+                </div>
               </div>
             </div>
 
-            <!-- BATILLAGE details -->
-            <div class="detail-section" id="detail-batillage">
-              <div class="detail-section-title"><span class="ico">🌊</span> Protection batillage</div>
-
+            <!-- BROYAGE ROSEAUX details -->
+            <div class="detail-section" id="detail-broyage-roseaux">
+              <div class="detail-section-title"><span class="ico">🌾</span> Broyage de roseaux à la chenillette</div>
               <div class="form-group">
-                <label>Longueur à protéger (mètres linéaires)</label>
+                <label>Surface de roselière à traiter (ha)</label>
                 <div class="range-wrap">
-                  <input type="range" id="lg-batillage" min="0" max="1000" value="50" step="10" />
-                  <span class="range-val" id="lg-batillage-val">50 ml</span>
+                  <input type="range" id="surf-broyage-roseaux" min="0.1" max="20" value="1" step="0.1" />
+                  <span class="range-val" id="surf-broyage-roseaux-val">1.0 ha</span>
                 </div>
+              </div>
+              <div class="form-group">
+                <label class="radio-option" style="border-color:var(--green-500); background:var(--blue-50);">
+                  <input type="checkbox" id="avec-ramassage" />
+                  <span>Avec ramassage et export des roseaux broyés <em style="color:var(--gray-500); font-weight:400;">(+60 à 80 % du coût)</em></span>
+                </label>
+                <p class="form-hint">Sans ramassage : les roseaux broyés restent sur place et se décomposent. Avec ramassage : export complet par nos soins.</p>
               </div>
             </div>
 
             <!-- DIAGNOSTIC details -->
             <div class="detail-section" id="detail-diagnostic">
               <div class="detail-section-title"><span class="ico">🔍</span> Diagnostic & conseil</div>
-              <p style="color:var(--gray-600); font-size:.9rem;">
-                Le diagnostic comprend une visite technique sur site, une analyse de l'état du plan d'eau et de ses berges, et un rapport de préconisations avec chiffrage indicatif des travaux. Déplacement gratuit pour les projets importants.
+              <p style="color:var(--gray-600); font-size:.9rem; line-height:1.7;">
+                Le diagnostic comprend une visite technique sur site, une analyse de l'état du plan d'eau ou de la zone, et un rapport de préconisations avec chiffrage indicatif des travaux.<br><strong>Déplacement gratuit</strong> pour tout projet d'envergure.
               </p>
             </div>
 
