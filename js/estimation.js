@@ -384,16 +384,18 @@ if (mapEl && typeof L !== 'undefined') {
 
   const map = L.map('leaflet-map', { zoomControl: true }).setView([46.8, 2.3], 6);
 
-  const satellite = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { attribution: 'Imagery © Esri', maxZoom: 19 }
-  ).addTo(map);
-
   const ignOrtho = L.tileLayer(
-    'https://wxs.ign.fr/essentiels/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
     '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
     '&FORMAT=image%2Fjpeg&STYLE=normal',
-    { attribution: '© IGN Géoportail', maxZoom: 21 }
+    { attribution: '© IGN – Géoplateforme', maxZoom: 21, maxNativeZoom: 19 }
+  ).addTo(map);
+
+  const ignPlan = L.tileLayer(
+    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+    '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+    '&FORMAT=image%2Fpng&STYLE=normal',
+    { attribution: '© IGN – Géoplateforme', maxZoom: 19 }
   );
 
   const planOSM = L.tileLayer(
@@ -402,7 +404,7 @@ if (mapEl && typeof L !== 'undefined') {
   );
 
   L.control.layers(
-    { 'Satellite (Esri)': satellite, 'Orthophoto IGN': ignOrtho, 'Plan OSM': planOSM },
+    { '🛰️ Orthophoto IGN': ignOrtho, '🗺️ Plan IGN': ignPlan, '📍 OpenStreetMap': planOSM },
     null, { position: 'topright' }
   ).addTo(map);
 
@@ -489,10 +491,17 @@ if (mapEl && typeof L !== 'undefined') {
   });
 
   // Exposé pour l'autocomplete : centrer la carte sur l'adresse choisie
-  window.centerMapOn = (lng, lat) => map.setView([lat, lng], 17);
+  window.centerMapOn = (lng, lat) => {
+    map.setView([lat, lng], 17);
+    map.invalidateSize();
+  };
 
   // Mode par défaut
   setMode('surface');
+
+  // Fix blank map : forcer le recalcul de la taille après rendu
+  setTimeout(() => map.invalidateSize(), 100);
+  setTimeout(() => map.invalidateSize(), 400);
 }
 
 // ── SOUMISSION ────────────────────────────────────────────────
