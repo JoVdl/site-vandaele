@@ -1903,3 +1903,26 @@ input[type=range]::-moz-range-thumb {
   border: none;
   cursor: pointer;
 }
+
+/* ── Boutons réseaux sociaux (TikTok + Facebook) ── */
+.social-follow-btns {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+.social-follow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .7em 1.6em;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: .9rem;
+  text-decoration: none;
+  transition: opacity var(--transition), transform var(--transition);
+}
+.social-follow-btn:hover { opacity: .85; transform: translateY(-2px); }
+.social-follow-btn--tiktok   { background: #000;     color: #fff; }
+.social-follow-btn--facebook { background: #1877f2;  color: #fff; }
