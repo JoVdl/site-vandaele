@@ -138,8 +138,8 @@ function showToast(msg, type = '') {
   // Facteur d'échelle CSS selon la largeur d'écran (doit correspondre aux media queries)
   function getScale() {
     const w = window.innerWidth;
-    if (w <= 767)  return 0.46;
-    if (w <= 1199) return 0.67;
+    if (w <= 767)  return 0.37;
+    if (w <= 1199) return 0.62;
     return 1;
   }
 
