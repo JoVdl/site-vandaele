@@ -1921,7 +1921,7 @@ input[type=range]::-moz-range-thumb {
   overflow: hidden;
   background: linear-gradient(to bottom, #5a2d0a 0%, #2a1005 100%);
 }
-.page-home .dg-s-strip { display: block; }
+/* .page-home .dg-s-strip { display: block; } — désactivé temporairement */
 @media (prefers-reduced-motion: reduce) { .dg-s-strip { display: none !important; } }
 
 /* ── Adaptation responsive du bandeau drague ── */
@@ -1947,9 +1947,10 @@ input[type=range]::-moz-range-thumb {
 }
 
 /* Décalage du contenu homepage pour éviter le chevauchement */
-@media (max-width: 767px)  { body.page-home { padding-left: 28px; } }
-@media (min-width: 768px) and (max-width: 1199px) { body.page-home { padding-left: 42px; } }
-@media (min-width: 1200px) { body.page-home { padding-left: 60px; } }
+/* Décalage contenu homepage — décommenter avec le bandeau drague */
+/* @media (max-width: 767px)  { body.page-home { padding-left: 28px; } } */
+/* @media (min-width: 768px) and (max-width: 1199px) { body.page-home { padding-left: 42px; } } */
+/* @media (min-width: 1200px) { body.page-home { padding-left: 60px; } } */
 
 /* ── Bassin de décantation (haut, fixe – aligné tribord avec le tuyau) ── */
 .dg-s-basin {
