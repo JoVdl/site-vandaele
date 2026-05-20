@@ -1910,7 +1910,7 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* ── Drague verticale v2 (bandeau fixe + scroll) ── */
+/* ── Drague verticale v3 (vue du dessus · tuyau · bassin) ── */
 .dg-s-strip {
   position: fixed;
   left: 0; top: 0; bottom: 0;
@@ -1919,79 +1919,103 @@ input[type=range]::-moz-range-thumb {
   pointer-events: none;
   display: none;
   overflow: hidden;
-  /* fond initial = marron (boue non curée) */
   background: linear-gradient(to bottom, #5a2d0a 0%, #2a1005 100%);
 }
-/* Visible uniquement page d'accueil sur grands écrans */
 .page-home .dg-s-strip { display: block; }
 @media (max-width: 1439px) { .dg-s-strip { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { .dg-s-strip { display: none !important; } }
 
-/* Machine complète (positionnée par JS via style.top) */
-.dg-s-machine {
+/* ── Bassin de décantation (haut, fixe) ── */
+.dg-s-basin {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 8px;
+  right: 6px;
+  width: 14px;
+  height: 30px;
+  border: 2px solid #5a6272;
+  border-radius: 2px 2px 3px 3px;
+  background: #1e2232;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  top: 88px;   /* valeur initiale, écrasée par JS */
+  justify-content: flex-end;
+}
+.dg-s-basin-mud {
+  width: 100%;
+  height: 0%;           /* piloté par JS : 0 → 100 % selon scroll */
+  background: linear-gradient(to top, #3d1a05 0%, #8a4010 70%, #b05018 100%);
+  transition: height 0.35s ease;
+  border-radius: 0 0 1px 1px;
 }
 
-/* Corps de la drague */
-.dg-s-body { width: 56px; height: 82px; display: block; overflow: visible; }
-
-/* Tige de liaison corps → vis sans fin */
-.dg-s-rod {
-  width: 10px;
-  height: 14px;
-  background: #163d5c;
-  border: 1px solid #1e4a6e;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-/* Vis sans fin (auger) – gradient diagonal animé simulant l'hélicoïde */
-.dg-s-auger {
-  width: 22px;
-  height: 72px;
-  background: #163d5c;
-  border: 1.5px solid #1e5070;
-  border-radius: 3px;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.dg-s-auger::before {
-  content: '';
+/* ── Tuyau d'aspiration (fixe, relie bassin → fond du bandeau) ── */
+.dg-s-pipe {
   position: absolute;
-  inset: -14px;
-  background: repeating-linear-gradient(
-    -52deg,
-    transparent               0px,
-    transparent               5px,
-    rgba(58, 130, 185, 0.75)  5px,
-    rgba(58, 130, 185, 0.75)  8px,
-    rgba(25,  75, 130, 0.30)  8px,
-    rgba(25,  75, 130, 0.30) 12px
-  );
-  animation: dg-auger-spin 0.42s linear infinite;
-}
-@keyframes dg-auger-spin {
-  from { transform: translateY(0); }
-  to   { transform: translateY(14px); }
+  top: 38px;            /* juste sous le bassin */
+  bottom: 0;
+  right: 11px;          /* centré sur le bassin (14px basin, right:6 → centre à 13px) */
+  width: 6px;
+  background: linear-gradient(to right, #5a6a7a, #3d4a5c, #2a3545);
+  border-radius: 1px;
+  overflow: hidden;
 }
 
-/* Pointe conique */
-.dg-s-tip { width: 28px; height: 22px; display: block; flex-shrink: 0; }
+/* Bolus de vase remontant dans le tuyau */
+.dg-sb {
+  position: absolute;
+  left: 1px; right: 1px;
+  height: 7px;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at 40% 40%, #b85820 0%, #6a2e08 60%, #3d1a04 100%);
+  opacity: 0;
+  animation: dg-sb-rise linear infinite;
+}
+.dg-sb1 { bottom: 8%;  animation-duration: 2.3s; animation-delay: 0s;   }
+.dg-sb2 { bottom: 28%; animation-duration: 1.9s; animation-delay: 0.75s; }
+.dg-sb3 { bottom: 50%; animation-duration: 2.6s; animation-delay: 1.4s;  }
+.dg-sb4 { bottom: 15%; animation-duration: 2.1s; animation-delay: 1.9s;  }
+.dg-sb5 { bottom: 38%; animation-duration: 2.4s; animation-delay: 0.4s;  }
+@keyframes dg-sb-rise {
+  0%   { opacity: 0;   transform: translateY(0); }
+  7%   { opacity: 0.9; }
+  93%  { opacity: 0.75; }
+  100% { opacity: 0;   transform: translateY(-100vh); }
+}
 
-/* Fumée cheminée */
-.dg-v-smoke { transform-box: fill-box; transform-origin: center bottom; }
-.dg-v-s1 { animation: dg-vsmoke 2.2s ease-out infinite 0s; }
-.dg-v-s2 { animation: dg-vsmoke 2.2s ease-out infinite 0.7s; }
-@keyframes dg-vsmoke {
-  0%   { opacity:0.7; transform: translateY(0)   scale(1);   }
-  100% { opacity:0;   transform: translateY(-9px) scale(1.7); }
+/* ── Machine (vue du dessus, positionnée par JS) ── */
+.dg-s-machine {
+  position: absolute;
+  left: 5px;
+  overflow: visible;    /* permet au connecteur de déborder */
+  top: 88px;            /* valeur initiale, écrasée par JS */
+}
+
+/* Connecteur horizontal machine → tuyau (pont visuel) */
+.dg-s-connector {
+  position: absolute;
+  top: 94px;            /* hauteur du raccord aspiration sur le SVG hull */
+  left: 54px;           /* depuis le bord droit du SVG */
+  width: 14px;
+  height: 6px;
+  background: linear-gradient(to right, #4a5870, #5a6880);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Corps SVG (barge vue du dessus) */
+.dg-s-body { width: 56px; height: 108px; display: block; overflow: visible; }
+
+/* Disque de vis sans fin (vue du dessus) */
+.dg-s-auger-disk { width: 44px; height: 44px; display: block; margin-left: 6px; }
+
+/* Animation rotation de la spirale de vis */
+.dg-s-auger-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dg-auger-rot 0.8s linear infinite;
+}
+@keyframes dg-auger-rot {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* ── Services unifiés (photo/vidéo + texte) ── */

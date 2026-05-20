@@ -121,41 +121,45 @@ function showToast(msg, type = '') {
   });
 })();
 
-// ── DRAGUE VERTICALE v2 – machine entière descend avec le scroll ──
+// ── DRAGUE VERTICALE v3 – vue du dessus · machine descend · tuyau + bassin ──
 (function () {
-  const strip   = document.getElementById('dg-s-strip');
-  const machine = document.getElementById('dg-s-machine');
+  const strip    = document.getElementById('dg-s-strip');
+  const machine  = document.getElementById('dg-s-machine');
+  const basinMud = document.getElementById('dg-s-basin-mud');
   if (!strip || !machine) return;
 
-  // Hauteurs des composants (px) : corps(82) + tige(14) + auger(72) + pointe(22)
-  const MACHINE_H = 190;
+  // Hauteur totale machine : SVG hull (108px) + disque auger (44px)
+  const MACHINE_H = 152;
   const HEADER_H  = 88;
-  const MARGIN_B  = 16;
+  const MARGIN_B  = 20;
 
   function update() {
     const viewH     = window.innerHeight;
     const scrollMax = document.documentElement.scrollHeight - viewH;
     const progress  = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
 
-    // Déplacement vertical de la machine
+    // Position verticale de la machine (descend haut → bas)
     const topMin = HEADER_H;
     const topMax = viewH - MACHINE_H - MARGIN_B;
     const top    = Math.round(topMin + progress * Math.max(0, topMax - topMin));
     machine.style.top = top + 'px';
 
-    // Point de coupure bleu/marron = bas de la pointe
-    const splitY   = top + MACHINE_H;
-    const sp       = (splitY / viewH * 100);
-    const s        = v => Math.min(100, Math.max(0, v)).toFixed(1);
+    // Remplissage du bassin de décantation (0 → 100 %)
+    if (basinMud) basinMud.style.height = (progress * 100).toFixed(1) + '%';
+
+    // Gradient : eau bleue au-dessus du front de curage, boue marron en dessous
+    const splitY = top + MACHINE_H;
+    const sp     = (splitY / viewH * 100);
+    const s      = v => Math.min(100, Math.max(0, v)).toFixed(1);
 
     strip.style.background = [
       'linear-gradient(to bottom,',
-      `#0a2f50 0%,`,
-      `#1268a8 ${s(sp - 8)}%,`,
-      `#1a80c0 ${s(sp - 2)}%,`,
-      `#b87030 ${s(sp)}%,`,
-      `#7a3a14 ${s(sp + 6)}%,`,
-      `#3a1805 100%)`
+      '#07223a 0%,',
+      `#0e5898 ${s(sp - 12)}%,`,
+      `#1a80c0 ${s(sp - 3)}%,`,
+      `#c07828 ${s(sp)}%,`,
+      `#7a3812 ${s(sp + 7)}%,`,
+      '#361504 100%)'
     ].join(' ');
   }
 
