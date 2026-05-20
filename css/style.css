@@ -1924,5 +1924,6 @@ input[type=range]::-moz-range-thumb {
   transition: opacity var(--transition), transform var(--transition);
 }
 .social-follow-btn:hover { opacity: .85; transform: translateY(-2px); }
+.social-follow-btn--instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
 .social-follow-btn--tiktok   { background: #000;     color: #fff; }
 .social-follow-btn--facebook { background: #1877f2;  color: #fff; }
