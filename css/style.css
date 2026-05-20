@@ -393,6 +393,151 @@ ul { list-style: none; }
   margin-top: 2.5rem;
 }
 
+/* ── GALLERY STRIP (accueil) ── */
+.services-gallery {
+  display: flex;
+  height: 300px;
+}
+.gallery-item {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+.gallery-item + .gallery-item { border-left: 2px solid rgba(255,255,255,.07); }
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .55s ease;
+  display: block;
+}
+.gallery-item:hover img { transform: scale(1.09); }
+.gallery-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5,18,10,.82) 0%, rgba(5,18,10,.22) 55%, transparent 100%);
+  z-index: 1;
+  transition: background .35s;
+}
+.gallery-item:hover::before {
+  background: linear-gradient(to top, rgba(5,18,10,.9) 0%, rgba(30,92,52,.4) 65%, transparent 100%);
+}
+.gallery-item-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.15rem .9rem;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: .92rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.gallery-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all .3s;
+}
+.gallery-item:hover .gallery-arrow { opacity: 1; transform: translateX(0); }
+.gallery-item-badge {
+  display: inline-block;
+  background: var(--blue-400);
+  color: var(--white);
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: .18em .5em;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+@media (max-width: 900px) {
+  .services-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    height: auto;
+  }
+  .gallery-item { height: 155px; }
+  .gallery-item + .gallery-item { border-left: none; border-top: 2px solid rgba(255,255,255,.07); }
+}
+@media (max-width: 480px) {
+  .services-gallery { grid-template-columns: repeat(2, 1fr); }
+  .gallery-item { height: 130px; }
+  .gallery-item-label { font-size: .8rem; padding: .65rem .8rem; }
+}
+
+/* ── PROBLEMS → SOLUTIONS ── */
+.problems-section {
+  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-700) 100%);
+  padding-block: 3.5rem;
+}
+.problems-section .section-tag {
+  background: rgba(86,181,122,.18);
+  color: var(--blue-100);
+  border: 1px solid rgba(86,181,122,.3);
+}
+.problems-section .section-title { color: var(--white); }
+.problems-section .section-desc { color: rgba(255,255,255,.6); }
+.problems-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 900px) { .problems-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .problems-grid { grid-template-columns: 1fr; } }
+.problem-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.4rem 1.3rem;
+  text-decoration: none;
+  color: var(--white);
+  transition: all var(--transition);
+}
+.problem-card:hover {
+  background: rgba(86,181,122,.15);
+  border-color: rgba(86,181,122,.45);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.problem-icon { font-size: 2rem; margin-bottom: .8rem; line-height: 1; }
+.problem-card h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: .45rem;
+  color: var(--white);
+  line-height: 1.3;
+}
+.problem-card p {
+  font-size: .845rem;
+  color: rgba(255,255,255,.6);
+  line-height: 1.55;
+  flex: 1;
+  margin-bottom: 1rem;
+}
+.problem-cta {
+  font-size: .8rem;
+  color: var(--blue-100);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.problem-card--cta { background: var(--blue-500); border-color: var(--blue-400); }
+.problem-card--cta:hover { background: var(--blue-400); border-color: var(--blue-300); }
+.problem-card--cta .problem-cta { color: var(--white); }
+
 /* ── SERVICE CARDS ── */
 .services-grid {
   display: grid;
