@@ -1994,6 +1994,76 @@ input[type=range]::-moz-range-thumb {
 .svc-card--cta .svc-card-body { background: var(--blue-50); }
 .svc-card--cta .svc-card-link { font-weight: 700; color: var(--blue-600); }
 
+/* Placeholder image (service sans photo) */
+.svc-card-media--placeholder { cursor: default; }
+.svc-placeholder-img {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  color: rgba(255,255,255,.6);
+  font-size: .8rem;
+  font-weight: 500;
+}
+
+/* Carte pleine largeur – Procédure d'autorisation */
+.svc-autorisation {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  background: var(--blue-900);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem 2rem;
+}
+.svc-autorisation-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  background: rgba(255,255,255,.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-400);
+}
+.svc-autorisation-body { flex: 1; }
+.svc-autorisation-body h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: .4rem;
+}
+.svc-autorisation-body p {
+  font-size: .875rem;
+  color: rgba(255,255,255,.72);
+  line-height: 1.65;
+}
+.svc-autorisation-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  background: var(--blue-400);
+  color: #fff;
+  font-weight: 700;
+  font-size: .875rem;
+  padding: .65em 1.4em;
+  border-radius: 30px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition), transform var(--transition);
+}
+.svc-autorisation-link:hover { background: var(--blue-500); transform: translateY(-2px); }
+@media (max-width: 700px) {
+  .svc-autorisation { flex-direction: column; text-align: center; }
+  .svc-autorisation-icon { margin: 0 auto; }
+}
+
 /* ── Boutons réseaux sociaux (TikTok + Facebook) ── */
 .social-follow-btns {
   display: flex;
