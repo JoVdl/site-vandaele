@@ -232,16 +232,15 @@ ul { list-style: none; }
 .hero-bg {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(135deg, #0a1f12 0%, #133d22 40%, #1e5c34 70%, #133d22 100%);
+  background-size: cover;
+  background-position: center;
+  background-color: #0a1f12;
 }
 .hero-bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 70% 60% at 80% 50%, rgba(86,181,122,.25) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(61,158,98,.15) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(10,31,18,.88) 0%, rgba(19,61,34,.78) 50%, rgba(30,92,52,.68) 100%);
 }
 .hero-bg::after {
   content: '';
@@ -403,6 +402,22 @@ ul { list-style: none; }
 @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px)  { .services-grid { grid-template-columns: 1fr; } }
 
+/* photo en haut de la carte */
+.service-img {
+  margin: -1.4rem -1.5rem 1rem;
+  height: 155px;
+  overflow: hidden;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.service-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
+  display: block;
+}
+.service-card:hover .service-img img { transform: scale(1.06); }
+
 .service-card {
   display: flex;
   flex-direction: column;
@@ -550,13 +565,40 @@ ul { list-style: none; }
   color: var(--gray-400);
 }
 
+/* ── POURQUOI NOUS : layout photo + grille ── */
+.pourquoi-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+.pourquoi-photo {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  box-shadow: var(--shadow-lg);
+}
+.pourquoi-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pourquoi-content .section-header {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) {
+  .pourquoi-layout { grid-template-columns: 1fr; gap: 2rem; }
+  .pourquoi-photo { aspect-ratio: 16/7; }
+}
+
 /* ── FEATURES ── */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .85rem;
 }
-@media (max-width: 768px) { .features-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .features-grid { grid-template-columns: 1fr; } }
 
 .feature {
@@ -1253,7 +1295,6 @@ textarea { resize: vertical; min-height: 100px; }
 
   .services-grid,
   .chantiers-grid,
-  .features-grid,
   .conseils-grid { grid-template-columns: 1fr; }
 
   .travaux-grid { grid-template-columns: 1fr 1fr; }
