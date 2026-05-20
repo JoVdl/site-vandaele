@@ -1955,7 +1955,7 @@ input[type=range]::-moz-range-thumb {
 .dg-s-basin {
   position: absolute;
   top: 8px;
-  right: 5px;
+  right: 6px;
   width: 14px;
   height: 30px;
   border: 2px solid #4a5a3a;
@@ -1980,8 +1980,8 @@ input[type=range]::-moz-range-thumb {
   position: absolute;
   top: 38px;
   bottom: 0;            /* écrasé par JS pour s'arrêter à la poupe de la drague */
-  right: 9px;
-  width: 6px;
+  right: 10px;
+  width: 7px;
   background: linear-gradient(to right, #364828, #253618, #1a2810);
   border-radius: 1px;
   overflow: hidden;
@@ -2038,11 +2038,8 @@ input[type=range]::-moz-range-thumb {
   z-index: 2;
 }
 
-/* Corps SVG (pontoon dredger vue du dessus) */
-.dg-s-body { width: 70px; height: 90px; display: block; overflow: visible; }
-
-/* Tête de coupe rotative */
-.dg-s-auger-disk { width: 44px; height: 44px; display: block; margin-left: 13px; }
+/* Corps SVG (corps + bras + tête de coupe, tout en un) */
+.dg-s-body { width: 70px; height: 102px; display: block; overflow: visible; }
 
 /* Animation rotation de la spirale de vis */
 .dg-s-auger-spin {

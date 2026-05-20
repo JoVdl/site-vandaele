@@ -130,8 +130,8 @@ function showToast(msg, type = '') {
   const dgTurb   = document.getElementById('dg-s-turb');
   if (!strip || !machine) return;
 
-  // Hauteur totale machine non scalée : SVG hull (90px) + tête de coupe (44px)
-  const MACHINE_H_BASE = 134;
+  // Hauteur totale machine non scalée : SVG tout-en-un (corps + bras + tête de coupe)
+  const MACHINE_H_BASE = 102;
   const HEADER_H       = 88;
   const MARGIN_B       = 20;
 
