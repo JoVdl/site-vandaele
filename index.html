@@ -756,8 +756,8 @@
     <div class="dg-s-basin-mud" id="dg-s-basin-mud"></div>
   </div>
 
-  <!-- Tuyau d'aspiration (fixe, colonne droite du bandeau) -->
-  <div class="dg-s-pipe">
+  <!-- Tuyau de refoulement (centré derrière la drague, longueur pilotée par JS) -->
+  <div class="dg-s-pipe" id="dg-s-pipe">
     <span class="dg-sb dg-sb1"></span>
     <span class="dg-sb dg-sb2"></span>
     <span class="dg-sb dg-sb3"></span>
@@ -765,55 +765,53 @@
     <span class="dg-sb dg-sb5"></span>
   </div>
 
-  <!-- Machine (vue du dessus, positionnée par JS) -->
+  <!-- Machine rectangulaire vue du dessus, positionnée par JS -->
   <div class="dg-s-machine" id="dg-s-machine">
 
-    <!-- Connecteur horizontal machine → tuyau (pontage entre SVG et pipe fixe) -->
-    <div class="dg-s-connector"></div>
-
-    <!-- Vue du dessus : coque + superstructure + bras + sortie aspiration -->
-    <svg class="dg-s-body" viewBox="0 0 56 108" xmlns="http://www.w3.org/2000/svg">
-      <!-- Flotteurs latéraux (sponsons) -->
-      <ellipse cx="5"  cy="46" rx="4" ry="14" fill="#0e2035" stroke="#163d5c" stroke-width="0.8"/>
-      <ellipse cx="51" cy="46" rx="4" ry="14" fill="#0e2035" stroke="#163d5c" stroke-width="0.8"/>
-      <!-- Coque principale (ovale allongé = barge vue du dessus) -->
-      <ellipse cx="28" cy="46" rx="21" ry="40" fill="#163d5c" stroke="#1e5070" stroke-width="1.5"/>
-      <!-- Superstructure / cabine (centre haut) -->
-      <rect x="17" y="18" width="22" height="20" rx="3" fill="#102a42"/>
-      <!-- Fenêtres cabine -->
-      <rect x="19" y="20" width="8" height="5" rx="1.5" fill="#1860a0" opacity="0.6"/>
-      <rect x="30" y="20" width="8" height="5" rx="1.5" fill="#1860a0" opacity="0.6"/>
-      <!-- Ligne de pont centrale -->
-      <line x1="9" y1="57" x2="47" y2="57" stroke="#1e5070" stroke-width="1" opacity="0.5"/>
-      <!-- Bras de curage (boom vers la tête de vis) -->
-      <rect x="25" y="57" width="6" height="22" rx="2" fill="#1e4a6e"/>
-      <!-- Sortie tuyau aspiration (raccord latéral droit vers le pipe du bandeau) -->
-      <rect x="44" y="54" width="14" height="8" rx="2" fill="#4a5870"/>
-      <rect x="47" y="56" width="9"  height="4" rx="1" fill="#5a6880" opacity="0.85"/>
+    <!-- Coque rectangulaire + cabine + pont de travail -->
+    <svg class="dg-s-body" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
+      <!-- Collet de raccord tuyau (poupe, centré, flush avec le haut du SVG) -->
+      <rect x="30" y="0" width="10" height="8" rx="1" fill="#2a4a6a" stroke="#3a5a7a" stroke-width="0.5"/>
+      <!-- Sponson bâbord -->
+      <rect x="0" y="8" width="9" height="70" rx="3" fill="#0c1d2e" stroke="#15344d" stroke-width="1"/>
+      <!-- Sponson tribord -->
+      <rect x="61" y="8" width="9" height="70" rx="3" fill="#0c1d2e" stroke="#15344d" stroke-width="1"/>
+      <!-- Pont principal -->
+      <rect x="8" y="6" width="54" height="76" rx="3" fill="#163d5c" stroke="#1e5070" stroke-width="1.5"/>
+      <!-- Cabine (poupe) -->
+      <rect x="14" y="9" width="42" height="22" rx="3" fill="#0e2638" stroke="#163550" stroke-width="1"/>
+      <!-- Hublots bâbord -->
+      <rect x="17" y="13" width="14" height="6" rx="1.5" fill="#1a60b0" opacity="0.75"/>
+      <!-- Hublots tribord -->
+      <rect x="38" y="13" width="14" height="6" rx="1.5" fill="#1a60b0" opacity="0.75"/>
+      <!-- Séparation cabine / pont de travail -->
+      <line x1="9" y1="34" x2="61" y2="34" stroke="#1e5070" stroke-width="1" opacity="0.5"/>
+      <!-- Machinerie bâbord -->
+      <rect x="10" y="38" width="18" height="9" rx="2" fill="#0c1e30"/>
+      <!-- Machinerie tribord -->
+      <rect x="42" y="38" width="18" height="9" rx="2" fill="#0c1e30"/>
+      <!-- Bras de curage (centré, de la cabine vers la proue) -->
+      <rect x="32" y="34" width="6" height="34" rx="2" fill="#1a3a5a"/>
+      <!-- Plateforme proue (là où s'accroche la tête de vis) -->
+      <rect x="20" y="70" width="30" height="8" rx="2" fill="#0e2030" opacity="0.8"/>
     </svg>
 
     <!-- Tête de vis sans fin vue du dessus (disque spiralé rotatif) -->
     <svg class="dg-s-auger-disk" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
-      <!-- Corps du disque -->
       <circle cx="22" cy="22" r="20" fill="#0e2a42" stroke="#1e4070" stroke-width="1.5"/>
-      <!-- Spirale hélicoïdale animée (vis sans fin vue du dessus) -->
       <g class="dg-s-auger-spin">
         <path d="M22,4 C35,10 38,22 22,22 C6,22 9,34 22,40"
               stroke="#3a90c0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
         <path d="M22,4 C9,10 6,22 22,22 C38,22 35,34 22,40"
               stroke="#1e5a8a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <!-- Petites dents de la vis -->
         <circle cx="22" cy="4"  r="2" fill="#4a90c0" opacity="0.7"/>
         <circle cx="22" cy="40" r="2" fill="#4a90c0" opacity="0.7"/>
         <circle cx="4"  cy="22" r="2" fill="#3a80b0" opacity="0.5"/>
         <circle cx="40" cy="22" r="2" fill="#3a80b0" opacity="0.5"/>
-        <!-- Moyeu central -->
         <circle cx="22" cy="22" r="5" fill="#4a90c0"/>
         <circle cx="22" cy="22" r="2.5" fill="#6ab0d8"/>
       </g>
-      <!-- Cerclage fixe externe -->
       <circle cx="22" cy="22" r="20" fill="none" stroke="#2060a0" stroke-width="0.8" opacity="0.5"/>
-      <!-- Vase projetée (halo marron à la périphérie basse) -->
       <ellipse cx="22" cy="41" rx="16" ry="4" fill="#5a2d0a" opacity="0.55"/>
     </svg>
 

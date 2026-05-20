@@ -126,10 +126,11 @@ function showToast(msg, type = '') {
   const strip    = document.getElementById('dg-s-strip');
   const machine  = document.getElementById('dg-s-machine');
   const basinMud = document.getElementById('dg-s-basin-mud');
+  const dgPipe   = document.getElementById('dg-s-pipe');
   if (!strip || !machine) return;
 
-  // Hauteur totale machine non scalée : SVG hull (108px) + disque auger (44px)
-  const MACHINE_H_BASE = 152;
+  // Hauteur totale machine non scalée : SVG hull (90px) + disque auger (44px)
+  const MACHINE_H_BASE = 134;
   const HEADER_H       = 88;
   const MARGIN_B       = 20;
 
@@ -154,6 +155,9 @@ function showToast(msg, type = '') {
     const topMax = viewH - machineH - MARGIN_B;
     const top    = Math.round(topMin + progress * Math.max(0, topMax - topMin));
     machine.style.top = top + 'px';
+
+    // Tuyau : s'arrête exactement à la poupe de la drague (ni devant, ni à côté)
+    if (dgPipe) dgPipe.style.bottom = (viewH - top) + 'px';
 
     // Remplissage du bassin (0 → 100 % au scroll)
     if (basinMud) basinMud.style.height = (progress * 100).toFixed(1) + '%';

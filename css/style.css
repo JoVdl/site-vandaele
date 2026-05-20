@@ -1929,20 +1929,18 @@ input[type=range]::-moz-range-thumb {
 /* Tablette (768 – 1199 px) : scale 0.67 → strip 54 px */
 @media (max-width: 1199px) {
   .dg-s-strip    { width: 54px; }
-  .dg-s-machine  { transform: scale(0.67); transform-origin: top left; left: 2px; }
-  .dg-s-connector{ display: none; }
-  .dg-s-basin    { right: 2px; width: 10px; height: 22px; }
-  .dg-s-pipe     { right: 6px;  width: 4px; }
+  .dg-s-machine  { transform: scale(0.67); transform-origin: top left; left: 4px; }
+  .dg-s-basin    { width: 10px; height: 22px; }
+  .dg-s-pipe     { width: 4px; }
   .dg-sb         { height: 5px; }
 }
 
 /* Mobile (< 768 px) : scale 0.46 → strip 38 px */
 @media (max-width: 767px) {
   .dg-s-strip    { width: 38px; }
-  .dg-s-machine  { transform: scale(0.46); transform-origin: top left; left: 1px; }
-  .dg-s-connector{ display: none; }
-  .dg-s-basin    { right: 2px; width: 7px; height: 14px; border-width: 1px; }
-  .dg-s-pipe     { right: 4px;  width: 3px; }
+  .dg-s-machine  { transform: scale(0.46); transform-origin: top left; left: 3px; }
+  .dg-s-basin    { width: 7px; height: 14px; border-width: 1px; }
+  .dg-s-pipe     { width: 3px; }
   .dg-sb         { height: 4px; border-radius: 2px; }
 }
 
@@ -1955,7 +1953,8 @@ input[type=range]::-moz-range-thumb {
 .dg-s-basin {
   position: absolute;
   top: 8px;
-  right: 6px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 14px;
   height: 30px;
   border: 2px solid #5a6272;
@@ -1965,6 +1964,7 @@ input[type=range]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  z-index: 3;
 }
 .dg-s-basin-mud {
   width: 100%;
@@ -1974,16 +1974,18 @@ input[type=range]::-moz-range-thumb {
   border-radius: 0 0 1px 1px;
 }
 
-/* ── Tuyau d'aspiration (fixe, relie bassin → fond du bandeau) ── */
+/* ── Tuyau de refoulement (centré, longueur pilotée par JS) ── */
 .dg-s-pipe {
   position: absolute;
   top: 38px;            /* juste sous le bassin */
-  bottom: 0;
-  right: 11px;          /* centré sur le bassin (14px basin, right:6 → centre à 13px) */
+  bottom: 0;            /* écrasé par JS pour s'arrêter à la poupe de la drague */
+  left: 50%;
+  transform: translateX(-50%);
   width: 6px;
   background: linear-gradient(to right, #5a6a7a, #3d4a5c, #2a3545);
   border-radius: 1px;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* Bolus de vase remontant dans le tuyau */
@@ -2008,30 +2010,19 @@ input[type=range]::-moz-range-thumb {
   100% { opacity: 0;   transform: translateY(-100vh); }
 }
 
-/* ── Machine (vue du dessus, positionnée par JS) ── */
+/* ── Machine rectangulaire (vue du dessus, positionnée par JS) ── */
 .dg-s-machine {
   position: absolute;
   left: 5px;
-  overflow: visible;    /* permet au connecteur de déborder */
   top: 88px;            /* valeur initiale, écrasée par JS */
+  z-index: 2;
 }
 
-/* Connecteur horizontal machine → tuyau (pont visuel) */
-.dg-s-connector {
-  position: absolute;
-  top: 94px;            /* hauteur du raccord aspiration sur le SVG hull */
-  left: 54px;           /* depuis le bord droit du SVG */
-  width: 14px;
-  height: 6px;
-  background: linear-gradient(to right, #4a5870, #5a6880);
-  border-radius: 0 2px 2px 0;
-}
-
-/* Corps SVG (barge vue du dessus) */
-.dg-s-body { width: 56px; height: 108px; display: block; overflow: visible; }
+/* Corps SVG (barge rectangulaire vue du dessus) */
+.dg-s-body { width: 70px; height: 90px; display: block; overflow: visible; }
 
 /* Disque de vis sans fin (vue du dessus) */
-.dg-s-auger-disk { width: 44px; height: 44px; display: block; margin-left: 6px; }
+.dg-s-auger-disk { width: 44px; height: 44px; display: block; margin-left: 13px; }
 
 /* Animation rotation de la spirale de vis */
 .dg-s-auger-spin {
