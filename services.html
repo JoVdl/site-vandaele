@@ -130,6 +130,156 @@
         <details class="svc-details">
           <summary>Voir le processus complet</summary>
           <div class="svc-details-body">
+
+            <figure class="hydro-anim" aria-label="Schéma animé du processus d'hydrocurage par aspiration">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 310" role="img" aria-labelledby="hydro-title hydro-desc">
+                <title id="hydro-title">Processus d'hydrocurage</title>
+                <desc id="hydro-desc">Vue en coupe d'un étang dont la vase est aspirée par pompe, transportée par tuyau vers des géotubes, l'eau filtrée retournant ensuite dans l'étang.</desc>
+                <defs>
+                  <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dff0f8"/><stop offset="100%" stop-color="#b8dff0"/></linearGradient>
+                  <linearGradient id="gWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2a9ad0" stop-opacity="0.85"/><stop offset="100%" stop-color="#1a6fa0" stop-opacity="1"/></linearGradient>
+                  <linearGradient id="gMud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a87040"/><stop offset="100%" stop-color="#6b3f18"/></linearGradient>
+                  <linearGradient id="gBerge" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#56B57A"/><stop offset="100%" stop-color="#2d7a4a"/></linearGradient>
+                  <linearGradient id="gGeo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8b89a"/><stop offset="100%" stop-color="#a0896a"/></linearGradient>
+                  <linearGradient id="gGeoMud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a87040"/><stop offset="100%" stop-color="#7a4e22"/></linearGradient>
+                  <clipPath id="clipEtang"><rect x="0" y="0" width="420" height="310"/></clipPath>
+                  <clipPath id="clipGeo1"><ellipse cx="560" cy="215" rx="36" ry="65"/></clipPath>
+                  <clipPath id="clipGeo2"><ellipse cx="660" cy="215" rx="36" ry="65"/></clipPath>
+                  <filter id="fBlur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+                </defs>
+
+                <!-- Fond -->
+                <rect width="760" height="310" fill="url(#gSky)"/>
+                <rect x="0" y="280" width="760" height="30" fill="#3a5a2a"/>
+
+                <!-- Berges & talus -->
+                <rect x="0" y="145" width="35" height="14" fill="#56B57A"/>
+                <rect x="385" y="145" width="35" height="14" fill="#56B57A"/>
+                <polygon points="0,155 30,155 40,205 0,205" fill="url(#gBerge)"/>
+                <polygon points="390,155 420,155 420,205 390,205" fill="url(#gBerge)"/>
+                <rect x="0" y="205" width="420" height="75" fill="#4a3218"/>
+
+                <!-- Eau étang -->
+                <rect x="0" y="155" width="420" height="50" fill="url(#gWater)" opacity="0.92"/>
+                <ellipse cx="120" cy="158" rx="40" ry="3" fill="white" opacity="0.18"/>
+                <ellipse cx="280" cy="160" rx="30" ry="2" fill="white" opacity="0.12"/>
+
+                <!-- Vase étang animée -->
+                <g clip-path="url(#clipEtang)">
+                  <rect x="0" y="218" width="420" height="62" fill="url(#gMud)" opacity="0.95">
+                    <animate attributeName="y" values="218;230;218" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                    <animate attributeName="height" values="62;50;62" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                  </rect>
+                  <path d="M0,218 Q105,214 210,218 Q315,222 420,218" fill="none" stroke="#c49060" stroke-width="2" opacity="0.7">
+                    <animate attributeName="d" values="M0,218 Q105,214 210,218 Q315,222 420,218;M0,230 Q105,226 210,230 Q315,234 420,230;M0,218 Q105,214 210,218 Q315,222 420,218" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                  </path>
+                </g>
+
+                <!-- Terrain droite -->
+                <rect x="420" y="145" width="340" height="135" fill="#4a7c3f"/>
+                <rect x="420" y="145" width="340" height="10" fill="#56B57A"/>
+                <rect x="420" y="260" width="340" height="20" fill="#3a5a2a"/>
+
+                <!-- Pompe submersible -->
+                <g transform="translate(180,210)">
+                  <rect x="-18" y="28" width="36" height="8" rx="3" fill="#133d22"/>
+                  <rect x="-13" y="0" width="26" height="32" rx="6" fill="#1e5c34"/>
+                  <rect x="-10" y="22" width="20" height="8" rx="2" fill="#0a1f12" opacity="0.6"/>
+                  <line x1="-6" y1="22" x2="-6" y2="30" stroke="#56B57A" stroke-width="1" opacity="0.5"/>
+                  <line x1="0"  y1="22" x2="0"  y2="30" stroke="#56B57A" stroke-width="1" opacity="0.5"/>
+                  <line x1="6"  y1="22" x2="6"  y2="30" stroke="#56B57A" stroke-width="1" opacity="0.5"/>
+                  <rect x="-10" y="-8" width="20" height="12" rx="4" fill="#2d7a4a"/>
+                  <rect x="-4" y="-22" width="8" height="16" rx="3" fill="#133d22"/>
+                </g>
+
+                <!-- Bulles montantes -->
+                <circle cx="172" cy="215" r="3.5" fill="none" stroke="#7dcfef" stroke-width="1.5">
+                  <animate attributeName="cy" values="215;155;155" dur="3s" begin="0s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.8;0.8;0" dur="3s" begin="0s" repeatCount="indefinite"/>
+                  <animate attributeName="r" values="3.5;5;5" dur="3s" begin="0s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="192" cy="215" r="2.5" fill="none" stroke="#7dcfef" stroke-width="1.5">
+                  <animate attributeName="cy" values="215;155;155" dur="3s" begin="0.9s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.8;0.8;0" dur="3s" begin="0.9s" repeatCount="indefinite"/>
+                  <animate attributeName="r" values="2.5;4;4" dur="3s" begin="0.9s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="163" cy="215" r="2" fill="none" stroke="#7dcfef" stroke-width="1.2">
+                  <animate attributeName="cy" values="215;155;155" dur="3s" begin="1.7s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.8;0.8;0" dur="3s" begin="1.7s" repeatCount="indefinite"/>
+                  <animate attributeName="r" values="2;3.5;3.5" dur="3s" begin="1.7s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="200" cy="215" r="3" fill="none" stroke="#aee6f8" stroke-width="1.2">
+                  <animate attributeName="cy" values="215;155;155" dur="3.4s" begin="0.4s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.7;0.7;0" dur="3.4s" begin="0.4s" repeatCount="indefinite"/>
+                  <animate attributeName="r" values="3;4.5;4.5" dur="3.4s" begin="0.4s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Tuyau refoulement (pompe → géotubes) -->
+                <path d="M180,188 L180,120 Q180,108 192,108 L680,108 Q692,108 692,120 L692,150" fill="none" stroke="#5c3010" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M180,188 L180,120 Q180,108 192,108 L680,108 Q692,108 692,120 L692,150" fill="none" stroke="#7a4018" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path class="pipe-flow-mud" d="M180,188 L180,120 Q180,108 192,108 L680,108 Q692,108 692,120 L692,150" fill="none" stroke="#c47830" stroke-width="5" stroke-dasharray="18 14" stroke-linecap="round"/>
+                <polygon points="400,101 414,108 400,115" fill="#c47830" opacity="0.8"/>
+
+                <!-- Tuyau retour (géotubes → étang) -->
+                <path d="M610,148 L610,130 Q610,118 598,118 L220,118 Q208,118 208,130 L208,155" fill="none" stroke="#0f4d70" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M610,148 L610,130 Q610,118 598,118 L220,118 Q208,118 208,130 L208,155" fill="none" stroke="#1a7aab" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path class="pipe-flow-water" d="M610,148 L610,130 Q610,118 598,118 L220,118 Q208,118 208,130 L208,155" fill="none" stroke="#5fc8f0" stroke-width="4" stroke-dasharray="14 12" stroke-linecap="round"/>
+                <polygon points="350,112 336,118 350,124" fill="#5fc8f0" opacity="0.85"/>
+
+                <!-- Géotube 1 -->
+                <ellipse cx="562" cy="282" rx="38" ry="7" fill="#1a3810" opacity="0.35" filter="url(#fBlur2)"/>
+                <ellipse cx="560" cy="215" rx="38" ry="68" fill="url(#gGeo)"/>
+                <g clip-path="url(#clipGeo1)" opacity="0.2">
+                  <line x1="522" y1="170" x2="598" y2="170" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="182" x2="598" y2="182" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="194" x2="598" y2="194" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="206" x2="598" y2="206" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="218" x2="598" y2="218" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="230" x2="598" y2="230" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="242" x2="598" y2="242" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="254" x2="598" y2="254" stroke="#6b4a20" stroke-width="1.5"/><line x1="522" y1="266" x2="598" y2="266" stroke="#6b4a20" stroke-width="1.5"/>
+                </g>
+                <g clip-path="url(#clipGeo1)">
+                  <rect x="522" y="248" width="76" height="35" fill="url(#gGeoMud)" opacity="0.85">
+                    <animate attributeName="y" values="248;230;248" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                    <animate attributeName="height" values="35;53;35" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                  </rect>
+                </g>
+                <ellipse cx="560" cy="215" rx="38" ry="68" fill="none" stroke="#8a6840" stroke-width="2"/>
+                <line x1="560" y1="147" x2="560" y2="283" stroke="#8a6840" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+
+                <!-- Géotube 2 -->
+                <ellipse cx="662" cy="282" rx="38" ry="7" fill="#1a3810" opacity="0.35" filter="url(#fBlur2)"/>
+                <ellipse cx="660" cy="215" rx="38" ry="68" fill="url(#gGeo)"/>
+                <g clip-path="url(#clipGeo2)" opacity="0.2">
+                  <line x1="622" y1="170" x2="698" y2="170" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="182" x2="698" y2="182" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="194" x2="698" y2="194" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="206" x2="698" y2="206" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="218" x2="698" y2="218" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="230" x2="698" y2="230" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="242" x2="698" y2="242" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="254" x2="698" y2="254" stroke="#6b4a20" stroke-width="1.5"/><line x1="622" y1="266" x2="698" y2="266" stroke="#6b4a20" stroke-width="1.5"/>
+                </g>
+                <g clip-path="url(#clipGeo2)">
+                  <rect x="622" y="258" width="76" height="25" fill="url(#gGeoMud)" opacity="0.85">
+                    <animate attributeName="y" values="258;238;258" dur="8s" begin="1.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                    <animate attributeName="height" values="25;45;25" dur="8s" begin="1.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+                  </rect>
+                </g>
+                <ellipse cx="660" cy="215" rx="38" ry="68" fill="none" stroke="#8a6840" stroke-width="2"/>
+                <line x1="660" y1="147" x2="660" y2="283" stroke="#8a6840" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+
+                <!-- Raccord inter-géotubes -->
+                <line x1="598" y1="150" x2="622" y2="150" stroke="#5c3010" stroke-width="8" stroke-linecap="round"/>
+                <line x1="598" y1="150" x2="622" y2="150" stroke="#7a4018" stroke-width="4" stroke-linecap="round"/>
+
+                <!-- Gouttelettes filtrées -->
+                <ellipse cx="538" cy="275" rx="2" ry="3" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="275;288;295" dur="1.8s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="1.8s" begin="0s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="548" cy="278" rx="1.5" ry="2.5" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="278;290;297" dur="1.8s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="1.8s" begin="0.6s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="575" cy="276" rx="2" ry="3" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="276;289;296" dur="1.8s" begin="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.65;0" dur="1.8s" begin="1.1s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="638" cy="275" rx="2" ry="3" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="275;288;295" dur="1.8s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="1.8s" begin="0.3s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="650" cy="278" rx="1.5" ry="2.5" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="278;290;297" dur="1.8s" begin="0.9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="1.8s" begin="0.9s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="675" cy="276" rx="2" ry="3" fill="#5fc8f0" opacity="0"><animate attributeName="cy" values="276;289;296" dur="1.8s" begin="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.65;0" dur="1.8s" begin="1.4s" repeatCount="indefinite"/></ellipse>
+
+                <!-- Labels -->
+                <text x="70" y="175" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#0f3a5c">ÉTANG</text>
+                <text x="40" y="240" font-family="'Inter', sans-serif" font-size="10" font-weight="500" fill="#f0e0c8">Vase</text>
+                <text x="152" y="270" font-family="'Inter', sans-serif" font-size="10" font-weight="500" fill="#d4eedc">Pompe</text>
+                <text x="256" y="102" font-family="'Inter', sans-serif" font-size="10" font-weight="500" fill="#8a5c28">Refoulement eau+vase →</text>
+                <text x="240" y="136" font-family="'Inter', sans-serif" font-size="10" font-weight="500" fill="#1a7aab">← Retour eau filtrée</text>
+                <text x="524" y="133" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#133d22">Géotubes</text>
+                <text x="516" y="300" font-family="'Inter', sans-serif" font-size="9.5" font-weight="400" fill="#aee6f8">eau filtrée</text>
+              </svg>
+              <figcaption class="hydro-anim__caption">La pompe aspire la vase, le mélange est dirigé vers les géotubes où les sédiments sont retenus — l'eau filtrée est réinjectée dans l'étang en continu.</figcaption>
+            </figure>
+
             <ol class="svc-process-steps">
               <li>
                 <strong>Création du bassin de décantation (géotubes)</strong>

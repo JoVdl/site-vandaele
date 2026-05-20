@@ -2667,3 +2667,45 @@ input[type=range]::-moz-range-thumb {
   .svc-split-media { aspect-ratio: 3/4; max-height: none; }
   .svc-details-body { padding: 1.2rem 1rem; }
 }
+
+/* ── Animation hydrocurage ── */
+.hydro-anim {
+  display: block;
+  margin: 0 0 1.5rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.hydro-anim svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+}
+.hydro-anim__caption {
+  margin-top: .6rem;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--gray-500);
+  text-align: center;
+  font-style: italic;
+}
+.pipe-flow-mud {
+  animation: flowMud 1.6s linear infinite;
+}
+.pipe-flow-water {
+  animation: flowWater 1.4s linear infinite;
+}
+@keyframes flowMud {
+  from { stroke-dashoffset: 64; }
+  to   { stroke-dashoffset: 0;  }
+}
+@keyframes flowWater {
+  from { stroke-dashoffset: 0;  }
+  to   { stroke-dashoffset: 52; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pipe-flow-mud, .pipe-flow-water { animation: none; }
+}
