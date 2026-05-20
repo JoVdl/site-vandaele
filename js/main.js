@@ -127,9 +127,10 @@ function showToast(msg, type = '') {
   const machine  = document.getElementById('dg-s-machine');
   const basinMud = document.getElementById('dg-s-basin-mud');
   const dgPipe   = document.getElementById('dg-s-pipe');
+  const dgTurb   = document.getElementById('dg-s-turb');
   if (!strip || !machine) return;
 
-  // Hauteur totale machine non scalée : SVG hull (90px) + disque auger (44px)
+  // Hauteur totale machine non scalée : SVG hull (90px) + tête de coupe (44px)
   const MACHINE_H_BASE = 134;
   const HEADER_H       = 88;
   const MARGIN_B       = 20;
@@ -156,25 +157,31 @@ function showToast(msg, type = '') {
     const top    = Math.round(topMin + progress * Math.max(0, topMax - topMin));
     machine.style.top = top + 'px';
 
-    // Tuyau : s'arrête exactement à la poupe de la drague (ni devant, ni à côté)
+    // Tuyau : s'arrête à la poupe (haut de la drague)
     if (dgPipe) dgPipe.style.bottom = (viewH - top) + 'px';
+
+    // Nuage de vase : suit la tête de coupe (bas de la drague)
+    if (dgTurb) dgTurb.style.top = (top + machineH - 8) + 'px';
 
     // Remplissage du bassin (0 → 100 % au scroll)
     if (basinMud) basinMud.style.height = (progress * 100).toFixed(1) + '%';
 
-    // Gradient : eau bleue au-dessus du front de curage, boue marron dessous
+    // Gradient : eau claire → turbidité → front de curage → vase
     const splitY = top + machineH;
     const sp     = (splitY / viewH * 100);
     const s      = v => Math.min(100, Math.max(0, v)).toFixed(1);
 
     strip.style.background = [
       'linear-gradient(to bottom,',
-      '#07223a 0%,',
-      `#0e5898 ${s(sp - 12)}%,`,
-      `#1a80c0 ${s(sp - 3)}%,`,
-      `#c07828 ${s(sp)}%,`,
-      `#7a3812 ${s(sp + 7)}%,`,
-      '#361504 100%)'
+      '#05182a 0%,',
+      `#0b4070 ${s(sp - 28)}%,`,
+      `#1568a0 ${s(sp - 14)}%,`,
+      `#5a4018 ${s(sp - 5)}%,`,
+      `#906018 ${s(sp)}%,`,
+      `#b07020 ${s(sp + 3)}%,`,
+      `#7a3c10 ${s(sp + 12)}%,`,
+      `#3a1808 ${s(sp + 26)}%,`,
+      '#150803 100%)'
     ].join(' ');
   }
 

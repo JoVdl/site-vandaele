@@ -1928,20 +1928,22 @@ input[type=range]::-moz-range-thumb {
 
 /* Tablette (768 – 1199 px) : scale 0.67 → strip 54 px */
 @media (max-width: 1199px) {
-  .dg-s-strip    { width: 54px; }
-  .dg-s-machine  { transform: scale(0.67); transform-origin: top left; left: 4px; }
-  .dg-s-basin    { width: 10px; height: 22px; }
-  .dg-s-pipe     { width: 4px; }
-  .dg-sb         { height: 5px; }
+  .dg-s-strip   { width: 54px; }
+  .dg-s-machine { transform: scale(0.67); transform-origin: top left; left: 4px; }
+  .dg-s-basin   { right: 3px; width: 10px; height: 22px; }
+  .dg-s-pipe    { right: 6px; width: 4px; }
+  .dg-sb        { height: 5px; }
+  .dg-s-turb    { height: 26px; }
 }
 
 /* Mobile (< 768 px) : scale 0.46 → strip 38 px */
 @media (max-width: 767px) {
-  .dg-s-strip    { width: 38px; }
-  .dg-s-machine  { transform: scale(0.46); transform-origin: top left; left: 3px; }
-  .dg-s-basin    { width: 7px; height: 14px; border-width: 1px; }
-  .dg-s-pipe     { width: 3px; }
-  .dg-sb         { height: 4px; border-radius: 2px; }
+  .dg-s-strip   { width: 38px; }
+  .dg-s-machine { transform: scale(0.46); transform-origin: top left; left: 3px; }
+  .dg-s-basin   { right: 2px; width: 7px; height: 14px; border-width: 1px; }
+  .dg-s-pipe    { right: 4px; width: 3px; }
+  .dg-sb        { height: 4px; border-radius: 2px; }
+  .dg-s-turb    { height: 18px; }
 }
 
 /* Décalage du contenu homepage pour éviter le chevauchement */
@@ -1949,17 +1951,16 @@ input[type=range]::-moz-range-thumb {
 @media (min-width: 768px) and (max-width: 1199px) { body.page-home { padding-left: 54px; } }
 @media (min-width: 1200px) { body.page-home { padding-left: 80px; } }
 
-/* ── Bassin de décantation (haut, fixe) ── */
+/* ── Bassin de décantation (haut, fixe – aligné tribord avec le tuyau) ── */
 .dg-s-basin {
   position: absolute;
   top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 5px;
   width: 14px;
   height: 30px;
-  border: 2px solid #5a6272;
+  border: 2px solid #4a5a3a;
   border-radius: 2px 2px 3px 3px;
-  background: #1e2232;
+  background: #1a2010;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1968,21 +1969,20 @@ input[type=range]::-moz-range-thumb {
 }
 .dg-s-basin-mud {
   width: 100%;
-  height: 0%;           /* piloté par JS : 0 → 100 % selon scroll */
+  height: 0%;
   background: linear-gradient(to top, #3d1a05 0%, #8a4010 70%, #b05018 100%);
   transition: height 0.35s ease;
   border-radius: 0 0 1px 1px;
 }
 
-/* ── Tuyau de refoulement (centré, longueur pilotée par JS) ── */
+/* ── Tuyau de refoulement (tribord, longueur pilotée par JS) ── */
 .dg-s-pipe {
   position: absolute;
-  top: 38px;            /* juste sous le bassin */
+  top: 38px;
   bottom: 0;            /* écrasé par JS pour s'arrêter à la poupe de la drague */
-  left: 50%;
-  transform: translateX(-50%);
+  right: 9px;
   width: 6px;
-  background: linear-gradient(to right, #5a6a7a, #3d4a5c, #2a3545);
+  background: linear-gradient(to right, #364828, #253618, #1a2810);
   border-radius: 1px;
   overflow: hidden;
   z-index: 1;
@@ -1992,25 +1992,45 @@ input[type=range]::-moz-range-thumb {
 .dg-sb {
   position: absolute;
   left: 1px; right: 1px;
-  height: 7px;
-  border-radius: 3px;
-  background: radial-gradient(ellipse at 40% 40%, #b85820 0%, #6a2e08 60%, #3d1a04 100%);
+  height: 8px;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 40% 40%, #c86020 0%, #7a3408 60%, #3d1a04 100%);
   opacity: 0;
   animation: dg-sb-rise linear infinite;
 }
-.dg-sb1 { bottom: 8%;  animation-duration: 2.3s; animation-delay: 0s;   }
-.dg-sb2 { bottom: 28%; animation-duration: 1.9s; animation-delay: 0.75s; }
-.dg-sb3 { bottom: 50%; animation-duration: 2.6s; animation-delay: 1.4s;  }
-.dg-sb4 { bottom: 15%; animation-duration: 2.1s; animation-delay: 1.9s;  }
-.dg-sb5 { bottom: 38%; animation-duration: 2.4s; animation-delay: 0.4s;  }
+.dg-sb1 { bottom: 8%;  animation-duration: 2.2s; animation-delay: 0s;    }
+.dg-sb2 { bottom: 28%; animation-duration: 1.8s; animation-delay: 0.6s;  }
+.dg-sb3 { bottom: 50%; animation-duration: 2.5s; animation-delay: 1.2s;  }
+.dg-sb4 { bottom: 15%; animation-duration: 2.0s; animation-delay: 1.8s;  }
+.dg-sb5 { bottom: 38%; animation-duration: 2.3s; animation-delay: 0.3s;  }
 @keyframes dg-sb-rise {
-  0%   { opacity: 0;   transform: translateY(0); }
-  7%   { opacity: 0.9; }
-  93%  { opacity: 0.75; }
-  100% { opacity: 0;   transform: translateY(-100vh); }
+  0%   { opacity: 0;   transform: translateY(0) scaleX(1); }
+  8%   { opacity: 1; }
+  50%  { transform: translateY(-50vh) scaleX(0.7); }
+  92%  { opacity: 0.8; }
+  100% { opacity: 0;   transform: translateY(-100vh) scaleX(0.5); }
 }
 
-/* ── Machine rectangulaire (vue du dessus, positionnée par JS) ── */
+/* ── Nuage de vase (pénétration active, suit la tête de coupe) ── */
+.dg-s-turb {
+  position: absolute;
+  left: 0; right: 0;
+  height: 38px;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 20%,
+    rgba(160, 80, 15, 0.75) 0%,
+    rgba(110, 50, 8,  0.45) 45%,
+    transparent 72%);
+  animation: dg-turb-pulse 1.8s ease-in-out infinite;
+}
+@keyframes dg-turb-pulse {
+  0%, 100% { transform: scaleX(0.9) scaleY(0.8); opacity: 0.65; }
+  35%       { transform: scaleX(1.4) scaleY(1.5); opacity: 0.95; }
+  70%       { transform: scaleX(1.2) scaleY(1.2); opacity: 0.80; }
+}
+
+/* ── Machine (vue du dessus, positionnée par JS) ── */
 .dg-s-machine {
   position: absolute;
   left: 5px;
@@ -2018,10 +2038,10 @@ input[type=range]::-moz-range-thumb {
   z-index: 2;
 }
 
-/* Corps SVG (barge rectangulaire vue du dessus) */
+/* Corps SVG (pontoon dredger vue du dessus) */
 .dg-s-body { width: 70px; height: 90px; display: block; overflow: visible; }
 
-/* Disque de vis sans fin (vue du dessus) */
+/* Tête de coupe rotative */
 .dg-s-auger-disk { width: 44px; height: 44px; display: block; margin-left: 13px; }
 
 /* Animation rotation de la spirale de vis */
