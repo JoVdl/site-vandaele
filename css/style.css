@@ -171,6 +171,9 @@ ul { list-style: none; }
   width: auto;
   display: block;
 }
+/* Logo agrandi sur la page d'accueil */
+.page-home .logo-img { height: 68px; }
+
 /* footer logo (dark background) – same SVG, same filter */
 .site-footer .logo-img { height: 52px; }
 
