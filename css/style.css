@@ -1904,6 +1904,93 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
+/* ── Services unifiés (photo/vidéo + texte) ── */
+.services-unified-section { background: var(--gray-50); }
+
+.services-unified-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+@media (max-width: 960px) { .services-unified-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .services-unified-grid { grid-template-columns: 1fr; } }
+
+.svc-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.svc-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+
+.svc-card-media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+.svc-card-media img,
+.svc-card-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+.svc-card:hover .svc-card-media img,
+.svc-card:hover .svc-card-media video { transform: scale(1.04); }
+
+.svc-card-body {
+  padding: 1.3rem 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.svc-card-body h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: .5rem;
+}
+.svc-card-body p {
+  font-size: .875rem;
+  color: var(--gray-600);
+  line-height: 1.65;
+  flex: 1;
+}
+.svc-card-link {
+  display: inline-block;
+  margin-top: .9rem;
+  color: var(--blue-500);
+  font-weight: 600;
+  font-size: .875rem;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.svc-card-link:hover { color: var(--blue-700); }
+
+.svc-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: var(--blue-400);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .25em .65em;
+  border-radius: 20px;
+  margin-bottom: .55rem;
+  width: fit-content;
+}
+
+.svc-card--cta { border: 2px solid var(--blue-100); }
+.svc-card--cta .svc-card-body { background: var(--blue-50); }
+.svc-card--cta .svc-card-link { font-weight: 700; color: var(--blue-600); }
+
 /* ── Boutons réseaux sociaux (TikTok + Facebook) ── */
 .social-follow-btns {
   display: flex;
