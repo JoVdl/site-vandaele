@@ -171,11 +171,18 @@ ul { list-style: none; }
   width: auto;
   display: block;
 }
-/* Logo agrandi sur la page d'accueil */
+/* Logo agrandi sur la page d'accueil (desktop) */
 .page-home .logo-img { height: 68px; }
 
 /* footer logo (dark background) – same SVG, same filter */
 .site-footer .logo-img { height: 52px; }
+
+/* Mobile : logo réduit pour tenir dans la navbar */
+@media (max-width: 768px) {
+  .logo-img          { height: 34px; }
+  .page-home .logo-img { height: 38px; }
+  .site-footer .logo-img { height: 40px; }
+}
 
 .nav-links {
   display: flex;
