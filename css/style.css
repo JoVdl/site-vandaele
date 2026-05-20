@@ -1884,6 +1884,18 @@ textarea { resize: vertical; min-height: 100px; }
 
 /* Instagram feed */
 .instagram-feed-wrap { margin-top: 1rem; }
+
+/* ── Behold widget – forcer format portrait 4:5 ── */
+[data-behold-id] img {
+  aspect-ratio: 4 / 5 !important;
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+[data-behold-id] [style*="padding-bottom: 100%"],
+[data-behold-id] [style*="padding-bottom:100%"] {
+  padding-bottom: 125% !important;
+}
 .instagram-feed-wrap h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: .5rem; display: flex; align-items: center; gap: .6rem; }
 .instagram-feed-wrap .feed-sub { font-size: .9rem; color: var(--gray-500); margin-bottom: 1.75rem; }
 .behold-placeholder {
