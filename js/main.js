@@ -121,6 +121,31 @@ function showToast(msg, type = '') {
   });
 })();
 
+// ── DRAGUE VERTICALE – bras suit le scroll ──
+(function () {
+  const arm = document.getElementById('dg-v-arm');
+  if (!arm) return;
+
+  const BODY_H   = 82;  // hauteur SVG corps drague
+  const CUTTER_H = 60;  // hauteur SVG cutter
+  const TOP_OFF  = 88;  // top: 88px (sous header)
+  const PADDING  = 16;  // marge basse
+
+  function maxArm() {
+    return Math.max(0, window.innerHeight - TOP_OFF - BODY_H - CUTTER_H - PADDING);
+  }
+
+  let max = maxArm();
+  window.addEventListener('resize', () => { max = maxArm(); }, { passive: true });
+
+  window.addEventListener('scroll', () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollable <= 0) return;
+    const progress = Math.min(window.scrollY / scrollable, 1);
+    arm.style.height = Math.round(progress * max) + 'px';
+  }, { passive: true });
+})();
+
 // ── SCROLL ANIMATIONS ──
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {

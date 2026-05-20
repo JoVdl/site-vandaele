@@ -1910,86 +1910,121 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* ── Animation drague ── */
-.dredge-strip {
-  width: 100%;
-  height: 120px;
-  overflow: hidden;
-  background: #0d2e42;
+/* ── Drague verticale (scroll) ── */
+.dg-vertical {
+  position: fixed;
+  left: 18px;
+  top: 88px;          /* sous le header */
+  width: 56px;
+  z-index: 4;
+  pointer-events: none;
+  display: none;      /* masqué par défaut */
+}
+/* Visible uniquement page d'accueil sur grands écrans */
+.page-home .dg-vertical { display: flex; flex-direction: column; align-items: center; }
+@media (max-width: 1399px) { .dg-vertical { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .dg-vertical { display: none !important; } }
+
+.dg-v-body,
+.dg-v-cutter-svg { width: 56px; display: block; overflow: visible; }
+.dg-v-body       { height: 82px; }
+.dg-v-cutter-svg { height: 60px; }
+
+/* Bras extensible */
+.dg-v-arm {
   position: relative;
-  line-height: 0;
+  width: 56px;
+  height: 0;          /* piloté par JS */
+  transition: height 80ms linear;
+  overflow: visible;
 }
-.dredge-scene {
-  width: 100%;
-  height: 120px;
-  display: block;
+/* Câbles latéraux */
+.dg-v-cable {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #2d6a9a, #163d5c);
+  border-radius: 1px;
+}
+.dg-v-cl { left:  11px; }
+.dg-v-cr { right: 11px; }
+/* Tuyau central */
+.dg-v-pipe {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  background: #163d5c;
+  border: 1.5px solid #1e4a6e;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dg-v-flow {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0px,
+    rgba(74,144,192,0.38) 4px,
+    rgba(74,144,192,0.15) 8px,
+    transparent 12px
+  );
+  background-size: 100% 24px;
+  animation: dg-flow-up 0.65s linear infinite;
+}
+@keyframes dg-flow-up {
+  from { background-position: 0 0; }
+  to   { background-position: 0 -24px; }
 }
 
-/* Mouvement de la drague : droite → gauche */
-.dg-machine {
-  animation: dg-traverse 32s linear infinite;
+/* Bulles remontant le long du bras */
+.dg-vb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(80,160,210,0.42);
 }
-@keyframes dg-traverse {
-  from { transform: translateX(1500px); }
-  to   { transform: translateX(-280px); }
+.dg-vb1 { width:5px; height:5px; left:17px; bottom:8%;  animation: dg-vbrise 2.4s ease-in infinite 0s; }
+.dg-vb2 { width:3px; height:3px; left:33px; bottom:4%;  animation: dg-vbrise 1.9s ease-in infinite 0.7s; }
+.dg-vb3 { width:4px; height:4px; left:21px; bottom:18%; animation: dg-vbrise 3.1s ease-in infinite 1.3s; }
+.dg-vb4 { width:3px; height:3px; left:36px; bottom:1%;  animation: dg-vbrise 2.2s ease-in infinite 0.4s; }
+@keyframes dg-vbrise {
+  0%   { opacity:0;   transform: translateY(0)    scale(1);   }
+  18%  { opacity:0.85; }
+  100% { opacity:0;   transform: translateY(-70px) scale(0.4); }
 }
 
-/* Rotation de la tête de coupe */
-.dg-cutter {
+/* Rotation tête de coupe */
+.dg-v-spin {
   transform-box: fill-box;
   transform-origin: center;
-  animation: dg-cutter-spin 1.1s linear infinite;
+  animation: dg-vspin 1.1s linear infinite;
 }
-@keyframes dg-cutter-spin {
+@keyframes dg-vspin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-/* Nuage de vase : pulsation */
-.dg-mudcloud {
-  transform-box: fill-box;
-  transform-origin: center bottom;
-  animation: dg-mud-pulse 1.8s ease-in-out infinite;
-}
-@keyframes dg-mud-pulse {
-  0%, 100% { opacity: 0.75; transform: scaleX(1)   scaleY(1); }
-  50%       { opacity: 1;    transform: scaleX(1.2) scaleY(1.15); }
-}
-
-/* Bulles remontant */
-.dg-bubble {
+/* Nuage de vase */
+.dg-v-mud {
   transform-box: fill-box;
   transform-origin: center;
 }
-.dg-b1 { animation: dg-rise 2.2s ease-in infinite; }
-.dg-b2 { animation: dg-rise 2.8s ease-in infinite 0.6s; }
-.dg-b3 { animation: dg-rise 2s   ease-in infinite 1.1s; }
-.dg-b4 { animation: dg-rise 3s   ease-in infinite 0.3s; }
-@keyframes dg-rise {
-  0%   { opacity: 0;   transform: translateY(0)    scale(1); }
-  20%  { opacity: 0.8; }
-  100% { opacity: 0;   transform: translateY(-32px) scale(0.5); }
+.dg-v-m1 { animation: dg-vpulse 1.9s ease-in-out infinite; }
+.dg-v-m2 { animation: dg-vpulse 1.9s ease-in-out infinite 0.3s; }
+.dg-v-m3 { animation: dg-vpulse 1.9s ease-in-out infinite 0.6s; }
+@keyframes dg-vpulse {
+  0%,100% { opacity:0.6; transform: scaleX(1)    scaleY(1); }
+  50%     { opacity:1;   transform: scaleX(1.25) scaleY(1.2); }
 }
 
 /* Fumée cheminée */
-.dg-smoke {
-  transform-box: fill-box;
-  transform-origin: center bottom;
-}
-.dg-s1 { animation: dg-smoke 2s ease-out infinite; }
-.dg-s2 { animation: dg-smoke 2s ease-out infinite 0.5s; }
-.dg-s3 { animation: dg-smoke 2s ease-out infinite 1s; }
-@keyframes dg-smoke {
-  0%   { opacity: 0.6; transform: translateY(0)    scale(1); }
-  100% { opacity: 0;   transform: translateY(-8px) scale(1.6); }
-}
-
-/* Ondes de surface */
-.dg-wave-1 { animation: dg-wave 10s ease-in-out infinite; }
-.dg-wave-2 { animation: dg-wave 14s ease-in-out infinite reverse; }
-@keyframes dg-wave {
-  0%, 100% { transform: translateX(0); }
-  50%       { transform: translateX(-40px); }
+.dg-v-smoke { transform-box: fill-box; transform-origin: center bottom; }
+.dg-v-s1 { animation: dg-vsmoke 2.2s ease-out infinite 0s; }
+.dg-v-s2 { animation: dg-vsmoke 2.2s ease-out infinite 0.7s; }
+@keyframes dg-vsmoke {
+  0%   { opacity:0.7; transform: translateY(0)   scale(1);   }
+  100% { opacity:0;   transform: translateY(-9px) scale(1.7); }
 }
 
 /* ── Services unifiés (photo/vidéo + texte) ── */
