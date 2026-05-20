@@ -1,0 +1,28 @@
+DOSSIER VIDÉOS – Site Curage Vandaele
+======================================
+
+Déposez ici vos fichiers vidéo au format MP4 (H.264).
+
+NOMS ATTENDUS (correspondant au code HTML) :
+  curage.mp4          → carte "Curage d'étang"
+  faucardage.mp4      → carte "Faucardage"
+  broyage.mp4         → carte "Broyage de roseaux"
+  berges.mp4          → carte "Défenses de berges"
+
+CONSEILS :
+  - Durée idéale : 5 à 15 secondes (loop automatique)
+  - Les vidéos passent en sourdine (muted) et en boucle
+  - Résolution recommandée : 1080x1920 (vertical TikTok) ou 1920x1080
+  - Format : MP4 H.264 (compatible tous navigateurs)
+  - Poids maximum conseillé : 10 Mo par fichier
+
+COMMENT RÉCUPÉRER VOS VIDÉOS TIKTOK SANS FILIGRANE :
+  1. Aller sur snaptik.app ou ssstik.io
+  2. Coller le lien de votre vidéo TikTok
+  3. Télécharger sans filigrane
+  4. Renommer le fichier selon les noms ci-dessus
+  5. Déposer dans ce dossier
+
+DOSSIER IMAGES :
+  Vos photos sont dans : assets/img/
+  Pour en ajouter, déposez les fichiers .jpg ou .webp dans ce dossier.
