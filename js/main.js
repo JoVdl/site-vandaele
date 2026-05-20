@@ -128,27 +128,38 @@ function showToast(msg, type = '') {
   const basinMud = document.getElementById('dg-s-basin-mud');
   if (!strip || !machine) return;
 
-  // Hauteur totale machine : SVG hull (108px) + disque auger (44px)
-  const MACHINE_H = 152;
-  const HEADER_H  = 88;
-  const MARGIN_B  = 20;
+  // Hauteur totale machine non scalée : SVG hull (108px) + disque auger (44px)
+  const MACHINE_H_BASE = 152;
+  const HEADER_H       = 88;
+  const MARGIN_B       = 20;
+
+  // Facteur d'échelle CSS selon la largeur d'écran (doit correspondre aux media queries)
+  function getScale() {
+    const w = window.innerWidth;
+    if (w <= 767)  return 0.46;
+    if (w <= 1199) return 0.67;
+    return 1;
+  }
 
   function update() {
     const viewH     = window.innerHeight;
     const scrollMax = document.documentElement.scrollHeight - viewH;
     const progress  = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
 
-    // Position verticale de la machine (descend haut → bas)
+    const scale     = getScale();
+    const machineH  = Math.round(MACHINE_H_BASE * scale);
+
+    // Position verticale de la machine (haut → bas)
     const topMin = HEADER_H;
-    const topMax = viewH - MACHINE_H - MARGIN_B;
+    const topMax = viewH - machineH - MARGIN_B;
     const top    = Math.round(topMin + progress * Math.max(0, topMax - topMin));
     machine.style.top = top + 'px';
 
-    // Remplissage du bassin de décantation (0 → 100 %)
+    // Remplissage du bassin (0 → 100 % au scroll)
     if (basinMud) basinMud.style.height = (progress * 100).toFixed(1) + '%';
 
-    // Gradient : eau bleue au-dessus du front de curage, boue marron en dessous
-    const splitY = top + MACHINE_H;
+    // Gradient : eau bleue au-dessus du front de curage, boue marron dessous
+    const splitY = top + machineH;
     const sp     = (splitY / viewH * 100);
     const s      = v => Math.min(100, Math.max(0, v)).toFixed(1);
 
