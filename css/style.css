@@ -2477,3 +2477,193 @@ input[type=range]::-moz-range-thumb {
   .svc-section-cols { grid-template-columns: 1fr; gap: 1.4rem; }
   .services-subnav-inner a { padding: .65rem .9rem; font-size: .75rem; }
 }
+
+/* ══════════════════════════════════════════════════
+   SERVICES PAGE – layout split portrait (v2)
+   ══════════════════════════════════════════════════ */
+
+.svc-split {
+  padding: 4.5rem 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+.svc-split:last-of-type { border-bottom: none; }
+
+.svc-split-inner {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+/* Colonnes inversées sur les services pairs */
+.svc-split--alt .svc-split-inner {
+  grid-template-columns: 7fr 5fr;
+}
+.svc-split--alt .svc-split-media { order: 2; }
+.svc-split--alt .svc-split-content { order: 1; }
+
+/* Colonne média – portrait, sticky */
+.svc-split-media {
+  position: sticky;
+  top: calc(var(--nav-h) + 56px);
+  align-self: start;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 9/16;
+  max-height: 85vh;
+  background: var(--gray-800);
+}
+.svc-split-media img,
+.svc-split-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Contenu textuel */
+.svc-split-content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin: .3rem 0 1.1rem;
+  line-height: 1.2;
+}
+
+/* ── Accordion <details> ── */
+.svc-details {
+  margin: 1.5rem 0;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.svc-details summary {
+  padding: .9rem 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--blue-700);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  background: var(--blue-50);
+  user-select: none;
+  transition: background .15s;
+}
+.svc-details summary::-webkit-details-marker { display: none; }
+.svc-details summary::before {
+  content: '▶';
+  font-size: .65rem;
+  transition: transform .2s;
+  flex: none;
+}
+.svc-details[open] summary { background: var(--blue-100); }
+.svc-details[open] summary::before { transform: rotate(90deg); }
+.svc-details-body {
+  padding: 1.6rem 1.4rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+/* Étapes de processus */
+.svc-process-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  counter-reset: step;
+}
+.svc-process-steps li {
+  counter-increment: step;
+  padding-left: 3rem;
+  position: relative;
+}
+.svc-process-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  background: var(--blue-400);
+  color: var(--white);
+  border-radius: 50%;
+  font-size: .75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.svc-process-steps li strong {
+  display: block;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: .3rem;
+}
+.svc-process-steps li p {
+  font-size: .9rem;
+  color: var(--gray-600);
+  line-height: 1.55;
+  margin: 0;
+}
+.svc-process-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: .8rem;
+}
+
+/* Tableau comparatif */
+.svc-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+.svc-compare-col {
+  background: var(--gray-50);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+.svc-compare-col h4 {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: .7rem;
+}
+.svc-compare-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.svc-compare-col li {
+  font-size: .85rem;
+  color: var(--gray-600);
+  padding-left: 1.1rem;
+  position: relative;
+}
+.svc-compare-col li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--blue-400);
+  font-weight: 700;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .svc-split-inner,
+  .svc-split--alt .svc-split-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .svc-split-media { position: static; aspect-ratio: 4/5; max-height: 70vw; }
+  .svc-split--alt .svc-split-media { order: 0; }
+  .svc-split--alt .svc-split-content { order: 0; }
+  .svc-compare { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .svc-split { padding: 2.5rem 0; }
+  .svc-split-media { aspect-ratio: 3/4; max-height: none; }
+  .svc-details-body { padding: 1.2rem 1rem; }
+}
