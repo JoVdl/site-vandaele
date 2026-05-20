@@ -1910,113 +1910,80 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* ── Drague verticale (scroll) ── */
-.dg-vertical {
+/* ── Drague verticale v2 (bandeau fixe + scroll) ── */
+.dg-s-strip {
   position: fixed;
-  left: 18px;
-  top: 88px;          /* sous le header */
-  width: 56px;
+  left: 0; top: 0; bottom: 0;
+  width: 80px;
   z-index: 4;
   pointer-events: none;
-  display: none;      /* masqué par défaut */
+  display: none;
+  overflow: hidden;
+  /* fond initial = marron (boue non curée) */
+  background: linear-gradient(to bottom, #5a2d0a 0%, #2a1005 100%);
 }
 /* Visible uniquement page d'accueil sur grands écrans */
-.page-home .dg-vertical { display: flex; flex-direction: column; align-items: center; }
-@media (max-width: 1399px) { .dg-vertical { display: none !important; } }
-@media (prefers-reduced-motion: reduce) { .dg-vertical { display: none !important; } }
+.page-home .dg-s-strip { display: block; }
+@media (max-width: 1439px) { .dg-s-strip { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .dg-s-strip { display: none !important; } }
 
-.dg-v-body,
-.dg-v-cutter-svg { width: 56px; display: block; overflow: visible; }
-.dg-v-body       { height: 82px; }
-.dg-v-cutter-svg { height: 60px; }
-
-/* Bras extensible */
-.dg-v-arm {
-  position: relative;
-  width: 56px;
-  height: 0;          /* piloté par JS */
-  transition: height 80ms linear;
-  overflow: visible;
-}
-/* Câbles latéraux */
-.dg-v-cable {
+/* Machine complète (positionnée par JS via style.top) */
+.dg-s-machine {
   position: absolute;
-  top: 0; bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, #2d6a9a, #163d5c);
-  border-radius: 1px;
-}
-.dg-v-cl { left:  11px; }
-.dg-v-cr { right: 11px; }
-/* Tuyau central */
-.dg-v-pipe {
-  position: absolute;
-  top: 0; bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  top: 88px;   /* valeur initiale, écrasée par JS */
+}
+
+/* Corps de la drague */
+.dg-s-body { width: 56px; height: 82px; display: block; overflow: visible; }
+
+/* Tige de liaison corps → vis sans fin */
+.dg-s-rod {
+  width: 10px;
+  height: 14px;
   background: #163d5c;
-  border: 1.5px solid #1e4a6e;
+  border: 1px solid #1e4a6e;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Vis sans fin (auger) – gradient diagonal animé simulant l'hélicoïde */
+.dg-s-auger {
+  width: 22px;
+  height: 72px;
+  background: #163d5c;
+  border: 1.5px solid #1e5070;
   border-radius: 3px;
+  position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
-.dg-v-flow {
+.dg-s-auger::before {
+  content: '';
   position: absolute;
-  inset: 0;
+  inset: -14px;
   background: repeating-linear-gradient(
-    to top,
-    transparent 0px,
-    rgba(74,144,192,0.38) 4px,
-    rgba(74,144,192,0.15) 8px,
-    transparent 12px
+    -52deg,
+    transparent               0px,
+    transparent               5px,
+    rgba(58, 130, 185, 0.75)  5px,
+    rgba(58, 130, 185, 0.75)  8px,
+    rgba(25,  75, 130, 0.30)  8px,
+    rgba(25,  75, 130, 0.30) 12px
   );
-  background-size: 100% 24px;
-  animation: dg-flow-up 0.65s linear infinite;
+  animation: dg-auger-spin 0.42s linear infinite;
 }
-@keyframes dg-flow-up {
-  from { background-position: 0 0; }
-  to   { background-position: 0 -24px; }
-}
-
-/* Bulles remontant le long du bras */
-.dg-vb {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(80,160,210,0.42);
-}
-.dg-vb1 { width:5px; height:5px; left:17px; bottom:8%;  animation: dg-vbrise 2.4s ease-in infinite 0s; }
-.dg-vb2 { width:3px; height:3px; left:33px; bottom:4%;  animation: dg-vbrise 1.9s ease-in infinite 0.7s; }
-.dg-vb3 { width:4px; height:4px; left:21px; bottom:18%; animation: dg-vbrise 3.1s ease-in infinite 1.3s; }
-.dg-vb4 { width:3px; height:3px; left:36px; bottom:1%;  animation: dg-vbrise 2.2s ease-in infinite 0.4s; }
-@keyframes dg-vbrise {
-  0%   { opacity:0;   transform: translateY(0)    scale(1);   }
-  18%  { opacity:0.85; }
-  100% { opacity:0;   transform: translateY(-70px) scale(0.4); }
+@keyframes dg-auger-spin {
+  from { transform: translateY(0); }
+  to   { transform: translateY(14px); }
 }
 
-/* Rotation tête de coupe */
-.dg-v-spin {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: dg-vspin 1.1s linear infinite;
-}
-@keyframes dg-vspin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* Nuage de vase */
-.dg-v-mud {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.dg-v-m1 { animation: dg-vpulse 1.9s ease-in-out infinite; }
-.dg-v-m2 { animation: dg-vpulse 1.9s ease-in-out infinite 0.3s; }
-.dg-v-m3 { animation: dg-vpulse 1.9s ease-in-out infinite 0.6s; }
-@keyframes dg-vpulse {
-  0%,100% { opacity:0.6; transform: scaleX(1)    scaleY(1); }
-  50%     { opacity:1;   transform: scaleX(1.25) scaleY(1.2); }
-}
+/* Pointe conique */
+.dg-s-tip { width: 28px; height: 22px; display: block; flex-shrink: 0; }
 
 /* Fumée cheminée */
 .dg-v-smoke { transform-box: fill-box; transform-origin: center bottom; }

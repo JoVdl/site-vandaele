@@ -121,29 +121,47 @@ function showToast(msg, type = '') {
   });
 })();
 
-// ── DRAGUE VERTICALE – bras suit le scroll ──
+// ── DRAGUE VERTICALE v2 – machine entière descend avec le scroll ──
 (function () {
-  const arm = document.getElementById('dg-v-arm');
-  if (!arm) return;
+  const strip   = document.getElementById('dg-s-strip');
+  const machine = document.getElementById('dg-s-machine');
+  if (!strip || !machine) return;
 
-  const BODY_H   = 82;  // hauteur SVG corps drague
-  const CUTTER_H = 60;  // hauteur SVG cutter
-  const TOP_OFF  = 88;  // top: 88px (sous header)
-  const PADDING  = 16;  // marge basse
+  // Hauteurs des composants (px) : corps(82) + tige(14) + auger(72) + pointe(22)
+  const MACHINE_H = 190;
+  const HEADER_H  = 88;
+  const MARGIN_B  = 16;
 
-  function maxArm() {
-    return Math.max(0, window.innerHeight - TOP_OFF - BODY_H - CUTTER_H - PADDING);
+  function update() {
+    const viewH     = window.innerHeight;
+    const scrollMax = document.documentElement.scrollHeight - viewH;
+    const progress  = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
+
+    // Déplacement vertical de la machine
+    const topMin = HEADER_H;
+    const topMax = viewH - MACHINE_H - MARGIN_B;
+    const top    = Math.round(topMin + progress * Math.max(0, topMax - topMin));
+    machine.style.top = top + 'px';
+
+    // Point de coupure bleu/marron = bas de la pointe
+    const splitY   = top + MACHINE_H;
+    const sp       = (splitY / viewH * 100);
+    const s        = v => Math.min(100, Math.max(0, v)).toFixed(1);
+
+    strip.style.background = [
+      'linear-gradient(to bottom,',
+      `#0a2f50 0%,`,
+      `#1268a8 ${s(sp - 8)}%,`,
+      `#1a80c0 ${s(sp - 2)}%,`,
+      `#b87030 ${s(sp)}%,`,
+      `#7a3a14 ${s(sp + 6)}%,`,
+      `#3a1805 100%)`
+    ].join(' ');
   }
 
-  let max = maxArm();
-  window.addEventListener('resize', () => { max = maxArm(); }, { passive: true });
-
-  window.addEventListener('scroll', () => {
-    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-    if (scrollable <= 0) return;
-    const progress = Math.min(window.scrollY / scrollable, 1);
-    arm.style.height = Math.round(progress * max) + 'px';
-  }, { passive: true });
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update, { passive: true });
+  update();
 })();
 
 // ── SCROLL ANIMATIONS ──

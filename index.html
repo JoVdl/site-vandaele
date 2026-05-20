@@ -748,79 +748,57 @@
   </div>
 </div>
 
-<!-- ===== DRAGUE VERTICALE (scroll) ===== -->
-<div class="dg-vertical" aria-hidden="true" role="presentation">
+<!-- ===== DRAGUE VERTICALE v2 (bandeau fixe + scroll) ===== -->
+<div class="dg-s-strip" id="dg-s-strip" aria-hidden="true">
+  <div class="dg-s-machine" id="dg-s-machine">
 
-  <!-- Corps de la drague (flotte en haut) -->
-  <svg class="dg-v-body" viewBox="0 0 56 82" xmlns="http://www.w3.org/2000/svg">
-    <!-- Cheminée -->
-    <rect x="37" y="8" width="7" height="13" rx="2" fill="#0a1820"/>
-    <ellipse cx="40.5" cy="8" rx="4.5" ry="2" fill="#0d2030"/>
-    <ellipse class="dg-v-smoke dg-v-s1" cx="40" cy="4"  rx="4"   ry="3"   fill="rgba(180,180,180,0.22)"/>
-    <ellipse class="dg-v-smoke dg-v-s2" cx="38" cy="0"  rx="5"   ry="3.5" fill="rgba(180,180,180,0.13)"/>
-    <!-- Cabine -->
-    <rect x="9"  y="19" width="38" height="29" rx="3" fill="#102a42"/>
-    <!-- Grande fenêtre avant -->
-    <rect x="12" y="24" width="16" height="15" rx="2" fill="#162f48"/>
-    <rect x="14" y="26" width="12" height="11" rx="1" fill="#2060a0" opacity="0.22"/>
-    <!-- Hublot -->
-    <ellipse cx="22" cy="31" rx="4"  ry="3.5" fill="#0d1e30" stroke="#2a5580" stroke-width="1"/>
-    <ellipse cx="22" cy="31" rx="2.5" ry="2"  fill="#1a4a8a" opacity="0.55"/>
-    <!-- Panneau machinerie -->
-    <rect x="30" y="23" width="14" height="20" rx="1.5" fill="#0e2035"/>
-    <rect x="32" y="26" width="10" height="5" rx="1"  fill="#162f48"/>
-    <rect x="32" y="33" width="10" height="5" rx="1"  fill="#162f48"/>
-    <!-- Pont / deck -->
-    <rect x="5"  y="47" width="46" height="6" rx="1" fill="#1e4a6e"/>
-    <!-- Coque (trapèze) -->
-    <path d="M3,53 L0,64 L56,64 L53,53 Z" fill="#163d5c"/>
-    <path d="M3,53 L0,64 L56,64 L53,53 Z" fill="none" stroke="#1e5070" stroke-width="0.8"/>
-    <!-- Ligne de flottaison -->
-    <line x1="2"  y1="55" x2="54" y2="55" stroke="#3a80b0" stroke-width="0.8" opacity="0.35"/>
-    <!-- Câbles de hauban vers guide -->
-    <line x1="15" y1="53" x2="26" y2="64" stroke="#2d6a9a" stroke-width="1" opacity="0.55"/>
-    <line x1="41" y1="53" x2="30" y2="64" stroke="#2d6a9a" stroke-width="1" opacity="0.55"/>
-    <!-- Guide / raccord bras -->
-    <rect x="22" y="63" width="12" height="19" rx="2" fill="#163d5c"/>
-    <rect x="24" y="65" width="8"  height="15" rx="1.5" fill="#1e4a6e"/>
-    <line x1="28" y1="66" x2="28" y2="80" stroke="#3a80b0" stroke-width="1" opacity="0.4"/>
-  </svg>
+    <!-- Corps flottant de la drague -->
+    <svg class="dg-s-body" viewBox="0 0 56 82" xmlns="http://www.w3.org/2000/svg">
+      <!-- Cheminée -->
+      <rect x="37" y="8" width="7" height="13" rx="2" fill="#0a1820"/>
+      <ellipse cx="40.5" cy="8" rx="4.5" ry="2" fill="#0d2030"/>
+      <ellipse class="dg-v-smoke dg-v-s1" cx="40" cy="4"  rx="4"   ry="3"   fill="rgba(200,200,200,0.25)"/>
+      <ellipse class="dg-v-smoke dg-v-s2" cx="38" cy="0"  rx="5"   ry="3.5" fill="rgba(200,200,200,0.14)"/>
+      <!-- Cabine -->
+      <rect x="9"  y="19" width="38" height="29" rx="3" fill="#102a42"/>
+      <!-- Grande fenêtre avant -->
+      <rect x="12" y="24" width="16" height="15" rx="2" fill="#162f48"/>
+      <rect x="14" y="26" width="12" height="11" rx="1" fill="#2060a0" opacity="0.25"/>
+      <!-- Hublot -->
+      <ellipse cx="22" cy="31" rx="4"  ry="3.5" fill="#0d1e30" stroke="#2a5580" stroke-width="1"/>
+      <ellipse cx="22" cy="31" rx="2.5" ry="2"  fill="#1a4a8a" opacity="0.55"/>
+      <!-- Panneau machinerie -->
+      <rect x="30" y="23" width="14" height="20" rx="1.5" fill="#0e2035"/>
+      <rect x="32" y="26" width="10" height="5" rx="1"  fill="#162f48"/>
+      <rect x="32" y="33" width="10" height="5" rx="1"  fill="#162f48"/>
+      <!-- Pont / deck -->
+      <rect x="5"  y="47" width="46" height="6" rx="1" fill="#1e4a6e"/>
+      <!-- Coque (trapèze) -->
+      <path d="M3,53 L0,64 L56,64 L53,53 Z" fill="#163d5c"/>
+      <path d="M3,53 L0,64 L56,64 L53,53 Z" fill="none" stroke="#1e5070" stroke-width="0.8"/>
+      <!-- Ligne de flottaison -->
+      <line x1="2"  y1="55" x2="54" y2="55" stroke="#3a80b0" stroke-width="0.8" opacity="0.35"/>
+      <!-- Guide / raccord vers tige -->
+      <rect x="22" y="63" width="12" height="19" rx="2" fill="#163d5c"/>
+      <rect x="24" y="65" width="8"  height="15" rx="1.5" fill="#1e4a6e"/>
+    </svg>
 
-  <!-- Bras extensible (hauteur pilotée par JS) -->
-  <div class="dg-v-arm" id="dg-v-arm">
-    <div class="dg-v-cable dg-v-cl"></div>
-    <div class="dg-v-cable dg-v-cr"></div>
-    <div class="dg-v-pipe"><div class="dg-v-flow"></div></div>
-    <!-- Bulles remontant le long du bras -->
-    <span class="dg-vb dg-vb1"></span>
-    <span class="dg-vb dg-vb2"></span>
-    <span class="dg-vb dg-vb3"></span>
-    <span class="dg-vb dg-vb4"></span>
+    <!-- Tige de liaison corps → vis -->
+    <div class="dg-s-rod"></div>
+
+    <!-- Vis sans fin (auger) – animation diagonale simulant la rotation hélicoïdale -->
+    <div class="dg-s-auger"></div>
+
+    <!-- Pointe conique -->
+    <svg class="dg-s-tip" viewBox="0 0 28 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14,21 L0,0 L28,0 Z" fill="#163d5c"/>
+      <path d="M14,17 L3,2 L25,2 Z" fill="#0e2a42"/>
+      <line x1="14" y1="2" x2="14" y2="18" stroke="#3a80b0" stroke-width="0.8" opacity="0.4"/>
+      <line x1="6"  y1="2" x2="11" y2="16" stroke="#2a6090" stroke-width="0.6" opacity="0.3"/>
+      <line x1="22" y1="2" x2="17" y2="16" stroke="#2a6090" stroke-width="0.6" opacity="0.3"/>
+    </svg>
+
   </div>
-
-  <!-- Tête de coupe (suit le bas du bras) -->
-  <svg class="dg-v-cutter-svg" viewBox="0 0 56 60" xmlns="http://www.w3.org/2000/svg">
-    <!-- Raccord haut -->
-    <rect x="22" y="0" width="12" height="11" rx="2" fill="#163d5c"/>
-    <rect x="24" y="0" width="8"  height="9"  rx="1.5" fill="#1e4a6e"/>
-    <!-- Corps cutter -->
-    <circle cx="28" cy="34" r="21" fill="#0e2a42" stroke="#1e4070" stroke-width="1.5"/>
-    <!-- Roue rotative -->
-    <g class="dg-v-spin">
-      <line x1="28" y1="13" x2="28" y2="55" stroke="#3a90c0" stroke-width="3"   stroke-linecap="round"/>
-      <line x1="7"  y1="34" x2="49" y2="34" stroke="#3a90c0" stroke-width="3"   stroke-linecap="round"/>
-      <line x1="13" y1="19" x2="43" y2="49" stroke="#2a70a0" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="43" y1="19" x2="13" y2="49" stroke="#2a70a0" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="28" cy="34" r="5"   fill="#4a90c0"/>
-      <circle cx="28" cy="34" r="2.5" fill="#6ab0d8"/>
-    </g>
-    <circle cx="28" cy="34" r="21" fill="none" stroke="#2060a0" stroke-width="1"/>
-    <!-- Nuage de vase -->
-    <ellipse class="dg-v-mud dg-v-m1" cx="28" cy="57" rx="22" ry="5"   fill="#3d2b0a" opacity="0.75"/>
-    <ellipse class="dg-v-mud dg-v-m2" cx="16" cy="54" rx="11" ry="4"   fill="#2a1a06" opacity="0.5"/>
-    <ellipse class="dg-v-mud dg-v-m3" cx="40" cy="54" rx="12" ry="3.5" fill="#2a1a06" opacity="0.45"/>
-  </svg>
-
 </div>
 
 <script src="js/main.js"></script>
