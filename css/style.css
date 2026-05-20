@@ -171,17 +171,14 @@ ul { list-style: none; }
   width: auto;
   display: block;
 }
-/* Logo légèrement agrandi sur la page d'accueil (desktop) */
-.page-home .logo-img { height: 50px; }
 
 /* footer logo (dark background) – same SVG, same filter */
-.site-footer .logo-img { height: 52px; }
+.site-footer .logo-img { height: 40px; }
 
 /* Mobile : logo réduit pour tenir dans la navbar */
 @media (max-width: 768px) {
-  .logo-img          { height: 34px; }
-  .page-home .logo-img { height: 38px; }
-  .site-footer .logo-img { height: 40px; }
+  .logo-img              { height: 34px; }
+  .site-footer .logo-img { height: 34px; }
 }
 
 .nav-links {
