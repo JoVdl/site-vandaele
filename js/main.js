@@ -166,7 +166,7 @@ function showToast(msg, type = '') {
     // Remplissage du bassin (0 → 100 % au scroll)
     if (basinMud) basinMud.style.height = (progress * 100).toFixed(1) + '%';
 
-    // Gradient : eau claire → turbidité → front de curage → vase
+    // Gradient : eau bleue jusqu'à la tête de coupe, puis vase immédiatement dessous
     const splitY = top + machineH;
     const sp     = (splitY / viewH * 100);
     const s      = v => Math.min(100, Math.max(0, v)).toFixed(1);
@@ -174,13 +174,11 @@ function showToast(msg, type = '') {
     strip.style.background = [
       'linear-gradient(to bottom,',
       '#05182a 0%,',
-      `#0b4070 ${s(sp - 28)}%,`,
-      `#1568a0 ${s(sp - 14)}%,`,
-      `#5a4018 ${s(sp - 5)}%,`,
-      `#906018 ${s(sp)}%,`,
-      `#b07020 ${s(sp + 3)}%,`,
-      `#7a3c10 ${s(sp + 12)}%,`,
-      `#3a1808 ${s(sp + 26)}%,`,
+      `#0c4a80 ${s(sp - 10)}%,`,
+      `#1870b0 ${s(sp - 2)}%,`,
+      `#8a5010 ${s(sp + 1)}%,`,
+      `#7a3c10 ${s(sp + 10)}%,`,
+      `#3a1808 ${s(sp + 24)}%,`,
       '#150803 100%)'
     ].join(' ');
   }
