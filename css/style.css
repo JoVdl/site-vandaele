@@ -844,7 +844,8 @@ ul { list-style: none; }
   overflow: hidden;
   background: var(--blue-900);
 }
-.chantier-img img {
+.chantier-img img,
+.chantier-img video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -852,7 +853,9 @@ ul { list-style: none; }
   transition: transform .5s ease;
 }
 .chantier-card-full:hover .chantier-img img,
-.chantier-card:hover .chantier-img img { transform: scale(1.05); }
+.chantier-card-full:hover .chantier-img video,
+.chantier-card:hover .chantier-img img,
+.chantier-card:hover .chantier-img video { transform: scale(1.05); }
 
 .chantier-badge {
   position: absolute;
