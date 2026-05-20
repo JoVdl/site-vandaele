@@ -1910,6 +1910,88 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
+/* ── Animation drague ── */
+.dredge-strip {
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  background: #0d2e42;
+  position: relative;
+  line-height: 0;
+}
+.dredge-scene {
+  width: 100%;
+  height: 120px;
+  display: block;
+}
+
+/* Mouvement de la drague : droite → gauche */
+.dg-machine {
+  animation: dg-traverse 32s linear infinite;
+}
+@keyframes dg-traverse {
+  from { transform: translateX(1500px); }
+  to   { transform: translateX(-280px); }
+}
+
+/* Rotation de la tête de coupe */
+.dg-cutter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dg-cutter-spin 1.1s linear infinite;
+}
+@keyframes dg-cutter-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Nuage de vase : pulsation */
+.dg-mudcloud {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: dg-mud-pulse 1.8s ease-in-out infinite;
+}
+@keyframes dg-mud-pulse {
+  0%, 100% { opacity: 0.75; transform: scaleX(1)   scaleY(1); }
+  50%       { opacity: 1;    transform: scaleX(1.2) scaleY(1.15); }
+}
+
+/* Bulles remontant */
+.dg-bubble {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.dg-b1 { animation: dg-rise 2.2s ease-in infinite; }
+.dg-b2 { animation: dg-rise 2.8s ease-in infinite 0.6s; }
+.dg-b3 { animation: dg-rise 2s   ease-in infinite 1.1s; }
+.dg-b4 { animation: dg-rise 3s   ease-in infinite 0.3s; }
+@keyframes dg-rise {
+  0%   { opacity: 0;   transform: translateY(0)    scale(1); }
+  20%  { opacity: 0.8; }
+  100% { opacity: 0;   transform: translateY(-32px) scale(0.5); }
+}
+
+/* Fumée cheminée */
+.dg-smoke {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.dg-s1 { animation: dg-smoke 2s ease-out infinite; }
+.dg-s2 { animation: dg-smoke 2s ease-out infinite 0.5s; }
+.dg-s3 { animation: dg-smoke 2s ease-out infinite 1s; }
+@keyframes dg-smoke {
+  0%   { opacity: 0.6; transform: translateY(0)    scale(1); }
+  100% { opacity: 0;   transform: translateY(-8px) scale(1.6); }
+}
+
+/* Ondes de surface */
+.dg-wave-1 { animation: dg-wave 10s ease-in-out infinite; }
+.dg-wave-2 { animation: dg-wave 14s ease-in-out infinite reverse; }
+@keyframes dg-wave {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(-40px); }
+}
+
 /* ── Services unifiés (photo/vidéo + texte) ── */
 .services-unified-section { background: var(--gray-50); }
 
