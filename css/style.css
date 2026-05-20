@@ -1932,7 +1932,7 @@ input[type=range]::-moz-range-thumb {
 
 .svc-card-media {
   display: block;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 .svc-card-media img,
@@ -1940,11 +1940,12 @@ input[type=range]::-moz-range-thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.5s ease;
   display: block;
 }
 .svc-card:hover .svc-card-media img,
-.svc-card:hover .svc-card-media video { transform: scale(1.04); }
+.svc-card:hover .svc-card-media video { transform: scale(1.03); }
 
 .svc-card-body {
   padding: 1.3rem 1.4rem 1.5rem;
