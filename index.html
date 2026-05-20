@@ -296,55 +296,85 @@
       <div class="stat"><span class="stat-number">3</span><span class="stat-label">Générations</span></div>
     </div>
   </div>
-  <div class="hero-scroll">
-    <span>Découvrir</span>
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-  </div>
 </section>
 
-<!-- ===== GALERIE SERVICES ===== -->
-<section class="services-gallery" id="services" aria-label="Nos prestations">
+<!-- ===== ACTIVITÉS PRINCIPALES (visible sans scroller) ===== -->
+<section class="activities-section" id="services" aria-label="Nos principales activités">
+  <div class="activities-grid">
 
-  <a href="services.html#curage" class="gallery-item">
-    <img src="assets/img/travaux-de-curage.jpg" alt="Curage d'étang par engin amphibie" loading="eager" />
-    <div class="gallery-item-label">
-      🚜 Curage d'étang
-      <svg class="gallery-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </div>
-  </a>
+    <!-- CURAGE – remplacer <img> par <video> quand le fichier est disponible -->
+    <a href="services.html#curage" class="activity-card">
+      <!--
+      <video autoplay muted loop playsinline poster="assets/img/curage-d-etang-avec-mise-en-assec.jpg">
+        <source src="assets/video/curage.mp4" type="video/mp4">
+      </video>
+      -->
+      <img src="assets/img/curage-d-etang-avec-mise-en-assec.jpg" alt="Curage d'étang par engin amphibie" loading="eager" />
+      <div class="activity-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Vidéo
+      </div>
+      <div class="activity-info">
+        <h3>Curage d'étang</h3>
+        <p>Extraction de la vase et remise en profondeur par engins amphibies</p>
+        <span class="activity-cta">Découvrir <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+    </a>
 
-  <a href="services.html#faucardage" class="gallery-item">
-    <img src="assets/img/faucardage-et-suppression-de-vegetation.jpg" alt="Faucardage végétation aquatique" loading="eager" />
-    <div class="gallery-item-label">
-      🌿 Faucardage
-      <svg class="gallery-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </div>
-  </a>
+    <!-- FAUCARDAGE -->
+    <a href="services.html#faucardage" class="activity-card">
+      <!--
+      <video autoplay muted loop playsinline poster="assets/img/faucardage-et-suppression-de-vegetation.jpg">
+        <source src="assets/video/faucardage.mp4" type="video/mp4">
+      </video>
+      -->
+      <img src="assets/img/faucardage-et-suppression-de-vegetation.jpg" alt="Faucardage et suppression de végétation aquatique" loading="eager" />
+      <div class="activity-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Vidéo
+      </div>
+      <div class="activity-info">
+        <h3>Faucardage</h3>
+        <p>Coupe et exportation des plantes envahissantes (roseaux, nénuphars…)</p>
+        <span class="activity-cta">Découvrir <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+    </a>
 
-  <a href="services.html#berges" class="gallery-item">
-    <img src="assets/img/terrassement-defense-des-berges-enrochements.jpg" alt="Défenses de berges" loading="lazy" />
-    <div class="gallery-item-label">
-      🪨 Défenses de berges
-      <svg class="gallery-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </div>
-  </a>
+    <!-- BROYAGE DE ROSEAUX -->
+    <a href="services.html#broyage" class="activity-card">
+      <!--
+      <video autoplay muted loop playsinline poster="assets/img/fauchage-de-roseaux-avec-exportation.jpg">
+        <source src="assets/video/broyage.mp4" type="video/mp4">
+      </video>
+      -->
+      <img src="assets/img/fauchage-de-roseaux-avec-exportation.jpg" alt="Broyage de roseaux à la chenillette en zones humides" loading="eager" />
+      <div class="activity-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Vidéo
+      </div>
+      <div class="activity-info">
+        <h3>Broyage de roseaux</h3>
+        <p>Chenillettes en zones humides, avant/après spectaculaire</p>
+        <span class="activity-cta">Découvrir <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+    </a>
 
-  <a href="services.html#broyage" class="gallery-item">
-    <img src="assets/img/fauchage-de-roseaux-avec-exportation.jpg" alt="Broyage de roseaux" loading="lazy" />
-    <div class="gallery-item-label">
-      🌾 Broyage de roseaux
-      <svg class="gallery-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </div>
-  </a>
+    <!-- DÉFENSES DE BERGES -->
+    <a href="services.html#berges" class="activity-card">
+      <!--
+      <video autoplay muted loop playsinline poster="assets/img/terrassement-defense-des-berges-enrochements.jpg">
+        <source src="assets/video/berges.mp4" type="video/mp4">
+      </video>
+      -->
+      <img src="assets/img/terrassement-defense-des-berges-enrochements.jpg" alt="Défenses de berges et enrochements" loading="lazy" />
+      <div class="activity-info">
+        <h3>Défenses de berges</h3>
+        <p>Enrochement et consolidation des rives contre l'érosion</p>
+        <span class="activity-cta">Découvrir <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+    </a>
 
-  <a href="estimation.html" class="gallery-item">
-    <img src="assets/img/nous-connaitre-ets-vandaele.jpg" alt="Diagnostic et estimation gratuite" loading="lazy" />
-    <div class="gallery-item-label">
-      🔍 Diagnostic <span class="gallery-item-badge">Gratuit</span>
-      <svg class="gallery-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </div>
-  </a>
-
+  </div>
 </section>
 
 <!-- ===== NOS PRESTATIONS – contenu détaillé (SEO) ===== -->
