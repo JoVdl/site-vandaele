@@ -2703,8 +2703,8 @@ input[type=range]::-moz-range-thumb {
   to   { stroke-dashoffset: 0;  }
 }
 @keyframes flowWater {
-  from { stroke-dashoffset: 0;  }
-  to   { stroke-dashoffset: 52; }
+  from { stroke-dashoffset: 52; }
+  to   { stroke-dashoffset: 0;  }
 }
 @media (prefers-reduced-motion: reduce) {
   .pipe-flow-mud, .pipe-flow-water { animation: none; }
