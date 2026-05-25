@@ -2520,6 +2520,15 @@ input[type=range]::-moz-range-thumb {
   object-fit: cover;
   display: block;
 }
+.svc-media-gallery {
+  display: grid;
+  grid-template-rows: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+.svc-media-gallery img:first-child {
+  grid-column: 1 / -1;
+}
 
 /* Contenu textuel */
 .svc-split-content h2 {
