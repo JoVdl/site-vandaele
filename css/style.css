@@ -2115,6 +2115,7 @@ img[src*="travaux-en-marais"] { object-fit: contain; background: #1c2e1c; }
   grid-template-rows: 1fr 1fr;
   gap: 3px;
 }
+.svc-media-gallery-4 img { object-fit: contain; background: #111; }
 
 
 .svc-card-body {
