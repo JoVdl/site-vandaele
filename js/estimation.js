@@ -610,9 +610,10 @@ async function submitEstimation() {
   const body = {
     access_key:  WEB3FORMS_KEY,
     _cc:         'vandaelemarcel@orange.fr',
-    subject:     `Demande d'estimation – ${prenom} ${nom}`,
-    from_name:   'Site Curage Vandaele',
-    redirect:    'false',
+    subject:      'contact@curagevandaele.fr',
+    from_name:    'Site Curage Vandaele',
+    redirect:     'false',
+    _autoresponse: 'false',
     Prénom:      prenom,
     Nom:         nom,
     Email:       email,
