@@ -199,6 +199,16 @@ async function loadTarifsPanel() {
       <button id="btn-tarifs-save" class="btn-tarifs-save">💾 Sauvegarder</button>
     </div>
 
+    <div class="coeff-bar">
+      <span class="coeff-label">Ajustement global</span>
+      <input type="range" id="coeff-slider" min="-50" max="100" value="0" step="1" class="coeff-slider">
+      <span class="coeff-sign" id="coeff-sign">+</span>
+      <input type="number" id="coeff-pct" value="0" min="-50" max="100" step="1" class="coeff-input">
+      <span class="coeff-unit">%</span>
+      <button id="coeff-apply" class="btn-coeff-apply">Appliquer</button>
+      <button id="coeff-reset" class="btn-coeff-reset">Réinitialiser</button>
+    </div>
+
     <table class="tarifs-table">
       <thead>
         <tr>
@@ -263,6 +273,33 @@ async function loadTarifsPanel() {
     <div id="tarifs-status" class="tarifs-status"></div>`;
 
   document.getElementById('btn-tarifs-save')?.addEventListener('click', saveTarifs);
+
+  // Sync slider ↔ number input
+  const slider = document.getElementById('coeff-slider');
+  const pctInput = document.getElementById('coeff-pct');
+  const sign = document.getElementById('coeff-sign');
+  function updateSign(v) { sign.textContent = v >= 0 ? '+' : ''; sign.style.color = v < 0 ? 'var(--red)' : 'var(--green-600)'; }
+  slider?.addEventListener('input', () => { pctInput.value = slider.value; updateSign(+slider.value); });
+  pctInput?.addEventListener('input', () => { slider.value = pctInput.value; updateSign(+pctInput.value); });
+
+  document.getElementById('coeff-apply')?.addEventListener('click', () => {
+    const pct = parseFloat(pctInput.value) || 0;
+    const factor = 1 + pct / 100;
+    document.querySelectorAll('.tt-input[data-field]').forEach(input => {
+      if (input.dataset.field.endsWith('.jussie')) return; // ne pas toucher au coefficient jussie
+      const v = parseFloat(input.value) || 0;
+      input.value = Math.round(v * factor);
+    });
+  });
+
+  document.getElementById('coeff-reset')?.addEventListener('click', () => {
+    slider.value = 0; pctInput.value = 0; updateSign(0);
+    document.querySelectorAll('.tt-input[data-field]').forEach(input => {
+      const keys = input.dataset.field.split('.');
+      let obj = TARIFS_DEFAULTS;
+      try { for (const k of keys) obj = obj[k]; input.value = obj; } catch {}
+    });
+  });
 }
 
 async function saveTarifs() {

@@ -307,6 +307,30 @@
     .tarifs-status { font-size: .8rem; color: var(--green-600); min-height: 1.2em; }
     .tarifs-status.err { color: var(--red); }
 
+    .coeff-bar {
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+      background: var(--white); border-radius: var(--radius); padding: .9rem 1.2rem;
+      box-shadow: var(--shadow);
+    }
+    .coeff-label { font-size: .82rem; font-weight: 600; color: var(--gray-700); white-space: nowrap; }
+    .coeff-slider { flex: 1; min-width: 140px; max-width: 260px; accent-color: var(--green-500); cursor: pointer; }
+    .coeff-sign { font-weight: 700; font-size: .95rem; color: var(--green-600); width: .6rem; text-align: center; }
+    .coeff-input { width: 58px; padding: .35rem .5rem; border: 1.5px solid var(--gray-200); border-radius: 6px; font-family: inherit; font-size: .88rem; text-align: right; outline: none; }
+    .coeff-input:focus { border-color: var(--green-500); }
+    .coeff-unit { font-size: .82rem; color: var(--gray-500); margin-left: -.4rem; }
+    .btn-coeff-apply {
+      padding: .38rem .9rem; background: var(--green-500); color: var(--white);
+      border: none; border-radius: 7px; font-size: .82rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: background .15s;
+    }
+    .btn-coeff-apply:hover { background: var(--green-600); }
+    .btn-coeff-reset {
+      padding: .38rem .9rem; background: var(--gray-100); color: var(--gray-600);
+      border: 1.5px solid var(--gray-200); border-radius: 7px; font-size: .82rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s;
+    }
+    .btn-coeff-reset:hover { background: var(--gray-200); }
+
     .tarifs-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); font-size: .84rem; }
     .tarifs-table thead th { background: var(--green-800); color: var(--white); padding: .65rem 1rem; text-align: left; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
     .tarifs-table thead th:nth-child(3), .tarifs-table thead th:nth-child(4) { text-align: center; width: 110px; }
