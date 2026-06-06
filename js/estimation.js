@@ -10,16 +10,16 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
 // ── FIREBASE ──────────────────────────────────────────────────
 // Remplacer par votre config : Firebase Console > Paramètres du projet > Vos applications
 const FIREBASE_CONFIG = {
-  apiKey:            'VOTRE_API_KEY',
-  authDomain:        'VOTRE-PROJET.firebaseapp.com',
-  projectId:         'VOTRE-PROJET-ID',
-  storageBucket:     'VOTRE-PROJET.appspot.com',
-  messagingSenderId: 'VOTRE_SENDER_ID',
-  appId:             'VOTRE_APP_ID',
+  apiKey:            'AIzaSyCedrdegva_01oxW1zqhMX-qrRdn_Xczjc',
+  authDomain:        'curage-vandaele.firebaseapp.com',
+  projectId:         'curage-vandaele',
+  storageBucket:     'curage-vandaele.firebasestorage.app',
+  messagingSenderId: '391514836726',
+  appId:             '1:391514836726:web:357672b95b8af8275426d7',
 };
 let db = null;
 try {
-  if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey !== 'VOTRE_API_KEY') {
+  if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
   }
