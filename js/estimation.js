@@ -2,6 +2,10 @@
    CURAGE VANDAELE – ESTIMATION TOOL
    ============================================================ */
 
+// Toujours partir du haut de la page à l'arrivée
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
 const TARIFS = {
   mobilisation: { min: 800, max: 2000 },
