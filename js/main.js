@@ -85,7 +85,7 @@ if (contactForm) {
               note_admin: null,
               created_at: firebase.firestore.FieldValue.serverTimestamp(),
             });
-          } catch (e) { console.warn('Firebase save failed:', e); }
+          } catch (e) { console.error('[Firebase] Sauvegarde contact échouée :', e.code, e.message); }
         }
         showToast('Message envoyé ! Nous vous répondrons sous 48 h.', 'success');
         contactForm.reset();

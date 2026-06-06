@@ -98,8 +98,13 @@ function startListener() {
         if (d) renderDetailPane(d);
       }
     }, err => {
+      console.error('[Firebase] onSnapshot erreur :', err.code, err.message);
       const listEl = document.getElementById('requests-list');
-      if (listEl) listEl.innerHTML = `<div class="state-msg">Erreur : ${esc(err.message)}</div>`;
+      if (listEl) listEl.innerHTML = `
+        <div class="state-msg" style="color:var(--red)">
+          ⚠️ Erreur Firestore : <strong>${esc(err.code || err.message)}</strong><br>
+          <small>Vérifiez les règles de sécurité dans la Firebase Console.</small>
+        </div>`;
     });
 }
 

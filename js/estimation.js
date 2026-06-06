@@ -23,7 +23,9 @@ try {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
   }
-} catch (e) {}
+} catch (e) {
+  console.error('[Firebase] Initialisation échouée :', e);
+}
 
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
 let TARIFS = {
@@ -695,7 +697,7 @@ async function submitEstimation() {
         created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      console.warn('Firebase save failed:', e);
+      console.error('[Firebase] Sauvegarde demande échouée :', e.code, e.message);
     }
   }
 
