@@ -61,6 +61,11 @@ if (contactForm) {
       return;
     }
 
+    const nom     = contactForm.querySelector('[name=nom]')?.value?.trim()     || '';
+    const email   = contactForm.querySelector('[name=email]')?.value?.trim()   || '';
+    const tel     = contactForm.querySelector('[name=tel]')?.value?.trim()     || '';
+    const message = contactForm.querySelector('[name=message]')?.value?.trim() || '';
+
     try {
       const res  = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
@@ -68,6 +73,18 @@ if (contactForm) {
       });
       const data = await res.json();
       if (data.success) {
+        // Sauvegarde dans Firebase (dashboard admin)
+        if (typeof firebase !== 'undefined') {
+          try {
+            await firebase.firestore().collection('demandes').add({
+              type:       'contact',
+              nom, email, telephone: tel, message,
+              statut:     'nouveau',
+              note_admin: null,
+              created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+          } catch (e) { console.warn('Firebase save failed:', e); }
+        }
         showToast('Message envoyé ! Nous vous répondrons sous 48 h.', 'success');
         contactForm.reset();
       } else {

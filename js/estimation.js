@@ -655,6 +655,7 @@ async function submitEstimation() {
   if (db) {
     try {
       await db.collection('demandes').add({
+        type: 'estimation',
         prenom, nom, email, telephone: tel,
         profil:          document.getElementById('c-profil')?.value || '',
         delai:           document.getElementById('c-delai')?.value  || '',

@@ -163,17 +163,30 @@ function renderList() {
 }
 
 function renderCard(d) {
-  const statut = d.statut || 'nouveau';
-  const tags   = (d.travaux || []).map(t => `<span class="ctag">${travailShort(t)}</span>`).join('');
+  const statut    = d.statut || 'nouveau';
+  const isContact = d.type === 'contact';
+
+  const name = isContact
+    ? esc(d.nom || '–')
+    : `${esc(d.prenom || '')} ${esc(d.nom || '')}`.trim() || '–';
+
+  const tags = isContact
+    ? `<span class="ctag ctag-contact">💬 Message</span>`
+    : (d.travaux || []).map(t => `<span class="ctag">${travailShort(t)}</span>`).join('');
+
+  const rightTop = isContact
+    ? (d.message ? `<div class="card-msg">${esc(d.message.slice(0, 55))}${d.message.length > 55 ? '…' : ''}</div>` : '')
+    : `<div class="card-amount">${esc(d.estimation_text || '–')}</div>`;
+
   return `
     <div class="req-card s-${statut}" data-id="${esc(d.id)}">
       <div class="card-main">
-        <div class="card-name">${esc(d.prenom || '')} ${esc(d.nom || '')}</div>
-        <div class="card-addr">${esc(d.adresse || d.email || '–')}</div>
+        <div class="card-name">${name}</div>
+        <div class="card-addr">${esc(d.email || '–')}</div>
         <div class="card-tags">${tags}</div>
       </div>
       <div class="card-right">
-        <div class="card-amount">${esc(d.estimation_text || '–')}</div>
+        ${rightTop}
         <div class="card-date">${fmtRelative(d.created_at)}</div>
         <div class="card-badge"><span class="badge b-${statut}">${statutLabel(statut)}</span></div>
       </div>
@@ -211,101 +224,141 @@ function renderDrawerBody(d) {
   const bodyEl = document.getElementById('drawer-body');
   if (!bodyEl) return;
 
-  const statut  = d.statut || 'nouveau';
-  const travaux = d.travaux || [];
-  const details = d.details || {};
+  const statut    = d.statut || 'nouveau';
+  const isContact = d.type === 'contact';
 
-  const profilMap = { particulier:'Particulier', association:'Association', collectivite:'Collectivité', agriculteur:'Agriculteur', autre:'Autre' };
-  const delaiMap  = { urgent:'Urgent – dès que possible', '3mois':'Dans 3 mois', '6mois':'Dans 6 mois', '1an':'Dans l\'année', indefini:'Non défini' };
-  const accesMap  = { facile:'Facile', moyen:'Moyen', difficile:'Difficile' };
-  const destMap   = { 'sur-place':'Épandage sur place', evacuation:'Évacuation par nos soins', valorisation:'Valorisation agricole' };
-  const typeMap   = { enrochement:'Enrochement', palplanche:'Palplanches', gabion:'Gabions', vegetal:'Génie végétal', conseil:'À définir' };
-  const densMap   = { legere:'Légère', moyenne:'Moyenne', dense:'Dense' };
+  let contentHtml = '';
 
-  let detailRows = '';
-  if (details.hydrocurage)
-    detailRows += drow('Hydrocurage – longueur', `${details.hydrocurage.longueur_ml} ml`);
-  if (details.curage) {
-    const c = details.curage;
-    detailRows += drow('Curage – prof. vase', `${c.prof_vase_cm} cm`);
-    detailRows += drow('Curage – surface concernée', `${c.pct_surface} %`);
-    detailRows += drow('Destination de la vase', destMap[c.destination_vase] || c.destination_vase);
-  }
-  if (details.faucardage) {
-    const f = details.faucardage;
-    detailRows += drow('Faucardage – couverture', `${f.pct_couverture} %`);
-    if (f.jussie) detailRows += drow('Jussie (invasive)', 'Oui (+40 %)');
-  }
-  if (details.berges) {
-    const b = details.berges;
-    detailRows += drow('Berges – longueur', `${b.longueur_ml} ml`);
-    detailRows += drow('Type de protection', typeMap[b.type] || b.type);
-  }
-  if (details['broyage-forestier']) {
-    const bf = details['broyage-forestier'];
-    detailRows += drow('Broyage forestier', `${bf.surface_ha} ha`);
-    detailRows += drow('Densité végétation', densMap[bf.densite] || bf.densite);
-  }
-  if (details['broyage-roseaux']) {
-    const br = details['broyage-roseaux'];
-    detailRows += drow('Broyage roseaux', `${br.surface_ha} ha`);
-    detailRows += drow('Avec ramassage', br.avec_ramassage ? 'Oui' : 'Non');
+  if (isContact) {
+    // ── Formulaire de contact simple ──────────────────────────
+    contentHtml = `
+      <div class="dsec">
+        <h3>Coordonnées</h3>
+        <div class="info-grid">
+          <div>
+            <div class="info-label">Nom</div>
+            <div class="info-value">${esc(d.nom || '–')}</div>
+          </div>
+          <div>
+            <div class="info-label">Email</div>
+            <div class="info-value"><a href="mailto:${esc(d.email)}">${esc(d.email || '–')}</a></div>
+          </div>
+          <div>
+            <div class="info-label">Téléphone</div>
+            <div class="info-value">${d.telephone ? `<a href="tel:${esc(d.telephone)}">${esc(d.telephone)}</a>` : '–'}</div>
+          </div>
+        </div>
+      </div>
+      ${d.message ? `
+      <div class="dsec">
+        <h3>Message</h3>
+        <p style="font-size:.9rem;color:var(--gray-700);line-height:1.7;white-space:pre-wrap;">${esc(d.message)}</p>
+      </div>` : ''}`;
+
+  } else {
+    // ── Demande d'estimation ──────────────────────────────────
+    const travaux = d.travaux || [];
+    const details = d.details || {};
+
+    const profilMap = { particulier:'Particulier', association:'Association', collectivite:'Collectivité', agriculteur:'Agriculteur', autre:'Autre' };
+    const delaiMap  = { urgent:'Urgent – dès que possible', '3mois':'Dans 3 mois', '6mois':'Dans 6 mois', '1an':'Dans l\'année', indefini:'Non défini' };
+    const accesMap  = { facile:'Facile', moyen:'Moyen', difficile:'Difficile' };
+    const destMap   = { 'sur-place':'Épandage sur place', evacuation:'Évacuation par nos soins', valorisation:'Valorisation agricole' };
+    const typeMap   = { enrochement:'Enrochement', palplanche:'Palplanches', gabion:'Gabions', vegetal:'Génie végétal', conseil:'À définir' };
+    const densMap   = { legere:'Légère', moyenne:'Moyenne', dense:'Dense' };
+
+    let detailRows = '';
+    if (details.hydrocurage)
+      detailRows += drow('Hydrocurage – longueur', `${details.hydrocurage.longueur_ml} ml`);
+    if (details.curage) {
+      const c = details.curage;
+      detailRows += drow('Curage – prof. vase', `${c.prof_vase_cm} cm`);
+      detailRows += drow('Curage – surface concernée', `${c.pct_surface} %`);
+      detailRows += drow('Destination de la vase', destMap[c.destination_vase] || c.destination_vase);
+    }
+    if (details.faucardage) {
+      const f = details.faucardage;
+      detailRows += drow('Faucardage – couverture', `${f.pct_couverture} %`);
+      if (f.jussie) detailRows += drow('Jussie (invasive)', 'Oui (+40 %)');
+    }
+    if (details.berges) {
+      const b = details.berges;
+      detailRows += drow('Berges – longueur', `${b.longueur_ml} ml`);
+      detailRows += drow('Type de protection', typeMap[b.type] || b.type);
+    }
+    if (details['broyage-forestier']) {
+      const bf = details['broyage-forestier'];
+      detailRows += drow('Broyage forestier', `${bf.surface_ha} ha`);
+      detailRows += drow('Densité végétation', densMap[bf.densite] || bf.densite);
+    }
+    if (details['broyage-roseaux']) {
+      const br = details['broyage-roseaux'];
+      detailRows += drow('Broyage roseaux', `${br.surface_ha} ha`);
+      detailRows += drow('Avec ramassage', br.avec_ramassage ? 'Oui' : 'Non');
+    }
+
+    contentHtml = `
+      <div class="dsec">
+        <h3>Contact</h3>
+        <div class="info-grid">
+          <div>
+            <div class="info-label">Prénom / Nom</div>
+            <div class="info-value">${esc(d.prenom || '')} ${esc(d.nom || '')}</div>
+          </div>
+          <div>
+            <div class="info-label">Email</div>
+            <div class="info-value"><a href="mailto:${esc(d.email)}">${esc(d.email || '–')}</a></div>
+          </div>
+          <div>
+            <div class="info-label">Téléphone</div>
+            <div class="info-value">${d.telephone ? `<a href="tel:${esc(d.telephone)}">${esc(d.telephone)}</a>` : '–'}</div>
+          </div>
+          <div>
+            <div class="info-label">Profil</div>
+            <div class="info-value">${esc(profilMap[d.profil] || d.profil || '–')}</div>
+          </div>
+          <div>
+            <div class="info-label">Délai envisagé</div>
+            <div class="info-value">${esc(delaiMap[d.delai] || d.delai || '–')}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dsec">
+        <h3>Chantier</h3>
+        ${d.adresse ? `<div style="margin-bottom:.65rem"><div class="info-label">Adresse</div><div class="info-value">${esc(d.adresse)}</div></div>` : ''}
+        <div class="info-grid">
+          ${d.surface_ha   ? `<div><div class="info-label">Surface</div><div class="info-value">${d.surface_ha} ha</div></div>` : ''}
+          ${d.perimetre_ml ? `<div><div class="info-label">Périmètre</div><div class="info-value">${d.perimetre_ml} ml</div></div>` : ''}
+          ${d.acces ? `<div><div class="info-label">Accès</div><div class="info-value">${esc(accesMap[d.acces] || d.acces)}</div></div>` : ''}
+        </div>
+        ${travaux.length ? `
+        <div style="margin-top:.7rem">
+          <div class="info-label" style="margin-bottom:.35rem">Travaux demandés</div>
+          <div class="work-chips">${travaux.map(t => `<span class="work-chip">${travailLabel(t)}</span>`).join('')}</div>
+        </div>` : ''}
+      </div>
+
+      ${detailRows ? `
+      <div class="dsec">
+        <h3>Paramètres des travaux</h3>
+        <div>${detailRows}</div>
+      </div>` : ''}
+
+      ${d.infos_sup ? `
+      <div class="dsec">
+        <h3>Informations complémentaires</h3>
+        <p style="font-size:.85rem;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;">${esc(d.infos_sup)}</p>
+      </div>` : ''}
+
+      <div class="est-total">
+        <div class="est-total-label">Estimation indicative</div>
+        <div class="est-total-val">${esc(d.estimation_text || '–')}</div>
+      </div>`;
   }
 
   bodyEl.innerHTML = `
-    <div class="dsec">
-      <h3>Contact</h3>
-      <div class="info-grid">
-        <div>
-          <div class="info-label">Email</div>
-          <div class="info-value"><a href="mailto:${esc(d.email)}">${esc(d.email || '–')}</a></div>
-        </div>
-        <div>
-          <div class="info-label">Téléphone</div>
-          <div class="info-value"><a href="tel:${esc(d.telephone)}">${esc(d.telephone || '–')}</a></div>
-        </div>
-        <div>
-          <div class="info-label">Profil</div>
-          <div class="info-value">${esc(profilMap[d.profil] || d.profil || '–')}</div>
-        </div>
-        <div>
-          <div class="info-label">Délai envisagé</div>
-          <div class="info-value">${esc(delaiMap[d.delai] || d.delai || '–')}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dsec">
-      <h3>Chantier</h3>
-      ${d.adresse ? `<div style="margin-bottom:.65rem"><div class="info-label">Adresse</div><div class="info-value">${esc(d.adresse)}</div></div>` : ''}
-      <div class="info-grid">
-        ${d.surface_ha  ? `<div><div class="info-label">Surface</div><div class="info-value">${d.surface_ha} ha</div></div>` : ''}
-        ${d.perimetre_ml ? `<div><div class="info-label">Périmètre</div><div class="info-value">${d.perimetre_ml} ml</div></div>` : ''}
-        <div><div class="info-label">Accès</div><div class="info-value">${esc(accesMap[d.acces] || d.acces || '–')}</div></div>
-      </div>
-      <div style="margin-top:.7rem">
-        <div class="info-label" style="margin-bottom:.35rem">Travaux demandés</div>
-        <div class="work-chips">${travaux.map(t => `<span class="work-chip">${travailLabel(t)}</span>`).join('') || '–'}</div>
-      </div>
-    </div>
-
-    ${detailRows ? `
-    <div class="dsec">
-      <h3>Détails des travaux</h3>
-      <div>${detailRows}</div>
-    </div>` : ''}
-
-    ${d.infos_sup ? `
-    <div class="dsec">
-      <h3>Informations complémentaires</h3>
-      <p style="font-size:.85rem;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;">${esc(d.infos_sup)}</p>
-    </div>` : ''}
-
-    <div class="est-total">
-      <div class="est-total-label">Estimation indicative</div>
-      <div class="est-total-val">${esc(d.estimation_text || '–')}</div>
-    </div>
-
+    ${contentHtml}
     <div class="admin-sec">
       <h3>Suivi</h3>
       <select class="statut-sel" id="drawer-statut">
