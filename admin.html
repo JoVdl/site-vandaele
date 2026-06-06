@@ -113,6 +113,7 @@
       flex: 1; display: flex; overflow: hidden;
       max-width: 1800px; width: 100%; margin: 0 auto;
     }
+    .admin-content { flex: 1; display: flex; min-width: 0; overflow: hidden; }
 
     /* ── SIDEBAR ───────────────────────────────────────── */
     .admin-sidebar {
@@ -395,6 +396,7 @@
     @media (max-width: 800px) {
       #dashboard { height: auto; overflow: visible; }
       .admin-body { flex-direction: column; overflow: visible; }
+      .admin-content { flex-direction: column; }
       .admin-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: .75rem; border-right: none; border-bottom: 1px solid var(--gray-200); padding: .75rem; }
       .stats-grid { min-width: 200px; }
       .filter-nav { flex-direction: row; flex-wrap: wrap; flex: 1; }
@@ -485,29 +487,34 @@
       <button class="btn-tarifs" id="btn-tarifs">⚙️ Grille tarifaire</button>
     </aside>
 
-    <!-- LIST PANE -->
-    <div class="list-pane">
-      <div class="list-toolbar">
-        <input type="search" id="search-input" placeholder="Rechercher…">
-        <select id="sort-select">
-          <option value="desc">Récent</option>
-          <option value="asc">Ancien</option>
-        </select>
-      </div>
-      <div id="requests-list">
-        <div class="state-msg">Chargement…</div>
-      </div>
-    </div>
-
     <!-- TARIFS PANEL -->
     <div class="tarifs-panel" id="tarifs-panel" hidden></div>
 
-    <!-- DETAIL PANE -->
-    <div class="detail-pane" id="detail-pane">
-      <div class="detail-empty">
-        <div class="detail-empty-icon">📋</div>
-        <p>Sélectionnez une demande<br>pour voir les détails</p>
+    <!-- CONTENU PRINCIPAL (list + détail) -->
+    <div class="admin-content">
+
+      <!-- LIST PANE -->
+      <div class="list-pane">
+        <div class="list-toolbar">
+          <input type="search" id="search-input" placeholder="Rechercher…">
+          <select id="sort-select">
+            <option value="desc">Récent</option>
+            <option value="asc">Ancien</option>
+          </select>
+        </div>
+        <div id="requests-list">
+          <div class="state-msg">Chargement…</div>
+        </div>
       </div>
+
+      <!-- DETAIL PANE -->
+      <div class="detail-pane" id="detail-pane">
+        <div class="detail-empty">
+          <div class="detail-empty-icon">📋</div>
+          <p>Sélectionnez une demande<br>pour voir les détails</p>
+        </div>
+      </div>
+
     </div>
 
   </div>
