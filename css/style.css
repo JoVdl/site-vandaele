@@ -2191,7 +2191,7 @@ input[type=range]::-moz-range-thumb {
 .activite-card {
   position: relative;
   display: block;
-  aspect-ratio: 4/5;
+  aspect-ratio: 9/16;
   overflow: hidden;
   border-radius: 10px;
   text-decoration: none;
@@ -2257,7 +2257,7 @@ input[type=range]::-moz-range-thumb {
 @media (max-width: 960px) { .activites-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; } }
 @media (max-width: 500px) {
   .activites-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
-  .activite-card { aspect-ratio: 3/4; }
+  .activite-card { aspect-ratio: 9/16; }
   .activite-overlay { padding: 10px; }
   .activite-sub { display: none; }
 }
