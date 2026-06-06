@@ -2,6 +2,19 @@
    CURAGE VANDAELE – MAIN JS
    ============================================================ */
 
+// ── VIDEO SEQUENCE (data-srcs) ──
+document.querySelectorAll('video[data-srcs]').forEach(video => {
+  const srcs = video.dataset.srcs.split(',');
+  let idx = 0;
+  video.addEventListener('ended', () => {
+    idx = (idx + 1) % srcs.length;
+    const src = video.querySelector('source');
+    if (src) src.src = srcs[idx];
+    video.load();
+    video.play().catch(() => {});
+  });
+});
+
 // ── NAVBAR scroll ──
 const header = document.getElementById('site-header');
 if (header) {
