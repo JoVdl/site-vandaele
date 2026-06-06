@@ -16,8 +16,8 @@ service cloud.firestore {
       // Seuls les utilisateurs connectés (admin) peuvent lire et modifier
       allow read, update: if request.auth != null;
 
-      // Personne ne peut supprimer (sécurité)
-      allow delete: if false;
+      // Seul l'admin connecté peut supprimer
+      allow delete: if request.auth != null;
     }
   }
 }

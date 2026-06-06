@@ -337,8 +337,16 @@ function renderDetailPane(d) {
 
   detailPane.innerHTML = `
     <div class="detail-header">
-      <h2>${name}</h2>
-      <div class="detail-meta" id="detail-meta">Reçu le ${fmtDate(d.created_at)} · ${statutLabel(statut)}</div>
+      <div>
+        <h2>${name}</h2>
+        <div class="detail-meta" id="detail-meta">Reçu le ${fmtDate(d.created_at)} · ${statutLabel(statut)}</div>
+      </div>
+      <button class="btn-delete" id="btn-delete" title="Supprimer cette demande">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+        </svg>
+        Supprimer
+      </button>
     </div>
     <div class="detail-scroll">
       ${contentHtml}
@@ -356,6 +364,8 @@ function renderDetailPane(d) {
         <div class="note-saved" id="note-saved"></div>
       </div>
     </div>`;
+
+  document.getElementById('btn-delete')?.addEventListener('click', () => deleteDetail(d.id, name));
 
   document.getElementById('detail-statut')?.addEventListener('change', async e => {
     const newStatut = e.target.value;
@@ -419,6 +429,23 @@ function renderAdminMap(geojson) {
     style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
   }).addTo(adminMap);
   adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] });
+}
+
+async function deleteDetail(id, name) {
+  if (!confirm(`Supprimer la demande de ${name} ?\n\nCette action est irréversible.`)) return;
+  try {
+    await db.collection('demandes').doc(id).delete();
+    openId = null;
+    if (adminMap) { adminMap.remove(); adminMap = null; }
+    detailPane.innerHTML = `
+      <div class="detail-empty">
+        <div class="detail-empty-icon">🗑️</div>
+        <p>Demande supprimée.</p>
+      </div>`;
+  } catch (err) {
+    alert('Erreur lors de la suppression. Vérifiez les règles Firestore.');
+    console.error(err);
+  }
 }
 
 function drow(key, val) {
