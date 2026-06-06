@@ -166,16 +166,19 @@ ul { list-style: none; }
   color: var(--white);
 }
 .logo-tagline {
-  font-family: 'Lora', Georgia, serif;
-  font-style: italic;
-  font-size: .85rem;
-  font-weight: 400;
-  color: rgba(255,255,255,.8);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.75);
   line-height: 1.2;
-  letter-spacing: .01em;
   white-space: nowrap;
 }
-@media (max-width: 700px) { .logo-tagline { display: none; } }
+@media (max-width: 400px) {
+  .logo-tagline { font-size: .6rem; letter-spacing: .08em; }
+}
 .logo-icon { font-size: 1.5rem; }
 .logo-text strong { color: var(--blue-400); }
 .logo-img {
@@ -1797,8 +1800,8 @@ textarea { resize: vertical; min-height: 100px; }
   .fab-long { display: none; }
   .fab-short { display: inline; }
   .fab-cta { border-radius: 50px; }
-  /* keep reel label/dots clear of FAB buttons */
-  .hero-bottom { right: 160px; }
+  /* push reel label/dots above FAB buttons */
+  .hero-bottom { bottom: calc(1.5rem + 80px); right: 0; }
 }
 /* push up when cookie banner is visible */
 .cookie-visible .fab-group { bottom: calc(1.5rem + 80px); }
