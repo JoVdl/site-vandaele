@@ -261,3 +261,46 @@ document.querySelectorAll('.service-card, .chantier-card, .feature, .conseil-car
   function advance() { goTo((cur + 1) % slides.length); }
   let timer = setInterval(advance, DURATION);
 })();
+
+// ── ZONE D'INTERVENTION MAP ──
+(function () {
+  const el = document.getElementById('zone-map');
+  if (!el) return;
+
+  function initMap() {
+    const map = L.map('zone-map', {
+      zoomControl: false, scrollWheelZoom: false,
+      dragging: false, touchZoom: false, doubleClickZoom: false
+    }).setView([46.5, 2.2], 5);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19
+    }).addTo(map);
+
+    const icon = L.divIcon({
+      className: '', html: '<div class="zone-marker-pulse"></div>',
+      iconSize: [14, 14], iconAnchor: [7, 7]
+    });
+    L.marker([50.4167, 1.9833], { icon })
+      .bindTooltip('Base · Tortefontaine (62)', {
+        permanent: true, direction: 'right', className: 'zone-tip', offset: [10, 0]
+      })
+      .addTo(map);
+  }
+
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    obs.disconnect();
+    if (window.L) { initMap(); return; }
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = initMap;
+    document.head.appendChild(script);
+  }, { threshold: 0.1 });
+  obs.observe(el);
+})();
