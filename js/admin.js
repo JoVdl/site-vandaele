@@ -673,7 +673,10 @@ function renderDetailPane(d) {
 
   // Carte du tracé client
   if (d.geojson || (d.lat && d.lng)) {
-    loadLeaflet(() => renderAdminMap(d.geojson, d.lat, d.lng));
+    const geojson = d.geojson
+      ? (typeof d.geojson === 'string' ? JSON.parse(d.geojson) : d.geojson)
+      : null;
+    loadLeaflet(() => renderAdminMap(geojson, d.lat, d.lng));
   }
 }
 

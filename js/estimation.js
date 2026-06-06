@@ -697,7 +697,7 @@ async function submitEstimation() {
         estimation_text: estimation,
         details:         buildDetails(),
         infos_sup:       state.infosSup || null,
-        geojson:         state.geojson  || null,
+        geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
         lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
         lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
         statut:          'nouveau',
