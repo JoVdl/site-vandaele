@@ -204,3 +204,33 @@ document.querySelectorAll('.service-card, .chantier-card, .feature, .conseil-car
   el.style.transition = 'opacity .5s ease, transform .5s ease';
   observer.observe(el);
 });
+
+// ── HERO REEL ──
+(function () {
+  const slides = Array.from(document.querySelectorAll('.hero-reel-slide'));
+  const dots   = Array.from(document.querySelectorAll('.hero-reel-dot'));
+  const label  = document.querySelector('.hero-reel-label');
+  if (slides.length < 2) return;
+
+  let cur = 0;
+  const DURATION = 7000;
+
+  function goTo(idx) {
+    slides[cur].classList.remove('is-active');
+    dots[cur].classList.remove('is-active');
+    slides[cur].pause();
+
+    cur = idx;
+    const next = slides[cur];
+    next.currentTime = 0;
+    next.play().catch(() => {});
+    next.classList.add('is-active');
+    dots[cur].classList.add('is-active');
+    if (label) label.textContent = next.dataset.label || '';
+  }
+
+  dots.forEach((dot, i) => dot.addEventListener('click', () => { clearInterval(timer); goTo(i); timer = setInterval(advance, DURATION); }));
+
+  function advance() { goTo((cur + 1) % slides.length); }
+  let timer = setInterval(advance, DURATION);
+})();
