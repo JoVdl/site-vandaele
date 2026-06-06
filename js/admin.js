@@ -30,6 +30,7 @@ const loginScreen = document.getElementById('login-screen');
 const dashboard   = document.getElementById('dashboard');
 
 auth.onAuthStateChanged(user => {
+  document.body.style.visibility = 'visible';
   if (user) {
     loginScreen.hidden = true;
     dashboard.hidden   = false;
