@@ -216,13 +216,24 @@
     .card-amount { font-weight: 700; font-size: .82rem; color: var(--green-600); }
     .card-date { font-size: .67rem; color: var(--gray-400); margin-top: .15rem; }
     .card-badge { margin-top: .35rem; }
+    /* Point clignotant sur les cartes jamais vues */
+    .req-card.s-nouveau .card-name::before {
+      content: ''; display: inline-block; width: 7px; height: 7px;
+      background: var(--red); border-radius: 50%; margin-right: .45rem;
+      vertical-align: middle; animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.7); }
+    }
 
     .badge {
       display: inline-block; font-size: .62rem; font-weight: 700;
       padding: .14rem .48rem; border-radius: 99px;
       text-transform: uppercase; letter-spacing: .05em;
     }
-    .b-nouveau        { background:#fef2f2; color:var(--red); }
+    .b-nouveau        { background:#fef2f2; color:var(--red); border: 1.5px solid #fca5a5; }
+    .b-a_traiter      { background:#fff7ed; color:#ea580c; }
     .b-contacte       { background:#fffbeb; color:#d97706; }
     .b-devis_envoye   { background:#eff6ff; color:var(--blue); }
     .b-chantier_gagne { background:var(--green-50); color:var(--green-600); }
@@ -455,14 +466,15 @@
     <aside class="admin-sidebar">
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-val" id="stat-total">–</div><div class="stat-label">Total</div></div>
-        <div class="stat-card stat-new"><div class="stat-val" id="stat-nouveau">–</div><div class="stat-label">Nouveaux</div></div>
+        <div class="stat-card stat-new"><div class="stat-val" id="stat-nouveau">–</div><div class="stat-label">Non lus</div></div>
         <div class="stat-card stat-prog"><div class="stat-val" id="stat-encours">–</div><div class="stat-label">En cours</div></div>
         <div class="stat-card stat-won"><div class="stat-val" id="stat-gagne">–</div><div class="stat-label">Gagnés</div></div>
       </div>
       <nav class="filter-nav">
         <div class="filter-nav-label">Statut</div>
         <button class="fnav-btn active" data-status="all">Toutes</button>
-        <button class="fnav-btn" data-status="nouveau">🔴 Nouveaux</button>
+        <button class="fnav-btn" data-status="nouveau">🔴 Non lus</button>
+        <button class="fnav-btn" data-status="a_traiter">🟠 À traiter</button>
         <button class="fnav-btn" data-status="contacte">🟡 Contactés</button>
         <button class="fnav-btn" data-status="devis_envoye">🔵 Devis envoyé</button>
         <button class="fnav-btn" data-status="chantier_gagne">🟢 Gagné</button>

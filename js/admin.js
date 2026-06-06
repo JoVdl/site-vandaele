@@ -343,7 +343,7 @@ async function saveTarifs() {
 function renderStats() {
   const active = allDemandes.filter(d => !d.archived);
   set('stat-total',   active.length);
-  set('stat-nouveau', active.filter(d => (d.statut || 'nouveau') === 'nouveau').length);
+  set('stat-nouveau', active.filter(d => (d.statut || 'nouveau') === 'nouveau').length);  // uniquement jamais vus
   set('stat-encours', active.filter(d => ['contacte', 'devis_envoye'].includes(d.statut)).length);
   set('stat-gagne',   active.filter(d => d.statut === 'chantier_gagne').length);
 }
@@ -447,6 +447,13 @@ function openDetail(id) {
   openId = id;
   document.querySelectorAll('.req-card').forEach(c => c.classList.toggle('is-active', c.dataset.id === id));
   renderDetailPane(d);
+  // Passage automatique nouveau → a_traiter à la première ouverture
+  if ((d.statut || 'nouveau') === 'nouveau') {
+    db.collection('demandes').doc(id).update({
+      statut: 'a_traiter',
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    }).catch(err => console.error('Statut update failed:', err));
+  }
 }
 
 function renderDetailPane(d) {
@@ -607,7 +614,8 @@ function renderDetailPane(d) {
       <div class="admin-sec">
         <h3>Suivi</h3>
         <select class="statut-sel" id="detail-statut">
-          <option value="nouveau"        ${statut==='nouveau'        ?'selected':''}>🔴 Nouveau</option>
+          <option value="nouveau"        ${statut==='nouveau'        ?'selected':''}>🔴 Non lu</option>
+          <option value="a_traiter"      ${statut==='a_traiter'      ?'selected':''}>🟠 À traiter</option>
           <option value="contacte"       ${statut==='contacte'       ?'selected':''}>🟡 Contacté</option>
           <option value="devis_envoye"   ${statut==='devis_envoye'   ?'selected':''}>🔵 Devis envoyé</option>
           <option value="chantier_gagne" ${statut==='chantier_gagne' ?'selected':''}>🟢 Chantier gagné</option>
@@ -811,7 +819,7 @@ function fmtRelative(ts) {
 }
 
 function statutLabel(s) {
-  return { nouveau:'Nouveau', contacte:'Contacté', devis_envoye:'Devis envoyé', chantier_gagne:'Gagné', sans_suite:'Sans suite' }[s] || s;
+  return { nouveau:'Non lu', a_traiter:'À traiter', contacte:'Contacté', devis_envoye:'Devis envoyé', chantier_gagne:'Gagné', sans_suite:'Sans suite' }[s] || s;
 }
 
 function travailLabel(t) {
