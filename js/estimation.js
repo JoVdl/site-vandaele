@@ -89,8 +89,11 @@ let TARIFS = {
 // Charge les tarifs depuis Firestore si disponible (admin peut les modifier)
 if (typeof db !== 'undefined' && db) {
   db.collection('config').doc('tarifs').get().then(snap => {
-    if (snap.exists) TARIFS = snap.data();
-  }).catch(() => {});
+    if (snap.exists) {
+      TARIFS = snap.data();
+      if (typeof computeEstimation === 'function') computeEstimation();
+    }
+  }).catch(e => console.error('[Firebase] Tarifs load failed:', e.code, e.message));
 }
 
 // ── ÉTAT ──────────────────────────────────────────────────────

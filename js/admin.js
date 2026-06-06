@@ -93,9 +93,16 @@ function startListener() {
       allDemandes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderStats();
       renderList();
+      // Mise à jour légère du panneau ouvert sans réécrire le HTML entier
+      // (évite de détruire la carte Leaflet en cours d'initialisation)
       if (openId) {
         const d = allDemandes.find(x => x.id === openId);
-        if (d) renderDetailPane(d);
+        if (d) {
+          const metaEl = document.getElementById('detail-meta');
+          if (metaEl) metaEl.textContent = `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(d.statut || 'nouveau')}`;
+          const sel = document.getElementById('detail-statut');
+          if (sel && document.activeElement !== sel) sel.value = d.statut || 'nouveau';
+        }
       }
     }, err => {
       console.error('[Firebase] onSnapshot erreur :', err.code, err.message);
@@ -181,7 +188,7 @@ async function loadTarifsPanel() {
     const snap = await db.collection('config').doc('tarifs').get();
     if (snap.exists) tarifs = snap.data();
   } catch (e) {
-    console.warn('Tarifs load failed, using defaults:', e);
+    console.error('[Firebase] Tarifs load failed:', e.code, e.message);
   }
 
   const row = (field, label, unit, val) => `
