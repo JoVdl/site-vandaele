@@ -2,8 +2,6 @@
    CURAGE VANDAELE – ADMIN JS (Firebase)
    ============================================================ */
 
-// ── CONFIG ──────────────────────────────────────────────────
-// Remplacer par votre config : Firebase Console > Paramètres du projet > Vos applications
 const FIREBASE_CONFIG = {
   apiKey:            'AIzaSyCedrdegva_01oxW1zqhMX-qrRdn_Xczjc',
   authDomain:        'curage-vandaele.firebaseapp.com',
@@ -13,7 +11,6 @@ const FIREBASE_CONFIG = {
   appId:             '1:391514836726:web:357672b95b8af8275426d7',
 };
 
-// ── INIT ─────────────────────────────────────────────────────
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db   = firebase.firestore();
@@ -23,11 +20,12 @@ let currentFilter = 'all';
 let currentSearch = '';
 let currentSort   = 'desc';
 let openId        = null;
-let unsubscribe   = null; // listener temps réel
+let unsubscribe   = null;
 
 // ── AUTH ─────────────────────────────────────────────────────
 const loginScreen = document.getElementById('login-screen');
 const dashboard   = document.getElementById('dashboard');
+const detailPane  = document.getElementById('detail-pane');
 
 auth.onAuthStateChanged(user => {
   document.body.style.visibility = 'visible';
@@ -44,7 +42,6 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// Toggle affichage mot de passe
 document.getElementById('toggle-pwd')?.addEventListener('click', () => {
   const input = document.getElementById('l-password');
   const icon  = document.getElementById('eye-icon');
@@ -70,7 +67,6 @@ document.getElementById('login-form')?.addEventListener('submit', async e => {
   try {
     await auth.setPersistence(rememberMe ? 'local' : 'session');
     await auth.signInWithEmailAndPassword(email, pass);
-    // onAuthStateChanged prend le relais et affiche le dashboard
   } catch {
     errEl.textContent = 'Email ou mot de passe incorrect.';
     errEl.hidden      = false;
@@ -93,6 +89,10 @@ function startListener() {
       allDemandes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderStats();
       renderList();
+      if (openId) {
+        const d = allDemandes.find(x => x.id === openId);
+        if (d) renderDetailPane(d);
+      }
     }, err => {
       const listEl = document.getElementById('requests-list');
       if (listEl) listEl.innerHTML = `<div class="state-msg">Erreur : ${esc(err.message)}</div>`;
@@ -139,13 +139,10 @@ function renderList() {
   if (!listEl) return;
 
   let items = [...allDemandes];
-
-  if (currentFilter !== 'all') {
-    items = items.filter(d => (d.statut || 'nouveau') === currentFilter);
-  }
+  if (currentFilter !== 'all') items = items.filter(d => (d.statut || 'nouveau') === currentFilter);
   if (currentSearch) {
     items = items.filter(d => {
-      const hay = [d.prenom, d.nom, d.email, d.telephone, d.adresse].join(' ').toLowerCase();
+      const hay = [d.prenom, d.nom, d.email, d.telephone, d.adresse, d.message].join(' ').toLowerCase();
       return hay.includes(currentSearch);
     });
   }
@@ -158,79 +155,63 @@ function renderList() {
 
   listEl.innerHTML = items.map(renderCard).join('');
   listEl.querySelectorAll('.req-card').forEach(card => {
-    card.addEventListener('click', () => openDrawer(card.dataset.id));
+    card.addEventListener('click', () => openDetail(card.dataset.id));
   });
 }
 
 function renderCard(d) {
   const statut    = d.statut || 'nouveau';
   const isContact = d.type === 'contact';
+  const isActive  = d.id === openId;
 
   const name = isContact
     ? esc(d.nom || '–')
     : `${esc(d.prenom || '')} ${esc(d.nom || '')}`.trim() || '–';
 
   const tags = isContact
-    ? `<span class="ctag ctag-contact">💬 Message</span>`
+    ? `<span class="ctag ctag-contact">💬 Contact</span>`
     : (d.travaux || []).map(t => `<span class="ctag">${travailShort(t)}</span>`).join('');
 
-  const rightTop = isContact
-    ? (d.message ? `<div class="card-msg">${esc(d.message.slice(0, 55))}${d.message.length > 55 ? '…' : ''}</div>` : '')
-    : `<div class="card-amount">${esc(d.estimation_text || '–')}</div>`;
+  const preview = isContact && d.message
+    ? `<div class="card-preview">${esc(d.message)}</div>`
+    : !isContact && d.estimation_text
+      ? `<div class="card-amount">${esc(d.estimation_text)}</div>`
+      : '';
 
   return `
-    <div class="req-card s-${statut}" data-id="${esc(d.id)}">
+    <div class="req-card s-${statut}${isActive ? ' is-active' : ''}" data-id="${esc(d.id)}">
       <div class="card-main">
         <div class="card-name">${name}</div>
         <div class="card-addr">${esc(d.email || '–')}</div>
         <div class="card-tags">${tags}</div>
+        ${preview}
       </div>
       <div class="card-right">
-        ${rightTop}
         <div class="card-date">${fmtRelative(d.created_at)}</div>
         <div class="card-badge"><span class="badge b-${statut}">${statutLabel(statut)}</span></div>
       </div>
     </div>`;
 }
 
-// ── DRAWER ───────────────────────────────────────────────────
-const overlay = document.getElementById('detail-overlay');
-const drawer  = document.getElementById('detail-drawer');
-
-function openDrawer(id) {
+// ── DETAIL PANE ───────────────────────────────────────────────
+function openDetail(id) {
   const d = allDemandes.find(x => x.id === id);
   if (!d) return;
   openId = id;
-  set('drawer-name', `${d.prenom || ''} ${d.nom || ''}`.trim() || '–');
-  set('drawer-meta', `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(d.statut || 'nouveau')}`);
-  renderDrawerBody(d);
-  overlay.hidden = false;
-  drawer.hidden  = false;
-  document.body.style.overflow = 'hidden';
+  document.querySelectorAll('.req-card').forEach(c => c.classList.toggle('is-active', c.dataset.id === id));
+  renderDetailPane(d);
 }
 
-function closeDrawer() {
-  overlay.hidden = true;
-  drawer.hidden  = true;
-  openId = null;
-  document.body.style.overflow = '';
-}
-
-document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
-overlay?.addEventListener('click', closeDrawer);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) closeDrawer(); });
-
-function renderDrawerBody(d) {
-  const bodyEl = document.getElementById('drawer-body');
-  if (!bodyEl) return;
-
+function renderDetailPane(d) {
   const statut    = d.statut || 'nouveau';
   const isContact = d.type === 'contact';
+  const name      = isContact
+    ? esc(d.nom || '–')
+    : `${esc(d.prenom || '')} ${esc(d.nom || '')}`.trim() || '–';
 
   let contentHtml = '';
 
   if (isContact) {
-    // ── Formulaire de contact simple ──────────────────────────
     contentHtml = `
       <div class="dsec">
         <h3>Coordonnées</h3>
@@ -241,7 +222,7 @@ function renderDrawerBody(d) {
           </div>
           <div>
             <div class="info-label">Email</div>
-            <div class="info-value"><a href="mailto:${esc(d.email)}">${esc(d.email || '–')}</a></div>
+            <div class="info-value"><a href="mailto:${esc(d.email || '')}">${esc(d.email || '–')}</a></div>
           </div>
           <div>
             <div class="info-label">Téléphone</div>
@@ -249,14 +230,14 @@ function renderDrawerBody(d) {
           </div>
         </div>
       </div>
-      ${d.message ? `
       <div class="dsec">
         <h3>Message</h3>
-        <p style="font-size:.9rem;color:var(--gray-700);line-height:1.7;white-space:pre-wrap;">${esc(d.message)}</p>
-      </div>` : ''}`;
+        ${d.message
+          ? `<p style="font-size:.88rem;color:var(--gray-700);line-height:1.75;white-space:pre-wrap;">${esc(d.message)}</p>`
+          : `<p style="color:var(--gray-400);font-size:.85rem;font-style:italic;">Aucun message.</p>`}
+      </div>`;
 
   } else {
-    // ── Demande d'estimation ──────────────────────────────────
     const travaux = d.travaux || [];
     const details = d.details || {};
 
@@ -271,30 +252,25 @@ function renderDrawerBody(d) {
     if (details.hydrocurage)
       detailRows += drow('Hydrocurage – longueur', `${details.hydrocurage.longueur_ml} ml`);
     if (details.curage) {
-      const c = details.curage;
-      detailRows += drow('Curage – prof. vase', `${c.prof_vase_cm} cm`);
-      detailRows += drow('Curage – surface concernée', `${c.pct_surface} %`);
-      detailRows += drow('Destination de la vase', destMap[c.destination_vase] || c.destination_vase);
+      detailRows += drow('Curage – prof. vase', `${details.curage.prof_vase_cm} cm`);
+      detailRows += drow('Curage – surface concernée', `${details.curage.pct_surface} %`);
+      detailRows += drow('Destination de la vase', destMap[details.curage.destination_vase] || details.curage.destination_vase);
     }
     if (details.faucardage) {
-      const f = details.faucardage;
-      detailRows += drow('Faucardage – couverture', `${f.pct_couverture} %`);
-      if (f.jussie) detailRows += drow('Jussie (invasive)', 'Oui (+40 %)');
+      detailRows += drow('Faucardage – couverture', `${details.faucardage.pct_couverture} %`);
+      if (details.faucardage.jussie) detailRows += drow('Jussie (invasive)', 'Oui (+40 %)');
     }
     if (details.berges) {
-      const b = details.berges;
-      detailRows += drow('Berges – longueur', `${b.longueur_ml} ml`);
-      detailRows += drow('Type de protection', typeMap[b.type] || b.type);
+      detailRows += drow('Berges – longueur', `${details.berges.longueur_ml} ml`);
+      detailRows += drow('Type de protection', typeMap[details.berges.type] || details.berges.type);
     }
     if (details['broyage-forestier']) {
-      const bf = details['broyage-forestier'];
-      detailRows += drow('Broyage forestier', `${bf.surface_ha} ha`);
-      detailRows += drow('Densité végétation', densMap[bf.densite] || bf.densite);
+      detailRows += drow('Broyage forestier', `${details['broyage-forestier'].surface_ha} ha`);
+      detailRows += drow('Densité végétation', densMap[details['broyage-forestier'].densite] || details['broyage-forestier'].densite);
     }
     if (details['broyage-roseaux']) {
-      const br = details['broyage-roseaux'];
-      detailRows += drow('Broyage roseaux', `${br.surface_ha} ha`);
-      detailRows += drow('Avec ramassage', br.avec_ramassage ? 'Oui' : 'Non');
+      detailRows += drow('Broyage roseaux', `${details['broyage-roseaux'].surface_ha} ha`);
+      detailRows += drow('Avec ramassage', details['broyage-roseaux'].avec_ramassage ? 'Oui' : 'Non');
     }
 
     contentHtml = `
@@ -307,7 +283,7 @@ function renderDrawerBody(d) {
           </div>
           <div>
             <div class="info-label">Email</div>
-            <div class="info-value"><a href="mailto:${esc(d.email)}">${esc(d.email || '–')}</a></div>
+            <div class="info-value"><a href="mailto:${esc(d.email || '')}">${esc(d.email || '–')}</a></div>
           </div>
           <div>
             <div class="info-label">Téléphone</div>
@@ -342,7 +318,7 @@ function renderDrawerBody(d) {
       ${detailRows ? `
       <div class="dsec">
         <h3>Paramètres des travaux</h3>
-        <div>${detailRows}</div>
+        ${detailRows}
       </div>` : ''}
 
       ${d.infos_sup ? `
@@ -357,43 +333,47 @@ function renderDrawerBody(d) {
       </div>`;
   }
 
-  bodyEl.innerHTML = `
-    ${contentHtml}
-    <div class="admin-sec">
-      <h3>Suivi</h3>
-      <select class="statut-sel" id="drawer-statut">
-        <option value="nouveau"        ${statut==='nouveau'        ?'selected':''}>🔴 Nouveau</option>
-        <option value="contacte"       ${statut==='contacte'       ?'selected':''}>🟡 Contacté</option>
-        <option value="devis_envoye"   ${statut==='devis_envoye'   ?'selected':''}>🔵 Devis envoyé</option>
-        <option value="chantier_gagne" ${statut==='chantier_gagne' ?'selected':''}>🟢 Chantier gagné</option>
-        <option value="sans_suite"     ${statut==='sans_suite'     ?'selected':''}>⚫ Sans suite</option>
-      </select>
-      <div class="note-lbl">Note interne</div>
-      <textarea class="note-ta" id="drawer-note" placeholder="Ajouter une note…">${esc(d.note_admin || '')}</textarea>
-      <div class="note-saved" id="note-saved"></div>
+  detailPane.innerHTML = `
+    <div class="detail-header">
+      <h2>${name}</h2>
+      <div class="detail-meta" id="detail-meta">Reçu le ${fmtDate(d.created_at)} · ${statutLabel(statut)}</div>
+    </div>
+    <div class="detail-scroll">
+      ${contentHtml}
+      <div class="admin-sec">
+        <h3>Suivi</h3>
+        <select class="statut-sel" id="detail-statut">
+          <option value="nouveau"        ${statut==='nouveau'        ?'selected':''}>🔴 Nouveau</option>
+          <option value="contacte"       ${statut==='contacte'       ?'selected':''}>🟡 Contacté</option>
+          <option value="devis_envoye"   ${statut==='devis_envoye'   ?'selected':''}>🔵 Devis envoyé</option>
+          <option value="chantier_gagne" ${statut==='chantier_gagne' ?'selected':''}>🟢 Chantier gagné</option>
+          <option value="sans_suite"     ${statut==='sans_suite'     ?'selected':''}>⚫ Sans suite</option>
+        </select>
+        <div class="note-lbl">Note interne</div>
+        <textarea class="note-ta" id="detail-note" placeholder="Ajouter une note…">${esc(d.note_admin || '')}</textarea>
+        <div class="note-saved" id="note-saved"></div>
+      </div>
     </div>`;
 
-  // Changement de statut → sauvegarde immédiate
-  document.getElementById('drawer-statut')?.addEventListener('change', async e => {
+  document.getElementById('detail-statut')?.addEventListener('change', async e => {
     const newStatut = e.target.value;
     try {
       await db.collection('demandes').doc(d.id).update({
         statut: newStatut,
         updated_at: firebase.firestore.FieldValue.serverTimestamp(),
       });
-      set('drawer-meta', `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(newStatut)}`);
+      const metaEl = document.getElementById('detail-meta');
+      if (metaEl) metaEl.textContent = `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(newStatut)}`;
     } catch (err) {
       console.error('Update statut failed:', err);
     }
-    // allDemandes se met à jour automatiquement via onSnapshot
   });
 
-  // Note → auto-save 800ms après arrêt de frappe
   let noteSaveTimer = null;
-  document.getElementById('drawer-note')?.addEventListener('input', () => {
+  document.getElementById('detail-note')?.addEventListener('input', () => {
     clearTimeout(noteSaveTimer);
     noteSaveTimer = setTimeout(async () => {
-      const note = document.getElementById('drawer-note')?.value || '';
+      const note = document.getElementById('detail-note')?.value || '';
       try {
         await db.collection('demandes').doc(d.id).update({
           note_admin: note,
@@ -424,7 +404,7 @@ function set(id, text) {
 
 function toDate(ts) {
   if (!ts) return null;
-  if (typeof ts.toDate === 'function') return ts.toDate(); // Firestore Timestamp
+  if (typeof ts.toDate === 'function') return ts.toDate();
   return new Date(ts);
 }
 
@@ -458,5 +438,5 @@ function travailLabel(t) {
 }
 
 function travailShort(t) {
-  return { hydrocurage:'💧 Hydro.', curage:'🚜 Curage', faucardage:'🌿 Fauc.', berges:'🪨 Berges', 'broyage-forestier':'🌲 Broyage', 'broyage-roseaux':'🌾 Roseaux', diagnostic:'🔍 Diagnostic' }[t] || t;
+  return { hydrocurage:'💧 Hydro.', curage:'🚜 Curage', faucardage:'🌿 Fauc.', berges:'🪨 Berges', 'broyage-forestier':'🌲 Broyage', 'broyage-roseaux':'🌾 Roseaux', diagnostic:'🔍 Diag.' }[t] || t;
 }

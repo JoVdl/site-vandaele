@@ -67,9 +67,11 @@ if (contactForm) {
     const message = contactForm.querySelector('[name=message]')?.value?.trim() || '';
 
     try {
+      const fd = new FormData(contactForm);
+      fd.append('_cc', 'vandaelemarcel@orange.fr');
       const res  = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        body: new FormData(contactForm)
+        body: fd
       });
       const data = await res.json();
       if (data.success) {
@@ -85,19 +87,6 @@ if (contactForm) {
             });
           } catch (e) { console.warn('Firebase save failed:', e); }
         }
-        // Notification email à vandaelemarcel@orange.fr via FormSubmit
-        fetch('https://formsubmit.co/ajax/vandaelemarcel@orange.fr', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({
-            _subject: `Nouveau message de contact – ${nom}`,
-            _captcha: 'false',
-            Nom: nom,
-            Email: email,
-            'Téléphone': tel || '–',
-            Message: message,
-          })
-        }).catch(() => {});
         showToast('Message envoyé ! Nous vous répondrons sous 48 h.', 'success');
         contactForm.reset();
       } else {
