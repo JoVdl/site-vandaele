@@ -701,9 +701,12 @@ function renderAdminMap(geojson, lat, lng) {
   try {
     if (adminMap) { adminMap.remove(); adminMap = null; }
     adminMap = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: false });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
-    }).addTo(adminMap);
+    L.tileLayer(
+      'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+      '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+      '&FORMAT=image%2Fjpeg&STYLE=normal',
+      { attribution: '© IGN', maxZoom: 21, maxNativeZoom: 19 }
+    ).addTo(adminMap);
 
     // invalidateSize d'abord pour que le conteneur ait ses bonnes dimensions
     adminMap.invalidateSize();
