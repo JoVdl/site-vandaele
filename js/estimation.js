@@ -22,6 +22,9 @@ try {
   if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
+    console.log('[Firebase] Initialisé OK, db =', db ? 'OK' : 'null');
+  } else {
+    console.error('[Firebase] SDK non chargé (firebase undefined)');
   }
 } catch (e) {
   console.error('[Firebase] Initialisation échouée :', e);
@@ -673,7 +676,9 @@ async function submitEstimation() {
   };
 
   // Sauvegarde dans Firebase Firestore (dashboard admin)
+  console.log('[Firebase] db disponible ?', !!db);
   if (db) {
+    console.log('[Firebase] Tentative sauvegarde...');
     try {
       await db.collection('demandes').add({
         type: 'estimation',
@@ -696,6 +701,7 @@ async function submitEstimation() {
         statut:          'nouveau',
         created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });
+      console.log('[Firebase] Sauvegarde réussie ✓');
     } catch (e) {
       console.error('[Firebase] Sauvegarde demande échouée :', e.code, e.message);
     }
