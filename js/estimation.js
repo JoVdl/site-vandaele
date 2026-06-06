@@ -112,6 +112,7 @@ const state = {
   avecRamassage: false,
   // Infos libres
   infosSup: '',
+  geojson: null,
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
@@ -534,6 +535,7 @@ if (mapEl && typeof L !== 'undefined') {
       const perimEl = document.getElementById('perimetre');
       if (surfEl)  { surfEl.value  = areaHa; state.surface   = parseFloat(areaHa); }
       if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
+      state.geojson = e.layer.toGeoJSON();
       computeEstimation();
 
       if (infoBar) infoBar.innerHTML =
@@ -548,6 +550,7 @@ if (mapEl && typeof L !== 'undefined') {
       dist = Math.round(dist);
       const perimEl = document.getElementById('perimetre');
       if (perimEl) { perimEl.value = dist; state.perimetre = dist; }
+      state.geojson = e.layer.toGeoJSON();
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
       setTimeout(() => setMode('berges'), 300);
@@ -671,6 +674,7 @@ async function submitEstimation() {
         estimation_text: estimation,
         details:         buildDetails(),
         infos_sup:       state.infosSup || null,
+        geojson:         state.geojson  || null,
         statut:          'nouveau',
         created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });
