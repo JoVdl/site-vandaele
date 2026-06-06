@@ -677,6 +677,51 @@ async function submitEstimation() {
     }
   }
 
+  // Notification email à vandaelemarcel@orange.fr via FormSubmit
+  fetch('https://formsubmit.co/ajax/vandaelemarcel@orange.fr', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      _subject: `Demande d'estimation – ${prenom} ${nom}`,
+      _captcha: 'false',
+      Prénom: prenom,
+      Nom: nom,
+      Email: email,
+      'Téléphone': tel,
+      Profil: document.getElementById('c-profil')?.value || '',
+      'Délai': document.getElementById('c-delai')?.value || '',
+      'Adresse chantier': document.getElementById('adresse')?.value || 'Non renseignée',
+      'Surface (ha)': state.surface  || 'Non mesurée',
+      'Périmètre (ml)': state.perimetre || 'Non mesuré',
+      'Accès chantier': state.acces,
+      'Type de travaux': [...state.travaux].join(', ') || 'Non précisé',
+      'Estimation indicative': estimation,
+      ...(state.travaux.has('hydrocurage') ? { 'Hydrocurage – longueur (ml)': state.lgHydrocurage } : {}),
+      ...(state.travaux.has('curage') ? {
+        'Curage – prof. vase (cm)': state.profVase,
+        'Curage – % surface': state.pctCurage,
+        'Curage – destination vase': state.destinationVase,
+      } : {}),
+      ...(state.travaux.has('faucardage') ? {
+        'Faucardage – % couverture': state.pctFauc,
+        'Faucardage – jussie': state.faucJussie ? 'Oui' : 'Non',
+      } : {}),
+      ...(state.travaux.has('berges') ? {
+        'Berges – longueur (ml)': state.lgBerges,
+        'Berges – type': state.typeBerge,
+      } : {}),
+      ...(state.travaux.has('broyage-forestier') ? {
+        'Broyage forestier – surface (ha)': state.surfBroyageForestier,
+        'Broyage forestier – densité': state.densiteBroyage,
+      } : {}),
+      ...(state.travaux.has('broyage-roseaux') ? {
+        'Broyage roseaux – surface (ha)': state.surfBroyageRoseaux,
+        'Broyage roseaux – avec ramassage': state.avecRamassage ? 'Oui' : 'Non',
+      } : {}),
+      ...(state.infosSup ? { 'Informations complémentaires': state.infosSup } : {}),
+    })
+  }).catch(() => {});
+
   try {
     const res  = await fetch('https://api.web3forms.com/submit', {
       method:  'POST',
