@@ -7,6 +7,17 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 window.addEventListener('load', () => window.scrollTo(0, 0));
 
+// ── SUPABASE ──────────────────────────────────────────────────
+// Remplacer par vos valeurs : Supabase > Settings > API
+const SUPABASE_URL      = 'https://VOTRE-PROJET.supabase.co';
+const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON';
+let sb = null;
+try {
+  if (typeof supabase !== 'undefined' && !SUPABASE_URL.includes('VOTRE-PROJET')) {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {}
+
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
 const TARIFS = {
   mobilisation: { min: 800, max: 2000 },
@@ -67,6 +78,7 @@ const TARIFS = {
 };
 
 // ── ÉTAT ──────────────────────────────────────────────────────
+let lastEstMin = 0, lastEstMax = 0;
 let currentPanel = 1;
 const state = {
   surface: 0,
@@ -301,6 +313,8 @@ function computeEstimation() {
     </div>`
   ).join('');
 
+  lastEstMin = totalMin;
+  lastEstMax = totalMax;
   totalEl.textContent = fmtRange(totalMin, totalMax);
 }
 
@@ -543,6 +557,24 @@ if (mapEl && typeof L !== 'undefined') {
   setTimeout(() => map.invalidateSize(), 400);
 }
 
+// ── BUILD DETAILS (pour Supabase) ─────────────────────────────
+function buildDetails() {
+  const d = {};
+  if (state.travaux.has('hydrocurage'))
+    d.hydrocurage = { longueur_ml: state.lgHydrocurage };
+  if (state.travaux.has('curage'))
+    d.curage = { prof_vase_cm: state.profVase, pct_surface: state.pctCurage, destination_vase: state.destinationVase };
+  if (state.travaux.has('faucardage'))
+    d.faucardage = { pct_couverture: state.pctFauc, jussie: state.faucJussie };
+  if (state.travaux.has('berges'))
+    d.berges = { longueur_ml: state.lgBerges, type: state.typeBerge };
+  if (state.travaux.has('broyage-forestier'))
+    d['broyage-forestier'] = { surface_ha: state.surfBroyageForestier, densite: state.densiteBroyage };
+  if (state.travaux.has('broyage-roseaux'))
+    d['broyage-roseaux'] = { surface_ha: state.surfBroyageRoseaux, avec_ramassage: state.avecRamassage };
+  return d;
+}
+
 // ── SOUMISSION ────────────────────────────────────────────────
 const WEB3FORMS_KEY = 'd6047275-07ab-4b26-8be7-3b39b661f43b';
 
@@ -611,6 +643,30 @@ async function submitEstimation() {
     } : {}),
     ...(state.infosSup ? { 'Informations complémentaires': state.infosSup } : {}),
   };
+
+  // Sauvegarde dans Supabase (dashboard admin)
+  if (sb) {
+    try {
+      await sb.from('demandes').insert({
+        prenom, nom, email, telephone: tel,
+        profil:        document.getElementById('c-profil')?.value || '',
+        delai:         document.getElementById('c-delai')?.value  || '',
+        adresse:       document.getElementById('adresse')?.value  || '',
+        surface_ha:    state.surface   || null,
+        perimetre_ml:  state.perimetre || null,
+        acces:         state.acces,
+        travaux:       [...state.travaux],
+        estimation_min: lastEstMin || null,
+        estimation_max: lastEstMax || null,
+        estimation_text: estimation,
+        details:       buildDetails(),
+        infos_sup:     state.infosSup || null,
+        statut:        'nouveau',
+      });
+    } catch (e) {
+      console.warn('Supabase insert failed:', e);
+    }
+  }
 
   try {
     const res  = await fetch('https://api.web3forms.com/submit', {
