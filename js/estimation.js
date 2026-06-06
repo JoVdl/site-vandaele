@@ -26,7 +26,7 @@ try {
 } catch (e) {}
 
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
-const TARIFS = {
+let TARIFS = {
   mobilisation: { min: 800, max: 2000 },
 
   hydrocurage: {
@@ -83,6 +83,13 @@ const TARIFS = {
 
   diagnostic: { min: 0, max: 0 },
 };
+
+// Charge les tarifs depuis Firestore si disponible (admin peut les modifier)
+if (typeof db !== 'undefined' && db) {
+  db.collection('config').doc('tarifs').get().then(snap => {
+    if (snap.exists) TARIFS = snap.data();
+  }).catch(() => {});
+}
 
 // ── ÉTAT ──────────────────────────────────────────────────────
 let lastEstMin = 0, lastEstMax = 0;

@@ -109,6 +109,194 @@ function stopListener() {
 
 document.getElementById('btn-refresh')?.addEventListener('click', startListener);
 
+// ── GRILLE TARIFAIRE ─────────────────────────────────────────
+const TARIFS_DEFAULTS = {
+  mobilisation: { min: 800, max: 2000 },
+  hydrocurage: {
+    facile:    { min: 18, max: 30 },
+    moyen:     { min: 28, max: 48 },
+    difficile: { min: 40, max: 70 },
+  },
+  curage: {
+    facile:    { min: 12, max: 22 },
+    moyen:     { min: 18, max: 32 },
+    difficile: { min: 28, max: 50 },
+    evacuation: { min: 5, max: 10 },
+  },
+  faucardage: {
+    facile:    { min: 700,  max: 1200 },
+    moyen:     { min: 900,  max: 1600 },
+    difficile: { min: 1300, max: 2200 },
+    jussie: 1.4,
+  },
+  berges: {
+    enrochement: { min: 150, max: 280 },
+    palplanche:  { min: 200, max: 400 },
+    gabion:      { min: 120, max: 220 },
+    vegetal:     { min: 50,  max: 100 },
+    conseil:     { min: 150, max: 280 },
+  },
+  'broyage-forestier': {
+    legere:  { min: 900,  max: 1600 },
+    moyenne: { min: 1500, max: 2800 },
+    dense:   { min: 2500, max: 4500 },
+  },
+  'broyage-roseaux': {
+    sans: {
+      facile:    { min: 500, max: 800  },
+      moyen:     { min: 700, max: 1100 },
+      difficile: { min: 900, max: 1500 },
+    },
+    avec: {
+      facile:    { min: 1000, max: 1600 },
+      moyen:     { min: 1200, max: 2000 },
+      difficile: { min: 1600, max: 2800 },
+    },
+  },
+  diagnostic: { min: 0, max: 0 },
+};
+
+document.getElementById('btn-tarifs')?.addEventListener('click', () => {
+  const content = document.querySelector('.admin-content');
+  const panel   = document.getElementById('tarifs-panel');
+  const btn     = document.getElementById('btn-tarifs');
+  const isOpen  = !panel.hidden;
+  content.hidden = !isOpen;
+  panel.hidden   = isOpen;
+  btn.classList.toggle('active', !isOpen);
+  if (!isOpen) loadTarifsPanel();
+});
+
+async function loadTarifsPanel() {
+  const panel = document.getElementById('tarifs-panel');
+  panel.innerHTML = '<div class="state-msg">Chargement…</div>';
+
+  let tarifs = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
+  try {
+    const snap = await db.collection('config').doc('tarifs').get();
+    if (snap.exists) tarifs = snap.data();
+  } catch (e) {
+    console.warn('Tarifs load failed, using defaults:', e);
+  }
+
+  const row = (field, label, unit, val) => `
+    <tr>
+      <td class="tt-label">${label}</td>
+      <td class="tt-unit">${unit}</td>
+      <td><input type="number" class="tt-input" data-field="${field}.min" value="${val.min}" min="0" step="1"></td>
+      <td><input type="number" class="tt-input" data-field="${field}.max" value="${val.max}" min="0" step="1"></td>
+    </tr>`;
+
+  const sec = (label) =>
+    `<tr class="tt-section"><td colspan="4">${label}</td></tr>`;
+
+  panel.innerHTML = `
+    <div class="tarifs-panel-header">
+      <div>
+        <h2>⚙️ Grille tarifaire</h2>
+        <p>Modifiez les fourchettes de prix utilisées pour les estimations en ligne. Les changements s'appliquent immédiatement après sauvegarde.</p>
+      </div>
+      <button id="btn-tarifs-save" class="btn-tarifs-save">💾 Sauvegarder</button>
+    </div>
+
+    <table class="tarifs-table">
+      <thead>
+        <tr>
+          <th>Prestation</th>
+          <th>Unité</th>
+          <th style="text-align:center">Min (€)</th>
+          <th style="text-align:center">Max (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sec('🚛 Déplacement / Mobilisation')}
+        ${row('mobilisation', 'Mobilisation engin', '€ forfait', tarifs.mobilisation)}
+
+        ${sec('💧 Hydrocurage')}
+        ${row('hydrocurage.facile',    'Accès facile',    '€ / ml', tarifs.hydrocurage.facile)}
+        ${row('hydrocurage.moyen',     'Accès moyen',     '€ / ml', tarifs.hydrocurage.moyen)}
+        ${row('hydrocurage.difficile', 'Accès difficile', '€ / ml', tarifs.hydrocurage.difficile)}
+
+        ${sec('🚜 Curage mécanique')}
+        ${row('curage.facile',    'Accès facile',    '€ / m³', tarifs.curage.facile)}
+        ${row('curage.moyen',     'Accès moyen',     '€ / m³', tarifs.curage.moyen)}
+        ${row('curage.difficile', 'Accès difficile', '€ / m³', tarifs.curage.difficile)}
+        ${row('curage.evacuation', 'Supplément évacuation vase', '€ / m³', tarifs.curage.evacuation)}
+
+        ${sec('🌿 Faucardage')}
+        ${row('faucardage.facile',    'Accès facile',    '€ / ha', tarifs.faucardage.facile)}
+        ${row('faucardage.moyen',     'Accès moyen',     '€ / ha', tarifs.faucardage.moyen)}
+        ${row('faucardage.difficile', 'Accès difficile', '€ / ha', tarifs.faucardage.difficile)}
+        <tr>
+          <td class="tt-label">Majoration jussie</td>
+          <td class="tt-unit">coefficient ×</td>
+          <td colspan="2" style="text-align:center">
+            <input type="number" class="tt-input" data-field="faucardage.jussie"
+              value="${tarifs.faucardage.jussie}" min="1" max="5" step="0.05"
+              style="width:90px;margin:0 auto">
+          </td>
+        </tr>
+
+        ${sec('🪨 Défenses de berges')}
+        ${row('berges.enrochement', 'Enrochement',    '€ / ml', tarifs.berges.enrochement)}
+        ${row('berges.palplanche',  'Palplanches',    '€ / ml', tarifs.berges.palplanche)}
+        ${row('berges.gabion',      'Gabions',        '€ / ml', tarifs.berges.gabion)}
+        ${row('berges.vegetal',     'Génie végétal',  '€ / ml', tarifs.berges.vegetal)}
+        ${row('berges.conseil',     'À définir',      '€ / ml', tarifs.berges.conseil)}
+
+        ${sec('🌲 Broyage forestier')}
+        ${row('broyage-forestier.legere',  'Végétation légère',  '€ / ha', tarifs['broyage-forestier'].legere)}
+        ${row('broyage-forestier.moyenne', 'Végétation moyenne', '€ / ha', tarifs['broyage-forestier'].moyenne)}
+        ${row('broyage-forestier.dense',   'Végétation dense',   '€ / ha', tarifs['broyage-forestier'].dense)}
+
+        ${sec('🌾 Broyage roseaux — sans ramassage')}
+        ${row('broyage-roseaux.sans.facile',    'Accès facile',    '€ / ha', tarifs['broyage-roseaux'].sans.facile)}
+        ${row('broyage-roseaux.sans.moyen',     'Accès moyen',     '€ / ha', tarifs['broyage-roseaux'].sans.moyen)}
+        ${row('broyage-roseaux.sans.difficile', 'Accès difficile', '€ / ha', tarifs['broyage-roseaux'].sans.difficile)}
+
+        ${sec('🌾 Broyage roseaux — avec ramassage')}
+        ${row('broyage-roseaux.avec.facile',    'Accès facile',    '€ / ha', tarifs['broyage-roseaux'].avec.facile)}
+        ${row('broyage-roseaux.avec.moyen',     'Accès moyen',     '€ / ha', tarifs['broyage-roseaux'].avec.moyen)}
+        ${row('broyage-roseaux.avec.difficile', 'Accès difficile', '€ / ha', tarifs['broyage-roseaux'].avec.difficile)}
+      </tbody>
+    </table>
+    <div id="tarifs-status" class="tarifs-status"></div>`;
+
+  document.getElementById('btn-tarifs-save')?.addEventListener('click', saveTarifs);
+}
+
+async function saveTarifs() {
+  const tarifs = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
+
+  document.querySelectorAll('.tt-input[data-field]').forEach(input => {
+    const keys  = input.dataset.field.split('.');
+    let obj = tarifs;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (obj[keys[i]] === undefined) obj[keys[i]] = {};
+      obj = obj[keys[i]];
+    }
+    obj[keys[keys.length - 1]] = parseFloat(input.value) || 0;
+  });
+
+  const btn    = document.getElementById('btn-tarifs-save');
+  const status = document.getElementById('tarifs-status');
+  btn.disabled    = true;
+  btn.textContent = 'Sauvegarde…';
+  status.className = 'tarifs-status';
+  status.textContent = '';
+
+  try {
+    await db.collection('config').doc('tarifs').set(tarifs);
+    status.textContent = '✓ Tarifs sauvegardés. Ils s\'appliquent aux nouvelles estimations immédiatement.';
+  } catch (err) {
+    status.className   = 'tarifs-status err';
+    status.textContent = 'Erreur : ' + err.message;
+  }
+
+  btn.disabled    = false;
+  btn.textContent = '💾 Sauvegarder';
+}
+
 // ── STATS ────────────────────────────────────────────────────
 function renderStats() {
   const active = allDemandes.filter(d => !d.archived);
