@@ -558,7 +558,7 @@ function renderDetailPane(d) {
           <div class="info-label" style="margin-bottom:.35rem">Travaux demandés</div>
           <div class="work-chips">${travaux.map(t => `<span class="work-chip">${travailLabel(t)}</span>`).join('')}</div>
         </div>` : ''}
-        ${d.geojson ? `<div id="admin-map" style="height:220px;margin-top:.9rem;border-radius:8px;overflow:hidden;background:var(--gray-200);"></div>` : ''}
+        ${(d.geojson || (d.lat && d.lng)) ? `<div id="admin-map" style="height:220px;margin-top:.9rem;border-radius:8px;overflow:hidden;background:var(--gray-200);"></div>` : ''}
       </div>
 
       ${detailRows ? `
@@ -652,8 +652,8 @@ function renderDetailPane(d) {
   });
 
   // Carte du tracé client
-  if (d.geojson) {
-    loadLeaflet(() => renderAdminMap(d.geojson));
+  if (d.geojson || (d.lat && d.lng)) {
+    loadLeaflet(() => renderAdminMap(d.geojson, d.lat, d.lng));
   }
 }
 
@@ -669,18 +669,30 @@ function loadLeaflet(cb) {
   document.head.appendChild(script);
 }
 
-function renderAdminMap(geojson) {
+function renderAdminMap(geojson, lat, lng) {
   const el = document.getElementById('admin-map');
   if (!el) return;
-  if (adminMap) { adminMap.remove(); adminMap = null; }
-  adminMap = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19
-  }).addTo(adminMap);
-  const layer = L.geoJSON(geojson, {
-    style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
-  }).addTo(adminMap);
-  adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] });
+  try {
+    if (adminMap) { adminMap.remove(); adminMap = null; }
+    adminMap = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(adminMap);
+
+    if (geojson) {
+      const layer = L.geoJSON(geojson, {
+        style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
+      }).addTo(adminMap);
+      adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] });
+    } else if (lat && lng) {
+      adminMap.setView([lat, lng], 15);
+      L.marker([lat, lng]).addTo(adminMap);
+    }
+
+    setTimeout(() => adminMap && adminMap.invalidateSize(), 150);
+  } catch (err) {
+    console.error('Map render error:', err);
+  }
 }
 
 async function archiveDetail(id) {
