@@ -91,6 +91,8 @@ const state = {
   // Broyage roseaux
   surfBroyageRoseaux: 1.0,
   avecRamassage: false,
+  // Infos libres
+  infosSup: '',
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
@@ -161,6 +163,7 @@ function bindInput(id, stateKey, parse) {
 }
 bindInput('surface',   'surface',   v => parseFloat(v) || 0);
 bindInput('perimetre', 'perimetre', v => parseFloat(v) || 0);
+bindInput('infos-sup', 'infosSup',  v => v);
 
 const accesEl = document.getElementById('acces');
 if (accesEl) accesEl.addEventListener('change', () => { state.acces = accesEl.value || 'moyen'; computeEstimation(); });
@@ -606,6 +609,7 @@ async function submitEstimation() {
       'Broyage roseaux – surface (ha)':    state.surfBroyageRoseaux,
       'Broyage roseaux – avec ramassage':  state.avecRamassage ? 'Oui' : 'Non',
     } : {}),
+    ...(state.infosSup ? { 'Informations complémentaires': state.infosSup } : {}),
   };
 
   try {
