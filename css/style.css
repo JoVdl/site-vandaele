@@ -268,13 +268,28 @@ ul { list-style: none; }
 .hero-reel-slide {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   opacity: 0;
   transition: opacity 1.2s ease;
+  overflow: hidden;
 }
 .hero-reel-slide.is-active { opacity: 1; }
+.slide-bg,
+.slide-fg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.slide-bg {
+  object-fit: cover;
+  filter: blur(24px) brightness(0.32) saturate(0.6);
+  transform: scale(1.1);
+  z-index: 0;
+}
+.slide-fg {
+  object-fit: contain;
+  z-index: 1;
+}
 .hero-bottom {
   position: absolute;
   bottom: 2rem;

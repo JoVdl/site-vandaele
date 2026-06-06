@@ -207,11 +207,12 @@ document.querySelectorAll('.service-card, .chantier-card, .feature, .conseil-car
 
 // ── HERO REEL ──
 (function () {
-  // On desktop, swap portrait videos that have a landscape alternate
+  // On desktop, swap portrait videos to landscape alternate when available
   if (window.innerWidth > 768) {
-    document.querySelectorAll('.hero-reel-slide[data-landscape-src]').forEach(vid => {
-      const src = vid.querySelector('source');
-      if (src) { src.src = vid.dataset.landscapeSrc; vid.load(); }
+    document.querySelectorAll('.hero-reel-slide[data-landscape-src]').forEach(slide => {
+      const src = slide.dataset.landscapeSrc;
+      slide.querySelectorAll('source').forEach(s => s.src = src);
+      slide.querySelectorAll('video').forEach(v => v.load());
     });
   }
 
@@ -220,18 +221,23 @@ document.querySelectorAll('.service-card, .chantier-card, .feature, .conseil-car
   const label  = document.querySelector('.hero-reel-label');
   if (slides.length < 2) return;
 
+  function pauseSlide(slide) {
+    slide.querySelectorAll('video').forEach(v => v.pause());
+  }
+  function playSlide(slide) {
+    slide.querySelectorAll('video').forEach(v => { v.currentTime = 0; v.play().catch(() => {}); });
+  }
+
   let cur = 0;
   const DURATION = 7000;
 
   function goTo(idx) {
     slides[cur].classList.remove('is-active');
     dots[cur].classList.remove('is-active');
-    slides[cur].pause();
-
+    pauseSlide(slides[cur]);
     cur = idx;
     const next = slides[cur];
-    next.currentTime = 0;
-    next.play().catch(() => {});
+    playSlide(next);
     next.classList.add('is-active');
     dots[cur].classList.add('is-active');
     if (label) label.textContent = next.dataset.label || '';
