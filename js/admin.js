@@ -108,10 +108,11 @@ document.getElementById('btn-refresh')?.addEventListener('click', startListener)
 
 // ── STATS ────────────────────────────────────────────────────
 function renderStats() {
-  set('stat-total',   allDemandes.length);
-  set('stat-nouveau', allDemandes.filter(d => (d.statut || 'nouveau') === 'nouveau').length);
-  set('stat-encours', allDemandes.filter(d => ['contacte', 'devis_envoye'].includes(d.statut)).length);
-  set('stat-gagne',   allDemandes.filter(d => d.statut === 'chantier_gagne').length);
+  const active = allDemandes.filter(d => !d.archived);
+  set('stat-total',   active.length);
+  set('stat-nouveau', active.filter(d => (d.statut || 'nouveau') === 'nouveau').length);
+  set('stat-encours', active.filter(d => ['contacte', 'devis_envoye'].includes(d.statut)).length);
+  set('stat-gagne',   active.filter(d => d.statut === 'chantier_gagne').length);
 }
 
 // ── FILTRES ──────────────────────────────────────────────────
@@ -140,7 +141,12 @@ function renderList() {
   if (!listEl) return;
 
   let items = [...allDemandes];
-  if (currentFilter !== 'all') items = items.filter(d => (d.statut || 'nouveau') === currentFilter);
+  if (currentFilter === 'archived') {
+    items = items.filter(d => d.archived === true);
+  } else {
+    items = items.filter(d => !d.archived);
+    if (currentFilter !== 'all') items = items.filter(d => (d.statut || 'nouveau') === currentFilter);
+  }
   if (currentSearch) {
     items = items.filter(d => {
       const hay = [d.prenom, d.nom, d.email, d.telephone, d.adresse, d.message].join(' ').toLowerCase();
@@ -341,12 +347,17 @@ function renderDetailPane(d) {
         <h2>${name}</h2>
         <div class="detail-meta" id="detail-meta">Reçu le ${fmtDate(d.created_at)} · ${statutLabel(statut)}</div>
       </div>
-      <button class="btn-delete" id="btn-delete" title="Supprimer cette demande">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-        </svg>
-        Supprimer
-      </button>
+      <div style="display:flex;gap:.5rem;flex-shrink:0;">
+        ${d.archived
+          ? `<button class="btn-unarchive" id="btn-archive-toggle">↩ Désarchiver</button>`
+          : `<button class="btn-archive" id="btn-archive-toggle">📦 Archiver</button>`}
+        <button class="btn-delete" id="btn-delete" title="Supprimer cette demande">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+          Supprimer
+        </button>
+      </div>
     </div>
     <div class="detail-scroll">
       ${contentHtml}
@@ -365,6 +376,9 @@ function renderDetailPane(d) {
       </div>
     </div>`;
 
+  document.getElementById('btn-archive-toggle')?.addEventListener('click', () =>
+    d.archived ? unarchiveDetail(d.id) : archiveDetail(d.id)
+  );
   document.getElementById('btn-delete')?.addEventListener('click', () => deleteDetail(d.id, name));
 
   document.getElementById('detail-statut')?.addEventListener('change', async e => {
@@ -429,6 +443,35 @@ function renderAdminMap(geojson) {
     style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
   }).addTo(adminMap);
   adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] });
+}
+
+async function archiveDetail(id) {
+  try {
+    await db.collection('demandes').doc(id).update({
+      archived: true,
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    openId = null;
+    if (adminMap) { adminMap.remove(); adminMap = null; }
+    detailPane.innerHTML = `
+      <div class="detail-empty">
+        <div class="detail-empty-icon">📦</div>
+        <p>Demande archivée.<br><small>Retrouvez-la dans le filtre "Archivées".</small></p>
+      </div>`;
+  } catch (err) {
+    console.error('Archive failed:', err);
+  }
+}
+
+async function unarchiveDetail(id) {
+  try {
+    await db.collection('demandes').doc(id).update({
+      archived: false,
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('Unarchive failed:', err);
+  }
 }
 
 async function deleteDetail(id, name) {
