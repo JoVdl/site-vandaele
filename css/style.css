@@ -246,6 +246,7 @@ ul { list-style: none; }
   align-items: center;
   padding-top: var(--nav-h);
   overflow: hidden;
+  background: #0a1f12;
 }
 
 .hero-reel {
@@ -1747,37 +1748,52 @@ textarea { resize: vertical; min-height: 100px; }
 #cookie-refuse { background: var(--gray-700); color: var(--gray-200); }
 
 /* ── FLOATING PHONE BUTTON ── */
-.fab-phone {
+.fab-group {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
   z-index: 1000;
   display: flex;
   align-items: center;
+  gap: .5rem;
+}
+.fab-phone, .fab-cta {
+  display: flex;
+  align-items: center;
   gap: .6rem;
-  background: var(--green-500);
-  color: #fff;
   padding: .75rem 1.25rem;
   border-radius: 50px;
   font-weight: 700;
   font-size: .95rem;
-  box-shadow: 0 6px 24px rgba(22,163,74,.4);
   text-decoration: none;
-  transition: transform var(--transition), box-shadow var(--transition);
   white-space: nowrap;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.fab-phone {
+  background: var(--green-500);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(22,163,74,.4);
 }
 .fab-phone:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 32px rgba(22,163,74,.5);
 }
-.fab-phone svg { width: 20px; height: 20px; flex-shrink: 0; }
-/* shrink to icon only on very small screens */
-@media (max-width: 400px) {
-  .fab-phone span { display: none; }
-  .fab-phone { padding: .85rem; border-radius: 50%; }
+.fab-cta {
+  background: var(--blue-800);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(19,61,34,.4);
+}
+.fab-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(19,61,34,.5);
+}
+.fab-phone svg, .fab-cta svg { width: 18px; height: 18px; flex-shrink: 0; }
+@media (max-width: 500px) {
+  .fab-phone span, .fab-cta span { display: none; }
+  .fab-phone, .fab-cta { padding: .85rem; border-radius: 50%; }
 }
 /* push up when cookie banner is visible */
-.cookie-visible .fab-phone { bottom: calc(1.5rem + 80px); }
+.cookie-visible .fab-group { bottom: calc(1.5rem + 80px); }
 
 /* ── TESTIMONIALS ── */
 .testimonials {
