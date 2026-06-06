@@ -203,6 +203,7 @@ function renderCard(d) {
       </div>
       <div class="card-right">
         ${distKm !== null ? `<div class="card-dist">📍 ${distKm} km</div>` : ''}
+        ${!isContact && d.estimation_text ? `<div class="card-amount">${esc(d.estimation_text)}</div>` : ''}
         <div class="card-date">${fmtRelative(d.created_at)}</div>
         <div class="card-badge"><span class="badge b-${statut}">${statutLabel(statut)}</span></div>
       </div>
