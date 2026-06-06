@@ -2071,6 +2071,86 @@ input[type=range]::-moz-range-thumb {
 /* ── Services unifiés (photo/vidéo + texte) ── */
 .services-unified-section { background: var(--gray-50); }
 
+.activites-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 2.5rem;
+}
+.activite-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 4/5;
+  overflow: hidden;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #fff;
+  background: #0d1a10;
+}
+.activite-card video,
+.activite-card > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.activite-card:hover video,
+.activite-card:hover > img { transform: scale(1.05); }
+.activite-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5,20,10,.88) 0%, rgba(5,20,10,.28) 45%, transparent 70%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  transition: background .3s ease;
+}
+.activite-card:hover .activite-overlay {
+  background: linear-gradient(to top, rgba(5,20,10,.94) 0%, rgba(5,20,10,.5) 55%, rgba(5,20,10,.1) 80%);
+}
+.activite-num {
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--blue-400);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+.activite-title {
+  font-family: var(--font-title);
+  font-size: clamp(.95rem, 1.4vw, 1.2rem);
+  font-weight: 700;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.activite-sub {
+  font-size: .72rem;
+  opacity: .75;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+.activite-cta {
+  display: block;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--blue-400);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.activite-card:hover .activite-cta { opacity: 1; transform: translateY(0); }
+.activite-card--cta .activite-num { color: #f0c040; }
+@media (max-width: 960px) { .activites-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; } }
+@media (max-width: 500px) {
+  .activites-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .activite-card { aspect-ratio: 3/4; }
+  .activite-overlay { padding: 10px; }
+  .activite-sub { display: none; }
+}
+
 .services-unified-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
