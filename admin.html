@@ -95,7 +95,7 @@
       max-width: 1400px; margin: 0 auto; padding: .85rem 1.5rem;
       display: flex; align-items: center; justify-content: space-between; gap: 1rem;
     }
-    .admin-brand { display: flex; align-items: center; gap: .75rem; }
+    .admin-brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; color: inherit; }
     .admin-logo-img { height: 30px; filter: brightness(10); }
     .admin-brand-name { font-weight: 600; font-size: .95rem; }
     .admin-user { display: flex; align-items: center; gap: 1rem; font-size: .82rem; }
@@ -349,10 +349,10 @@
 <div id="dashboard" hidden>
   <header class="admin-header">
     <div class="admin-header-inner">
-      <div class="admin-brand">
+      <a href="index.html" class="admin-brand" title="Retour au site">
         <img src="assets/logo.svg" alt="" class="admin-logo-img">
         <span class="admin-brand-name">Admin · Curage Vandaele</span>
-      </div>
+      </a>
       <div class="admin-user">
         <span id="user-email"></span>
         <button id="logout-btn" class="btn-logout">Déconnexion</button>
