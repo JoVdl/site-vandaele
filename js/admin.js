@@ -15,10 +15,13 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+const DEPOT_LAT = 50.4167;
+const DEPOT_LNG = 1.9833;
+
 let allDemandes   = [];
 let currentFilter = 'all';
 let currentSearch = '';
-let adminMap      = null; // instance Leaflet réutilisable
+let adminMap      = null;
 let currentSort   = 'desc';
 let openId        = null;
 let unsubscribe   = null;
@@ -181,9 +184,13 @@ function renderCard(d) {
 
   const preview = isContact && d.message
     ? `<div class="card-preview">${esc(d.message)}</div>`
-    : !isContact && d.estimation_text
-      ? `<div class="card-amount">${esc(d.estimation_text)}</div>`
-      : '';
+    : '';
+
+  const metric = !isContact ? cardMetric(d) : '';
+
+  const distKm = !isContact && d.lat && d.lng
+    ? Math.round(haversineKm(DEPOT_LAT, DEPOT_LNG, d.lat, d.lng))
+    : null;
 
   return `
     <div class="req-card s-${statut}${isActive ? ' is-active' : ''}" data-id="${esc(d.id)}">
@@ -191,9 +198,11 @@ function renderCard(d) {
         <div class="card-name">${name}</div>
         <div class="card-addr">${esc(d.email || '–')}</div>
         <div class="card-tags">${tags}</div>
+        ${metric ? `<div class="card-metric">${esc(metric)}</div>` : ''}
         ${preview}
       </div>
       <div class="card-right">
+        ${distKm !== null ? `<div class="card-dist">📍 ${distKm} km</div>` : ''}
         <div class="card-date">${fmtRelative(d.created_at)}</div>
         <div class="card-badge"><span class="badge b-${statut}">${statutLabel(statut)}</span></div>
       </div>
@@ -308,12 +317,15 @@ function renderDetailPane(d) {
       </div>
 
       <div class="dsec">
-        <h3>Chantier</h3>
+        <h3>Chantier ${d.lat && d.lng
+          ? `<span class="dist-badge">📍 ${Math.round(haversineKm(DEPOT_LAT, DEPOT_LNG, d.lat, d.lng))} km du dépôt</span>`
+          : ''}</h3>
         ${d.adresse ? `<div style="margin-bottom:.65rem"><div class="info-label">Adresse</div><div class="info-value">${esc(d.adresse)}</div></div>` : ''}
         <div class="info-grid">
           ${d.surface_ha   ? `<div><div class="info-label">Surface</div><div class="info-value">${d.surface_ha} ha</div></div>` : ''}
           ${d.perimetre_ml ? `<div><div class="info-label">Périmètre</div><div class="info-value">${d.perimetre_ml} ml</div></div>` : ''}
           ${d.acces ? `<div><div class="info-label">Accès</div><div class="info-value">${esc(accesMap[d.acces] || d.acces)}</div></div>` : ''}
+          ${(() => { const m = cardMetric(d); return m ? `<div style="grid-column:1/-1"><div class="info-label">Volume / Dimensions</div><div class="info-value" style="font-size:.95rem;font-weight:700;color:var(--green-600)">${esc(m)}</div></div>` : ''; })()}
         </div>
         ${travaux.length ? `
         <div style="margin-top:.7rem">
@@ -489,6 +501,29 @@ async function deleteDetail(id, name) {
     alert('Erreur lors de la suppression. Vérifiez les règles Firestore.');
     console.error(err);
   }
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function cardMetric(d) {
+  const details = d.details || {};
+  const parts   = [];
+  if (d.surface_ha)   parts.push(`${d.surface_ha} ha`);
+  if (d.perimetre_ml) parts.push(`${d.perimetre_ml} ml`);
+  if (details.curage && d.surface_ha) {
+    const vol = Math.round(d.surface_ha * 10000 * (details.curage.pct_surface / 100) * (details.curage.prof_vase_cm / 100));
+    if (vol > 0) parts.push(`≈ ${vol.toLocaleString('fr')} m³`);
+  }
+  if (details.hydrocurage && !d.surface_ha) parts.push(`${details.hydrocurage.longueur_ml} ml`);
+  if (details.berges && !d.perimetre_ml)    parts.push(`${details.berges.longueur_ml} ml berges`);
+  return parts.join(' · ');
 }
 
 function drow(key, val) {

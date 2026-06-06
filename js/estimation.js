@@ -113,6 +113,8 @@ const state = {
   // Infos libres
   infosSup: '',
   geojson: null,
+  lat: null,
+  lng: null,
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
@@ -536,6 +538,8 @@ if (mapEl && typeof L !== 'undefined') {
       if (surfEl)  { surfEl.value  = areaHa; state.surface   = parseFloat(areaHa); }
       if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
       state.geojson = e.layer.toGeoJSON();
+      state.lat = lls.reduce((s, ll) => s + ll.lat, 0) / lls.length;
+      state.lng = lls.reduce((s, ll) => s + ll.lng, 0) / lls.length;
       computeEstimation();
 
       if (infoBar) infoBar.innerHTML =
@@ -551,6 +555,9 @@ if (mapEl && typeof L !== 'undefined') {
       const perimEl = document.getElementById('perimetre');
       if (perimEl) { perimEl.value = dist; state.perimetre = dist; }
       state.geojson = e.layer.toGeoJSON();
+      const mid = Math.floor(lls.length / 2);
+      state.lat = lls[mid].lat;
+      state.lng = lls[mid].lng;
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
       setTimeout(() => setMode('berges'), 300);
@@ -675,6 +682,8 @@ async function submitEstimation() {
         details:         buildDetails(),
         infos_sup:       state.infosSup || null,
         geojson:         state.geojson  || null,
+        lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
+        lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
         statut:          'nouveau',
         created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });
