@@ -44,19 +44,36 @@ auth.onAuthStateChanged(user => {
   }
 });
 
+// Toggle affichage mot de passe
+document.getElementById('toggle-pwd')?.addEventListener('click', () => {
+  const input = document.getElementById('l-password');
+  const icon  = document.getElementById('eye-icon');
+  const show  = input.type === 'password';
+  input.type  = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+});
+
 document.getElementById('login-form')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const btn   = document.getElementById('login-btn');
-  const errEl = document.getElementById('login-error');
-  const email = document.getElementById('l-email').value.trim();
-  const pass  = document.getElementById('l-password').value;
+  const btn        = document.getElementById('login-btn');
+  const errEl      = document.getElementById('login-error');
+  const email      = document.getElementById('l-email').value.trim();
+  const pass       = document.getElementById('l-password').value;
+  const rememberMe = document.getElementById('remember-me')?.checked ?? true;
 
   btn.disabled    = true;
   btn.textContent = 'Connexion…';
   errEl.hidden    = true;
 
   try {
+    const persistence = rememberMe
+      ? firebase.auth.Auth.Persistence.LOCAL
+      : firebase.auth.Auth.Persistence.SESSION;
+    await auth.setPersistence(persistence);
     await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged prend le relais et affiche le dashboard
   } catch {
     errEl.textContent = 'Email ou mot de passe incorrect.';
     errEl.hidden      = false;
