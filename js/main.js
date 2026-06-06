@@ -207,6 +207,14 @@ document.querySelectorAll('.service-card, .chantier-card, .feature, .conseil-car
 
 // ── HERO REEL ──
 (function () {
+  // On desktop, swap portrait videos that have a landscape alternate
+  if (window.innerWidth > 768) {
+    document.querySelectorAll('.hero-reel-slide[data-landscape-src]').forEach(vid => {
+      const src = vid.querySelector('source');
+      if (src) { src.src = vid.dataset.landscapeSrc; vid.load(); }
+    });
+  }
+
   const slides = Array.from(document.querySelectorAll('.hero-reel-slide'));
   const dots   = Array.from(document.querySelectorAll('.hero-reel-dot'));
   const label  = document.querySelector('.hero-reel-label');
