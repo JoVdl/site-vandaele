@@ -261,14 +261,6 @@ ul { list-style: none; }
   background: linear-gradient(135deg, rgba(10,31,18,.35) 0%, rgba(19,61,34,.2) 100%);
   z-index: 1;
 }
-.hero-reel::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 120px;
-  background: linear-gradient(to top, var(--white), transparent);
-  z-index: 1;
-}
 .hero-reel-slide {
   position: absolute;
   inset: 0;
@@ -279,16 +271,35 @@ ul { list-style: none; }
   transition: opacity 1.2s ease;
 }
 .hero-reel-slide.is-active { opacity: 1; }
-.hero-reel-ui {
+.hero-bottom {
   position: absolute;
-  bottom: 140px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(760px, 90vw);
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  padding: 0 max(1.5rem, calc((100vw - 960px) / 2));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  z-index: 2;
+}
+.hero-phone {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: rgba(255,255,255,.85);
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hero-phone:hover { color: var(--blue-400); }
+.hero-reel-ui {
   display: flex;
   align-items: center;
   gap: 1rem;
-  z-index: 2;
+  flex: 1;
+  justify-content: center;
 }
 .hero-reel-label {
   font-size: .7rem;
