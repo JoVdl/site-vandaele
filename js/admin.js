@@ -1,36 +1,44 @@
 /* ============================================================
-   CURAGE VANDAELE – ADMIN JS
+   CURAGE VANDAELE – ADMIN JS (Firebase)
    ============================================================ */
 
 // ── CONFIG ──────────────────────────────────────────────────
-// Remplacer par vos valeurs : Supabase > Settings > API
-const SUPABASE_URL      = 'https://VOTRE-PROJET.supabase.co';
-const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON';
+// Remplacer par votre config : Firebase Console > Paramètres du projet > Vos applications
+const FIREBASE_CONFIG = {
+  apiKey:            'VOTRE_API_KEY',
+  authDomain:        'VOTRE-PROJET.firebaseapp.com',
+  projectId:         'VOTRE-PROJET-ID',
+  storageBucket:     'VOTRE-PROJET.appspot.com',
+  messagingSenderId: 'VOTRE_SENDER_ID',
+  appId:             'VOTRE_APP_ID',
+};
 
 // ── INIT ─────────────────────────────────────────────────────
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
 let allDemandes   = [];
 let currentFilter = 'all';
 let currentSearch = '';
 let currentSort   = 'desc';
 let openId        = null;
+let unsubscribe   = null; // listener temps réel
 
 // ── AUTH ─────────────────────────────────────────────────────
 const loginScreen = document.getElementById('login-screen');
 const dashboard   = document.getElementById('dashboard');
 
-sb.auth.onAuthStateChange((_event, session) => {
-  if (session) {
+auth.onAuthStateChanged(user => {
+  if (user) {
     loginScreen.hidden = true;
     dashboard.hidden   = false;
-    const emailEl = document.getElementById('user-email');
-    if (emailEl) emailEl.textContent = session.user.email;
-    loadDemandes();
+    set('user-email', user.email);
+    startListener();
   } else {
     loginScreen.hidden = false;
     dashboard.hidden   = true;
+    stopListener();
     allDemandes = [];
   }
 });
@@ -46,9 +54,9 @@ document.getElementById('login-form')?.addEventListener('submit', async e => {
   btn.textContent = 'Connexion…';
   errEl.hidden    = true;
 
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-
-  if (error) {
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch {
     errEl.textContent = 'Email ou mot de passe incorrect.';
     errEl.hidden      = false;
     btn.disabled      = false;
@@ -56,39 +64,41 @@ document.getElementById('login-form')?.addEventListener('submit', async e => {
   }
 });
 
-document.getElementById('logout-btn')?.addEventListener('click', () => sb.auth.signOut());
+document.getElementById('logout-btn')?.addEventListener('click', () => auth.signOut());
 
-// ── LOAD DATA ────────────────────────────────────────────────
-async function loadDemandes() {
+// ── LISTENER TEMPS RÉEL ───────────────────────────────────────
+function startListener() {
+  stopListener();
   const listEl = document.getElementById('requests-list');
   if (listEl) listEl.innerHTML = '<div class="state-msg">Chargement…</div>';
 
-  const { data, error } = await sb
-    .from('demandes')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    if (listEl) listEl.innerHTML = `<div class="state-msg">Erreur : ${esc(error.message)}</div>`;
-    return;
-  }
-
-  allDemandes = data || [];
-  renderStats();
-  renderList();
+  unsubscribe = db.collection('demandes')
+    .orderBy('created_at', 'desc')
+    .onSnapshot(snap => {
+      allDemandes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderStats();
+      renderList();
+    }, err => {
+      const listEl = document.getElementById('requests-list');
+      if (listEl) listEl.innerHTML = `<div class="state-msg">Erreur : ${esc(err.message)}</div>`;
+    });
 }
 
-document.getElementById('btn-refresh')?.addEventListener('click', loadDemandes);
+function stopListener() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+}
+
+document.getElementById('btn-refresh')?.addEventListener('click', startListener);
 
 // ── STATS ────────────────────────────────────────────────────
 function renderStats() {
   set('stat-total',   allDemandes.length);
-  set('stat-nouveau', allDemandes.filter(d => d.statut === 'nouveau').length);
+  set('stat-nouveau', allDemandes.filter(d => (d.statut || 'nouveau') === 'nouveau').length);
   set('stat-encours', allDemandes.filter(d => ['contacte', 'devis_envoye'].includes(d.statut)).length);
   set('stat-gagne',   allDemandes.filter(d => d.statut === 'chantier_gagne').length);
 }
 
-// ── FILTERS ──────────────────────────────────────────────────
+// ── FILTRES ──────────────────────────────────────────────────
 document.querySelectorAll('.fnav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.fnav-btn').forEach(b => b.classList.remove('active'));
@@ -108,7 +118,7 @@ document.getElementById('sort-select')?.addEventListener('change', e => {
   renderList();
 });
 
-// ── RENDER LIST ──────────────────────────────────────────────
+// ── LISTE ────────────────────────────────────────────────────
 function renderList() {
   const listEl = document.getElementById('requests-list');
   if (!listEl) return;
@@ -118,15 +128,13 @@ function renderList() {
   if (currentFilter !== 'all') {
     items = items.filter(d => (d.statut || 'nouveau') === currentFilter);
   }
-
   if (currentSearch) {
     items = items.filter(d => {
       const hay = [d.prenom, d.nom, d.email, d.telephone, d.adresse].join(' ').toLowerCase();
       return hay.includes(currentSearch);
     });
   }
-
-  if (currentSort === 'asc') items.reverse();
+  if (currentSort === 'asc') items = items.slice().reverse();
 
   if (!items.length) {
     listEl.innerHTML = '<div class="state-msg">Aucune demande trouvée.</div>';
@@ -165,11 +173,9 @@ function openDrawer(id) {
   const d = allDemandes.find(x => x.id === id);
   if (!d) return;
   openId = id;
-
   set('drawer-name', `${d.prenom || ''} ${d.nom || ''}`.trim() || '–');
   set('drawer-meta', `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(d.statut || 'nouveau')}`);
   renderDrawerBody(d);
-
   overlay.hidden = false;
   drawer.hidden  = false;
   document.body.style.overflow = 'hidden';
@@ -195,41 +201,39 @@ function renderDrawerBody(d) {
   const details = d.details || {};
 
   const profilMap = { particulier:'Particulier', association:'Association', collectivite:'Collectivité', agriculteur:'Agriculteur', autre:'Autre' };
-  const delaiMap  = { urgent:'Urgent', '3mois':'Dans 3 mois', '6mois':'Dans 6 mois', '1an':'Dans l\'année', indefini:'Non défini' };
+  const delaiMap  = { urgent:'Urgent – dès que possible', '3mois':'Dans 3 mois', '6mois':'Dans 6 mois', '1an':'Dans l\'année', indefini:'Non défini' };
   const accesMap  = { facile:'Facile', moyen:'Moyen', difficile:'Difficile' };
+  const destMap   = { 'sur-place':'Épandage sur place', evacuation:'Évacuation par nos soins', valorisation:'Valorisation agricole' };
+  const typeMap   = { enrochement:'Enrochement', palplanche:'Palplanches', gabion:'Gabions', vegetal:'Génie végétal', conseil:'À définir' };
+  const densMap   = { legere:'Légère', moyenne:'Moyenne', dense:'Dense' };
 
-  // Build details rows
   let detailRows = '';
-  if (details.hydrocurage) {
+  if (details.hydrocurage)
     detailRows += drow('Hydrocurage – longueur', `${details.hydrocurage.longueur_ml} ml`);
-  }
   if (details.curage) {
     const c = details.curage;
-    const destLabel = { 'sur-place':'Épandage sur place', 'evacuation':'Évacuation', 'valorisation':'Valorisation agri.' };
-    detailRows += drow('Curage – prof. de vase', `${c.prof_vase_cm} cm`);
+    detailRows += drow('Curage – prof. vase', `${c.prof_vase_cm} cm`);
     detailRows += drow('Curage – surface concernée', `${c.pct_surface} %`);
-    detailRows += drow('Destination de la vase', destLabel[c.destination_vase] || c.destination_vase);
+    detailRows += drow('Destination de la vase', destMap[c.destination_vase] || c.destination_vase);
   }
   if (details.faucardage) {
     const f = details.faucardage;
-    detailRows += drow('Faucardage – couverture végétale', `${f.pct_couverture} %`);
+    detailRows += drow('Faucardage – couverture', `${f.pct_couverture} %`);
     if (f.jussie) detailRows += drow('Jussie (invasive)', 'Oui (+40 %)');
   }
   if (details.berges) {
     const b = details.berges;
-    const typeMap = { enrochement:'Enrochement', palplanche:'Palplanches', gabion:'Gabions', vegetal:'Génie végétal', conseil:'À définir' };
     detailRows += drow('Berges – longueur', `${b.longueur_ml} ml`);
     detailRows += drow('Type de protection', typeMap[b.type] || b.type);
   }
   if (details['broyage-forestier']) {
     const bf = details['broyage-forestier'];
-    const densMap = { legere:'Légère', moyenne:'Moyenne', dense:'Dense' };
-    detailRows += drow('Broyage forestier – surface', `${bf.surface_ha} ha`);
-    detailRows += drow('Densité de végétation', densMap[bf.densite] || bf.densite);
+    detailRows += drow('Broyage forestier', `${bf.surface_ha} ha`);
+    detailRows += drow('Densité végétation', densMap[bf.densite] || bf.densite);
   }
   if (details['broyage-roseaux']) {
     const br = details['broyage-roseaux'];
-    detailRows += drow('Broyage roseaux – surface', `${br.surface_ha} ha`);
+    detailRows += drow('Broyage roseaux', `${br.surface_ha} ha`);
     detailRows += drow('Avec ramassage', br.avec_ramassage ? 'Oui' : 'Non');
   }
 
@@ -301,37 +305,36 @@ function renderDrawerBody(d) {
       <div class="note-saved" id="note-saved"></div>
     </div>`;
 
-  // Status change → save immediately
+  // Changement de statut → sauvegarde immédiate
   document.getElementById('drawer-statut')?.addEventListener('change', async e => {
     const newStatut = e.target.value;
-    const { error } = await sb
-      .from('demandes')
-      .update({ statut: newStatut, updated_at: new Date().toISOString() })
-      .eq('id', d.id);
-    if (!error) {
-      const idx = allDemandes.findIndex(x => x.id === d.id);
-      if (idx >= 0) allDemandes[idx].statut = newStatut;
-      renderStats();
-      renderList();
+    try {
+      await db.collection('demandes').doc(d.id).update({
+        statut: newStatut,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      });
       set('drawer-meta', `Reçu le ${fmtDate(d.created_at)} · ${statutLabel(newStatut)}`);
+    } catch (err) {
+      console.error('Update statut failed:', err);
     }
+    // allDemandes se met à jour automatiquement via onSnapshot
   });
 
-  // Note → auto-save 800ms after stop typing
+  // Note → auto-save 800ms après arrêt de frappe
   let noteSaveTimer = null;
   document.getElementById('drawer-note')?.addEventListener('input', () => {
     clearTimeout(noteSaveTimer);
     noteSaveTimer = setTimeout(async () => {
       const note = document.getElementById('drawer-note')?.value || '';
-      const { error } = await sb
-        .from('demandes')
-        .update({ note_admin: note, updated_at: new Date().toISOString() })
-        .eq('id', d.id);
-      if (!error) {
-        const idx = allDemandes.findIndex(x => x.id === d.id);
-        if (idx >= 0) allDemandes[idx].note_admin = note;
+      try {
+        await db.collection('demandes').doc(d.id).update({
+          note_admin: note,
+          updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+        });
         const el = document.getElementById('note-saved');
         if (el) { el.textContent = '✓ Sauvegardé'; el.style.opacity = '1'; setTimeout(() => { if (el) el.style.opacity = '0'; }, 2000); }
+      } catch (err) {
+        console.error('Update note failed:', err);
       }
     }, 800);
   });
@@ -351,23 +354,31 @@ function set(id, text) {
   if (el) el.textContent = text;
 }
 
+function toDate(ts) {
+  if (!ts) return null;
+  if (typeof ts.toDate === 'function') return ts.toDate(); // Firestore Timestamp
+  return new Date(ts);
+}
+
 function fmtDate(ts) {
-  if (!ts) return '–';
-  return new Date(ts).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const d = toDate(ts);
+  if (!d) return '–';
+  return d.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
 function fmtRelative(ts) {
-  if (!ts) return '';
-  const diff = Date.now() - new Date(ts).getTime();
+  const d = toDate(ts);
+  if (!d) return '';
+  const diff = Date.now() - d.getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1)  return 'À l\'instant';
   if (m < 60) return `Il y a ${m} min`;
   const h = Math.floor(m / 60);
   if (h < 24) return `Il y a ${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7)  return `Il y a ${d}j`;
-  if (d < 30) return `Il y a ${Math.floor(d/7)} sem.`;
-  return new Date(ts).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' });
+  const days = Math.floor(h / 24);
+  if (days < 7)  return `Il y a ${days}j`;
+  if (days < 30) return `Il y a ${Math.floor(days/7)} sem.`;
+  return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'short' });
 }
 
 function statutLabel(s) {
@@ -379,5 +390,5 @@ function travailLabel(t) {
 }
 
 function travailShort(t) {
-  return { hydrocurage:'💧 Hydro.', curage:'🚜 Curage', faucardage:'🌿 Faucardage', berges:'🪨 Berges', 'broyage-forestier':'🌲 Broyage', 'broyage-roseaux':'🌾 Roseaux', diagnostic:'🔍 Diagnostic' }[t] || t;
+  return { hydrocurage:'💧 Hydro.', curage:'🚜 Curage', faucardage:'🌿 Fauc.', berges:'🪨 Berges', 'broyage-forestier':'🌲 Broyage', 'broyage-roseaux':'🌾 Roseaux', diagnostic:'🔍 Diagnostic' }[t] || t;
 }

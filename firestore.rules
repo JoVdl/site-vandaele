@@ -1,0 +1,48 @@
+// ============================================================
+// CURAGE VANDAELE – Règles de sécurité Firestore
+// ============================================================
+// À coller dans : Firebase Console > Firestore > Rules
+// Puis cliquer "Publier"
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /demandes/{demandeId} {
+
+      // Le formulaire public peut créer une demande (INSERT)
+      allow create: if true;
+
+      // Seuls les utilisateurs connectés (admin) peuvent lire et modifier
+      allow read, update: if request.auth != null;
+
+      // Personne ne peut supprimer (sécurité)
+      allow delete: if false;
+    }
+  }
+}
+
+// ============================================================
+// ÉTAPES DE CONFIGURATION (à faire une seule fois)
+// ============================================================
+//
+// 1. Créer un projet Firebase sur https://console.firebase.google.com
+//
+// 2. Activer Firestore :
+//    Firestore Database > Créer une base de données > Mode Production
+//
+// 3. Coller ces règles dans :
+//    Firestore Database > Règles > (coller ci-dessus) > Publier
+//
+// 4. Activer l'authentification par email :
+//    Authentication > Sign-in method > Email/mot de passe > Activer
+//
+// 5. Créer votre compte admin :
+//    Authentication > Users > Ajouter un utilisateur
+//    → Entrez votre email + mot de passe
+//
+// 6. Récupérer la config Firebase :
+//    Paramètres du projet (⚙️) > Vos applications > Ajouter une application Web
+//    → Copier l'objet firebaseConfig
+//    → Coller dans js/admin.js ET js/estimation.js
+//       (constante FIREBASE_CONFIG, remplacer les valeurs VOTRE_*)

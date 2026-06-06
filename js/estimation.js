@@ -7,14 +7,21 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 window.addEventListener('load', () => window.scrollTo(0, 0));
 
-// ── SUPABASE ──────────────────────────────────────────────────
-// Remplacer par vos valeurs : Supabase > Settings > API
-const SUPABASE_URL      = 'https://VOTRE-PROJET.supabase.co';
-const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON';
-let sb = null;
+// ── FIREBASE ──────────────────────────────────────────────────
+// Remplacer par votre config : Firebase Console > Paramètres du projet > Vos applications
+const FIREBASE_CONFIG = {
+  apiKey:            'VOTRE_API_KEY',
+  authDomain:        'VOTRE-PROJET.firebaseapp.com',
+  projectId:         'VOTRE-PROJET-ID',
+  storageBucket:     'VOTRE-PROJET.appspot.com',
+  messagingSenderId: 'VOTRE_SENDER_ID',
+  appId:             'VOTRE_APP_ID',
+};
+let db = null;
 try {
-  if (typeof supabase !== 'undefined' && !SUPABASE_URL.includes('VOTRE-PROJET')) {
-    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey !== 'VOTRE_API_KEY') {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
   }
 } catch (e) {}
 
@@ -644,27 +651,28 @@ async function submitEstimation() {
     ...(state.infosSup ? { 'Informations complémentaires': state.infosSup } : {}),
   };
 
-  // Sauvegarde dans Supabase (dashboard admin)
-  if (sb) {
+  // Sauvegarde dans Firebase Firestore (dashboard admin)
+  if (db) {
     try {
-      await sb.from('demandes').insert({
+      await db.collection('demandes').add({
         prenom, nom, email, telephone: tel,
-        profil:        document.getElementById('c-profil')?.value || '',
-        delai:         document.getElementById('c-delai')?.value  || '',
-        adresse:       document.getElementById('adresse')?.value  || '',
-        surface_ha:    state.surface   || null,
-        perimetre_ml:  state.perimetre || null,
-        acces:         state.acces,
-        travaux:       [...state.travaux],
-        estimation_min: lastEstMin || null,
-        estimation_max: lastEstMax || null,
+        profil:          document.getElementById('c-profil')?.value || '',
+        delai:           document.getElementById('c-delai')?.value  || '',
+        adresse:         document.getElementById('adresse')?.value  || '',
+        surface_ha:      state.surface   || null,
+        perimetre_ml:    state.perimetre || null,
+        acces:           state.acces,
+        travaux:         [...state.travaux],
+        estimation_min:  lastEstMin || null,
+        estimation_max:  lastEstMax || null,
         estimation_text: estimation,
-        details:       buildDetails(),
-        infos_sup:     state.infosSup || null,
-        statut:        'nouveau',
+        details:         buildDetails(),
+        infos_sup:       state.infosSup || null,
+        statut:          'nouveau',
+        created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      console.warn('Supabase insert failed:', e);
+      console.warn('Firebase save failed:', e);
     }
   }
 
