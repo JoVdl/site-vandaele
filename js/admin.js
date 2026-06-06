@@ -235,9 +235,9 @@ async function loadTarifsPanel() {
         ${row('mobilisation', 'Mobilisation engin', '€ forfait', tarifs.mobilisation)}
 
         ${sec('💧 Hydrocurage')}
-        ${row('hydrocurage.facile',    'Accès facile',    '€ / ml', tarifs.hydrocurage.facile)}
-        ${row('hydrocurage.moyen',     'Accès moyen',     '€ / ml', tarifs.hydrocurage.moyen)}
-        ${row('hydrocurage.difficile', 'Accès difficile', '€ / ml', tarifs.hydrocurage.difficile)}
+        ${row('hydrocurage.facile',    'Accès facile',    '€ / m³', tarifs.hydrocurage.facile)}
+        ${row('hydrocurage.moyen',     'Accès moyen',     '€ / m³', tarifs.hydrocurage.moyen)}
+        ${row('hydrocurage.difficile', 'Accès difficile', '€ / m³', tarifs.hydrocurage.difficile)}
 
         ${sec('🚜 Curage mécanique')}
         ${row('curage.facile',    'Accès facile',    '€ / m³', tarifs.curage.facile)}
@@ -511,7 +511,7 @@ function renderDetailPane(d) {
 
     let detailRows = '';
     if (details.hydrocurage)
-      detailRows += drow('Hydrocurage – longueur', `${details.hydrocurage.longueur_ml} ml`);
+      detailRows += drow('Hydrocurage', `Épaisseur : ${details.hydrocurage.epaisseur_cm ?? '–'} cm · Volume : ${details.hydrocurage.volume_m3 ?? details.hydrocurage.longueur_ml ?? '–'} m³`);
     if (details.curage) {
       detailRows += drow('Curage – prof. vase', `${details.curage.prof_vase_cm} cm`);
       detailRows += drow('Curage – surface concernée', `${details.curage.pct_surface} %`);
@@ -779,7 +779,10 @@ function cardMetric(d) {
     const vol = Math.round(d.surface_ha * 10000 * (details.curage.pct_surface / 100) * (details.curage.prof_vase_cm / 100));
     if (vol > 0) parts.push(`≈ ${vol.toLocaleString('fr')} m³`);
   }
-  if (details.hydrocurage && !d.surface_ha) parts.push(`${details.hydrocurage.longueur_ml} ml`);
+  if (details.hydrocurage) {
+    const vol = details.hydrocurage.volume_m3 ?? details.hydrocurage.longueur_ml;
+    if (vol) parts.push(`${vol} m³ hydro.`);
+  }
   if (details.berges && !d.perimetre_ml)    parts.push(`${details.berges.longueur_ml} ml berges`);
   return parts.join(' · ');
 }

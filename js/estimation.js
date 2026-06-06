@@ -105,7 +105,7 @@ const state = {
   acces: 'moyen',
   travaux: new Set(),
   // Hydrocurage
-  lgHydrocurage: 100,
+  epaisseurHydro: 30,
   // Curage mécanique
   profVase: 40,
   pctCurage: 100,
@@ -178,7 +178,7 @@ function bindRange(id, stateKey, displayId, fmt) {
   });
 }
 
-bindRange('lg-hydrocurage',         'lgHydrocurage',         'lg-hydrocurage-val',         v => parseInt(v).toLocaleString('fr') + ' ml');
+bindRange('ep-hydrocurage',         'epaisseurHydro',        'ep-hydrocurage-val',        v => parseInt(v) + ' cm');
 bindRange('prof-vase',              'profVase',               'prof-vase-val',               v => v + ' cm');
 bindRange('pct-curage',             'pctCurage',              'pct-curage-val',              v => v + ' %');
 bindRange('pct-fauc',               'pctFauc',                'pct-fauc-val',                v => v + ' %');
@@ -238,12 +238,13 @@ function computeEstimation() {
   // HYDROCURAGE
   if (state.travaux.has('hydrocurage')) {
     hasTravaux = true;
-    const lg = state.lgHydrocurage;
+    const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
+    const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
     const t = TARIFS.hydrocurage[acces];
-    const cMin = lg * t.min;
-    const cMax = lg * t.max;
+    const cMin = vol * t.min;
+    const cMax = vol * t.max;
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Hydrocurage (${lg.toLocaleString('fr')} ml)`, val: fmtRange(cMin, cMax) });
+    lines.push({ label: `Hydrocurage (${vol.toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
   }
 
   // CURAGE MÉCANIQUE
@@ -589,8 +590,10 @@ if (mapEl && typeof L !== 'undefined') {
 // ── BUILD DETAILS (pour Supabase) ─────────────────────────────
 function buildDetails() {
   const d = {};
-  if (state.travaux.has('hydrocurage'))
-    d.hydrocurage = { longueur_ml: state.lgHydrocurage };
+  if (state.travaux.has('hydrocurage')) {
+    const vol = Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100));
+    d.hydrocurage = { epaisseur_cm: state.epaisseurHydro, volume_m3: vol };
+  }
   if (state.travaux.has('curage'))
     d.curage = { prof_vase_cm: state.profVase, pct_surface: state.pctCurage, destination_vase: state.destinationVase };
   if (state.travaux.has('faucardage'))
@@ -649,7 +652,8 @@ async function submitEstimation() {
     'Type de travaux':        travaux,
     'Estimation indicative':  estimation,
     ...(state.travaux.has('hydrocurage') ? {
-      'Hydrocurage – longueur (ml)': state.lgHydrocurage,
+      'Hydrocurage – épaisseur vase (cm)': state.epaisseurHydro,
+      'Hydrocurage – volume estimé (m³)': Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100)),
     } : {}),
     ...(state.travaux.has('curage') ? {
       'Curage – prof. vase (cm)':   state.profVase,
