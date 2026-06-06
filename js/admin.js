@@ -68,10 +68,7 @@ document.getElementById('login-form')?.addEventListener('submit', async e => {
   errEl.hidden    = true;
 
   try {
-    const persistence = rememberMe
-      ? firebase.auth.Auth.Persistence.LOCAL
-      : firebase.auth.Auth.Persistence.SESSION;
-    await auth.setPersistence(persistence);
+    await auth.setPersistence(rememberMe ? 'local' : 'session');
     await auth.signInWithEmailAndPassword(email, pass);
     // onAuthStateChanged prend le relais et affiche le dashboard
   } catch {

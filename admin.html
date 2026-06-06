@@ -291,6 +291,9 @@
     .note-ta:focus { border-color: var(--green-500); }
     .note-saved { font-size: .72rem; color: var(--green-500); margin-top: .3rem; min-height: 1em; transition: opacity .4s; opacity: 0; }
 
+    /* Assure que hidden fonctionne même avec display:flex/block en CSS */
+    [hidden] { display: none !important; }
+
     /* ── RESPONSIVE ──────────────────────────────────── */
     @media (max-width: 900px) {
       .admin-body { flex-direction: column; padding: 1rem; gap: 1rem; }
