@@ -229,7 +229,7 @@ ul { list-style: none; }
 /* ── HERO ── */
 .hero {
   position: relative;
-  min-height: clamp(420px, 56vh, 620px);
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   padding-top: var(--nav-h);
@@ -269,7 +269,7 @@ ul { list-style: none; }
 .hero-reel-slide.is-active { opacity: 1; }
 .hero-reel-ui {
   position: absolute;
-  bottom: 130px;
+  bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
   width: min(760px, 90vw);
