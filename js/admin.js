@@ -671,12 +671,15 @@ function renderDetailPane(d) {
     }, 800);
   });
 
-  // Carte du tracé client
+  // Carte du tracé client — setTimeout pour laisser le navigateur calculer le layout
   if (d.geojson || (d.lat && d.lng)) {
-    const geojson = d.geojson
-      ? (typeof d.geojson === 'string' ? JSON.parse(d.geojson) : d.geojson)
-      : null;
-    loadLeaflet(() => renderAdminMap(geojson, d.lat, d.lng));
+    let geojson = null;
+    try {
+      geojson = d.geojson
+        ? (typeof d.geojson === 'string' ? JSON.parse(d.geojson) : d.geojson)
+        : null;
+    } catch (e) { console.error('GeoJSON parse error:', e); }
+    loadLeaflet(() => setTimeout(() => renderAdminMap(geojson, d.lat, d.lng), 80));
   }
 }
 
@@ -702,17 +705,21 @@ function renderAdminMap(geojson, lat, lng) {
       maxZoom: 19
     }).addTo(adminMap);
 
+    // invalidateSize d'abord pour que le conteneur ait ses bonnes dimensions
+    adminMap.invalidateSize();
+
     if (geojson) {
       const layer = L.geoJSON(geojson, {
         style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
       }).addTo(adminMap);
-      adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] });
+      try { adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] }); } catch(e) {}
     } else if (lat && lng) {
       adminMap.setView([lat, lng], 15);
       L.marker([lat, lng]).addTo(adminMap);
     }
 
-    setTimeout(() => adminMap && adminMap.invalidateSize(), 150);
+    // Second passage après rendu complet
+    setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 300);
   } catch (err) {
     console.error('Map render error:', err);
   }
