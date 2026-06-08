@@ -450,11 +450,37 @@
       #dashboard { height: auto; overflow: visible; }
       .admin-body { flex-direction: column; overflow: visible; }
       .admin-content { flex-direction: column; }
-      .admin-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: .75rem; border-right: none; border-bottom: 1px solid var(--gray-200); padding: .75rem; }
-      .stats-grid { min-width: 200px; }
-      .filter-nav { flex-direction: row; flex-wrap: wrap; flex: 1; }
+
+      /* Sidebar compacte : tout en colonne, padding réduit */
+      .admin-sidebar {
+        width: 100%; flex-direction: column; gap: .35rem;
+        border-right: none; border-bottom: 1px solid var(--gray-200);
+        padding: .5rem .75rem;
+      }
+
+      /* Stats : 4 tuiles en ligne unique */
+      .stats-grid { grid-template-columns: repeat(4, 1fr); gap: .3rem; }
+      .stat-card { padding: .35rem .2rem; }
+      .stat-val { font-size: 1.1rem; }
+      .stat-label { font-size: .54rem; }
+
+      /* Filtres : scroll horizontal — 1 seule ligne */
+      .filter-nav {
+        flex-direction: row; flex-wrap: nowrap;
+        overflow-x: auto; gap: .2rem;
+        padding-bottom: .15rem;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      }
+      .filter-nav::-webkit-scrollbar { display: none; }
       .filter-nav-label { display: none; }
-      .filter-nav .fnav-btn { font-size: .75rem; padding: .4rem .6rem; }
+      .filter-nav .fnav-btn { font-size: .72rem; padding: .28rem .55rem; white-space: nowrap; flex-shrink: 0; }
+      .fnav-archived { margin-top: 0; border-top: none; }
+
+      /* Boutons utilitaires : petits, en ligne */
+      .admin-sidebar-actions { display: flex; gap: .4rem; }
+      .btn-refresh { padding: .3rem .65rem; font-size: .74rem; }
+      .btn-tarifs  { padding: .3rem .65rem; font-size: .74rem; margin-top: 0; }
+
       .list-pane { width: 100%; border-right: none; border-bottom: 1px solid var(--gray-200); max-height: 50vh; }
       #requests-list { max-height: calc(50vh - 48px); }
       .detail-pane { min-height: 400px; }
@@ -536,8 +562,10 @@
         <button class="fnav-btn" data-status="sans_suite">⚫ Sans suite</button>
         <button class="fnav-btn fnav-archived" data-status="archived">📦 Archivées</button>
       </nav>
-      <button class="btn-refresh" id="btn-refresh">↻ Actualiser</button>
-      <button class="btn-tarifs" id="btn-tarifs">⚙️ Grille tarifaire</button>
+      <div class="admin-sidebar-actions">
+        <button class="btn-refresh" id="btn-refresh">↻ Actualiser</button>
+        <button class="btn-tarifs" id="btn-tarifs">⚙️ Grille tarifaire</button>
+      </div>
     </aside>
 
     <!-- TARIFS PANEL -->
