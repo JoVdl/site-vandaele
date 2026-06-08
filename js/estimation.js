@@ -682,28 +682,34 @@ if (mapEl && typeof L !== 'undefined') {
     drawnItems.addLayer(e.layer);
 
     if (e.layerType === 'polygon') {
-      const lls = e.layer.getLatLngs()[0];
-      const areaM2 = L.GeometryUtil.geodesicArea(lls);
-      const areaHa = (areaM2 / 10000).toFixed(4);
-      let perim = 0;
-      for (let i = 0; i < lls.length; i++) perim += lls[i].distanceTo(lls[(i + 1) % lls.length]);
-      perim = Math.round(perim);
+      try {
+        const lls = e.layer.getLatLngs()[0];
+        const areaM2 = L.GeometryUtil.geodesicArea(lls);
+        const areaHa = (areaM2 / 10000).toFixed(4);
+        let perim = 0;
+        for (let i = 0; i < lls.length; i++) perim += lls[i].distanceTo(lls[(i + 1) % lls.length]);
+        perim = Math.round(perim);
 
-      const surfEl  = document.getElementById('surface');
-      const perimEl = document.getElementById('perimetre');
-      if (surfEl)  { const m2 = Math.round(areaM2); surfEl.value = m2; state.surface = m2 / 10000; updateSurfaceHint(m2); }
-      if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
-      state.geojson = e.layer.toGeoJSON();
-      state.lat = lls.reduce((s, ll) => s + ll.lat, 0) / lls.length;
-      state.lng = lls.reduce((s, ll) => s + ll.lng, 0) / lls.length;
-      computeEstimation();
+        const surfEl  = document.getElementById('surface');
+        const perimEl = document.getElementById('perimetre');
+        if (surfEl)  { const m2 = Math.round(areaM2); surfEl.value = m2; state.surface = m2 / 10000; updateSurfaceHint(m2); }
+        if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
+        state.geojson = e.layer.toGeoJSON();
+        state.lat = lls.reduce((s, ll) => s + ll.lat, 0) / lls.length;
+        state.lng = lls.reduce((s, ll) => s + ll.lng, 0) / lls.length;
+        computeEstimation();
 
-      const areaM2display = Math.round(areaM2).toLocaleString('fr');
-      const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-      if (infoBar) infoBar.innerHTML =
-        `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
-      resetDrawingUI();
-      checkEnvironmentalZones(state.lat, state.lng);
+        const areaM2display = Math.round(areaM2).toLocaleString('fr');
+        const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+        if (infoBar) infoBar.innerHTML =
+          `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong> &nbsp;·&nbsp; <span style="font-size:.85em;">⬇️ Vérification des zones en cours…</span>`;
+        resetDrawingUI();
+        checkEnvironmentalZones(state.lat, state.lng);
+      } catch(err) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Erreur lors du calcul — veuillez retracez le polygone.';
+        console.error('[draw:created]', err);
+        resetDrawingUI();
+      }
     }
 
     if (e.layerType === 'polyline') {
@@ -808,6 +814,7 @@ async function checkEnvironmentalZones(lat, lng) {
         ⚠️ La vérification automatique des zones environnementales n'a pas abouti (service IGN indisponible).<br>
         <span>Nous effectuerons ce contrôle lors du rendez-vous technique.</span>
       </div>`;
+    zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
 
@@ -817,6 +824,7 @@ async function checkEnvironmentalZones(lat, lng) {
         ✅ <strong>Aucune zone protégée détectée</strong> (zone humide, Natura 2000, ZNIEFF) à cette localisation.<br>
         <span>Ces données sont indicatives — vérification définitive lors de la visite technique.</span>
       </div>`;
+    zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
 
@@ -856,6 +864,8 @@ async function checkEnvironmentalZones(lat, lng) {
     <div class="zone-alert-footer-global">
       Ces informations sont basées sur les données IGN et sont indicatives. La vérification définitive est effectuée lors de la visite technique.
     </div>` + accompHtml;
+
+  zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   const cb = document.getElementById('cb-accompagnement');
   if (cb) cb.addEventListener('change', () => { state.demandeAccompagnement = cb.checked; });
