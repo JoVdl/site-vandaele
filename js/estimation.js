@@ -689,9 +689,13 @@ if (mapEl && typeof L !== 'undefined') {
       const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
       if (infoBar) infoBar.innerHTML =
         `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
-      // setTimeout 0 : laisse Leaflet.draw terminer son propre nettoyage
-      // (suppression lignes pointillées, marqueurs) avant de désactiver l'UI
-      setTimeout(() => { resetDrawingUI(); checkEnvironmentalZones(state.lat, state.lng); }, 0);
+      resetDrawingUI();
+      // Supprime les pointillés guide de Leaflet.draw directement dans le DOM
+      // (_clearGuides interne peut manquer selon la version/timing)
+      map.getContainer().querySelectorAll('.leaflet-draw-guide-dash,.leaflet-draw-guides').forEach(el => {
+        while (el.firstChild) el.removeChild(el.firstChild);
+      });
+      checkEnvironmentalZones(state.lat, state.lng);
     }
 
     if (e.layerType === 'polyline') {
@@ -707,7 +711,10 @@ if (mapEl && typeof L !== 'undefined') {
       state.lng = lls[mid].lng;
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
-      setTimeout(() => resetDrawingUI(), 0);
+      resetDrawingUI();
+      map.getContainer().querySelectorAll('.leaflet-draw-guide-dash,.leaflet-draw-guides').forEach(el => {
+        while (el.firstChild) el.removeChild(el.firstChild);
+      });
     }
   });
 
