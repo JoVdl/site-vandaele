@@ -79,8 +79,12 @@ let TARIFS = {
 if (typeof db !== 'undefined' && db) {
   db.collection('config').doc('tarifs').get().then(snap => {
     if (snap.exists) {
-      TARIFS = snap.data();
-      if (typeof computeEstimation === 'function') computeEstimation();
+      const data = snap.data();
+      // Ignorer si ancien format (avant base+modifiers)
+      if (data.hydrocurage?.base) {
+        TARIFS = data;
+        if (typeof computeEstimation === 'function') computeEstimation();
+      }
     }
   }).catch(e => console.error('[Firebase] Tarifs load failed:', e.code, e.message));
 }

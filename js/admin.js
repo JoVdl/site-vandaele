@@ -187,7 +187,11 @@ async function loadTarifsPanel() {
   let tarifs = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
   try {
     const snap = await db.collection('config').doc('tarifs').get();
-    if (snap.exists) tarifs = snap.data();
+    if (snap.exists) {
+      const data = snap.data();
+      // Ignorer les données Firestore si elles ont l'ancien format (avant base+modifiers)
+      if (data.hydrocurage?.base) tarifs = data;
+    }
   } catch (e) {
     console.error('[Firebase] Tarifs load failed:', e.code, e.message);
   }
