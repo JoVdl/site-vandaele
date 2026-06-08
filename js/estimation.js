@@ -689,8 +689,9 @@ if (mapEl && typeof L !== 'undefined') {
       const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
       if (infoBar) infoBar.innerHTML =
         `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
-      resetDrawingUI();
-      checkEnvironmentalZones(state.lat, state.lng);
+      // setTimeout 0 : laisse Leaflet.draw terminer son propre nettoyage
+      // (suppression lignes pointillées, marqueurs) avant de désactiver l'UI
+      setTimeout(() => { resetDrawingUI(); checkEnvironmentalZones(state.lat, state.lng); }, 0);
     }
 
     if (e.layerType === 'polyline') {
@@ -706,7 +707,7 @@ if (mapEl && typeof L !== 'undefined') {
       state.lng = lls[mid].lng;
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
-      resetDrawingUI();
+      setTimeout(() => resetDrawingUI(), 0);
     }
   });
 
