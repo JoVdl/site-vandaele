@@ -123,47 +123,51 @@ document.getElementById('btn-refresh')?.addEventListener('click', startListener)
 
 // ── GRILLE TARIFAIRE ─────────────────────────────────────────
 const TARIFS_DEFAULTS = {
-  mobilisation: { min: 800, max: 2000 },
-
   hydrocurage: {
-    base:      { min: 15, max: 30 },
-    moyen:     20,
-    difficile: 40,
+    mobilisation: { min: 800,  max: 2000 },
+    base:         { min: 15,   max: 30   },
+    moyen:        20,
+    difficile:    40,
   },
 
   curage: {
-    base:       { min: 12, max: 22 },
-    moyen:      20,
-    difficile:  40,
-    evacuation: { min: 5, max: 10 },
+    mobilisation: { min: 1200, max: 3000 },
+    base:         { min: 12,   max: 22   },
+    moyen:        20,
+    difficile:    40,
+    evacuation:   { min: 5,    max: 10   },
   },
 
   faucardage: {
-    base:      { min: 700, max: 1200 },
-    moyen:     20,
-    difficile: 40,
-    jussie:    40,
+    mobilisation: { min: 600,  max: 1500 },
+    base:         { min: 700,  max: 1200 },
+    moyen:        20,
+    difficile:    40,
+    jussie:       40,
   },
 
   berges: {
-    enrochement: { min: 150, max: 280 },
-    palplanche:  { min: 200, max: 400 },
-    gabion:      { min: 120, max: 220 },
-    vegetal:     { min: 50,  max: 100 },
-    conseil:     { min: 150, max: 280 },
+    mobilisation: { min: 800,  max: 2000 },
+    enrochement:  { min: 150,  max: 280  },
+    palplanche:   { min: 200,  max: 400  },
+    gabion:       { min: 120,  max: 220  },
+    vegetal:      { min: 50,   max: 100  },
+    conseil:      { min: 150,  max: 280  },
   },
 
   'broyage-forestier': {
-    legere:  { min: 900,  max: 1600 },
-    moyenne: { min: 1500, max: 2800 },
-    dense:   { min: 2500, max: 4500 },
+    mobilisation: { min: 600,  max: 1500 },
+    legere:       { min: 900,  max: 1600 },
+    moyenne:      { min: 1500, max: 2800 },
+    dense:        { min: 2500, max: 4500 },
   },
 
   'broyage-roseaux': {
-    base:      { min: 500, max: 800 },
-    ramassage: 80,
-    moyen:     30,
-    difficile: 60,
+    mobilisation: { min: 500,  max: 1200 },
+    base:         { min: 500,  max: 800  },
+    ramassage:    80,
+    moyen:        30,
+    difficile:    60,
   },
 
   diagnostic: { min: 0, max: 0 },
@@ -236,27 +240,28 @@ async function loadTarifsPanel() {
     </div>
 
     <div class="tarifs-grid">
-      ${card('🚛 Mobilisation',
-        base('mobilisation', 'Forfait déplacement', '€', t.mobilisation)
-      )}
       ${card('💧 Hydrocurage',
-        base('hydrocurage.base', 'Base', '€/m³', t.hydrocurage.base) +
+        base('hydrocurage.mobilisation', '🚛 Mobilisation pompe', '€', t.hydrocurage.mobilisation) +
+        base('hydrocurage.base',         'Prestation',            '€/m³', t.hydrocurage.base) +
         mod('hydrocurage.moyen',     'Accès moyen',     t.hydrocurage.moyen     ?? 20) +
         mod('hydrocurage.difficile', 'Accès difficile', t.hydrocurage.difficile ?? 40)
       )}
       ${card('🚜 Curage mécanique',
-        base('curage.base', 'Base', '€/m³', t.curage.base) +
+        base('curage.mobilisation', '🚛 Mobilisation drague', '€', t.curage.mobilisation) +
+        base('curage.base',         'Prestation',             '€/m³', t.curage.base) +
         mod('curage.moyen',     'Accès moyen',     t.curage.moyen     ?? 20) +
         mod('curage.difficile', 'Accès difficile', t.curage.difficile ?? 40) +
         base('curage.evacuation', 'Suppl. évacuation', '€/m³', t.curage.evacuation)
       )}
       ${card('🌿 Faucardage',
-        base('faucardage.base', 'Base', '€/ha', t.faucardage.base) +
+        base('faucardage.mobilisation', '🚛 Mobilisation bateau', '€', t.faucardage.mobilisation) +
+        base('faucardage.base',         'Prestation',             '€/ha', t.faucardage.base) +
         mod('faucardage.moyen',     'Accès moyen',     t.faucardage.moyen     ?? 20) +
         mod('faucardage.difficile', 'Accès difficile', t.faucardage.difficile ?? 40) +
         mod('faucardage.jussie',    'Jussie',           t.faucardage.jussie    ?? 40)
       )}
       ${card('🪨 Défenses de berges',
+        base('berges.mobilisation', '🚛 Mobilisation pelle', '€', t.berges.mobilisation) +
         base('berges.enrochement', 'Enrochement',  '€/ml', t.berges.enrochement) +
         base('berges.palplanche',  'Palplanches',  '€/ml', t.berges.palplanche)  +
         base('berges.gabion',      'Gabions',      '€/ml', t.berges.gabion)      +
@@ -264,12 +269,14 @@ async function loadTarifsPanel() {
         base('berges.conseil',     'À définir',    '€/ml', t.berges.conseil)
       )}
       ${card('🌲 Broyage forestier',
+        base('broyage-forestier.mobilisation', '🚛 Mobilisation broyeur', '€', t['broyage-forestier'].mobilisation) +
         base('broyage-forestier.legere',  'Légère',  '€/ha', t['broyage-forestier'].legere)  +
         base('broyage-forestier.moyenne', 'Moyenne', '€/ha', t['broyage-forestier'].moyenne) +
         base('broyage-forestier.dense',   'Dense',   '€/ha', t['broyage-forestier'].dense)
       )}
       ${card('🌾 Broyage roseaux',
-        base('broyage-roseaux.base', 'Base', '€/ha', t['broyage-roseaux'].base) +
+        base('broyage-roseaux.mobilisation', '🚛 Mobilisation bateau', '€', t['broyage-roseaux'].mobilisation) +
+        base('broyage-roseaux.base',         'Prestation',             '€/ha', t['broyage-roseaux'].base) +
         mod('broyage-roseaux.ramassage', 'Avec ramassage',  t['broyage-roseaux'].ramassage ?? 80) +
         mod('broyage-roseaux.moyen',     'Accès moyen',     t['broyage-roseaux'].moyen     ?? 30) +
         mod('broyage-roseaux.difficile', 'Accès difficile', t['broyage-roseaux'].difficile ?? 60)

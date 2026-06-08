@@ -29,47 +29,51 @@ try {
 
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
 let TARIFS = {
-  mobilisation: { min: 800, max: 2000 },
-
   hydrocurage: {
-    base:      { min: 15, max: 30 },  // €/m³
-    moyen:     20,                     // +20 %
-    difficile: 40,                     // +40 %
+    mobilisation: { min: 800,  max: 2000 }, // pompe + groupe
+    base:         { min: 15,   max: 30   }, // €/m³
+    moyen:        20,                        // +20 %
+    difficile:    40,                        // +40 %
   },
 
   curage: {
-    base:       { min: 12, max: 22 }, // €/m³
-    moyen:      20,
-    difficile:  40,
-    evacuation: { min: 5, max: 10 },  // €/m³ supplément
+    mobilisation: { min: 1200, max: 3000 }, // drague / pelle amphibie
+    base:         { min: 12,   max: 22   }, // €/m³
+    moyen:        20,
+    difficile:    40,
+    evacuation:   { min: 5, max: 10 },      // €/m³ supplément
   },
 
   faucardage: {
-    base:      { min: 700, max: 1200 }, // €/ha
-    moyen:     20,
-    difficile: 40,
-    jussie:    40,                       // +40 %
+    mobilisation: { min: 600,  max: 1500 }, // bateau faucardeur
+    base:         { min: 700,  max: 1200 }, // €/ha
+    moyen:        20,
+    difficile:    40,
+    jussie:       40,                        // +40 %
   },
 
   berges: {
-    enrochement: { min: 150, max: 280 },
-    palplanche:  { min: 200, max: 400 },
-    gabion:      { min: 120, max: 220 },
-    vegetal:     { min: 50,  max: 100 },
-    conseil:     { min: 150, max: 280 },
+    mobilisation: { min: 800,  max: 2000 }, // pelle + matériaux
+    enrochement:  { min: 150,  max: 280  },
+    palplanche:   { min: 200,  max: 400  },
+    gabion:       { min: 120,  max: 220  },
+    vegetal:      { min: 50,   max: 100  },
+    conseil:      { min: 150,  max: 280  },
   },
 
   'broyage-forestier': {
-    legere:  { min: 900,  max: 1600 },
-    moyenne: { min: 1500, max: 2800 },
-    dense:   { min: 2500, max: 4500 },
+    mobilisation: { min: 600,  max: 1500 }, // broyeur forestier
+    legere:       { min: 900,  max: 1600 },
+    moyenne:      { min: 1500, max: 2800 },
+    dense:        { min: 2500, max: 4500 },
   },
 
   'broyage-roseaux': {
-    base:      { min: 500, max: 800 }, // €/ha sans ramassage
-    ramassage: 80,                      // +80 % avec ramassage
-    moyen:     30,
-    difficile: 60,
+    mobilisation: { min: 500,  max: 1200 }, // bateau + broyeur
+    base:         { min: 500,  max: 800  }, // €/ha
+    ramassage:    80,                        // +80 % avec ramassage
+    moyen:        30,
+    difficile:    60,
   },
 
   diagnostic: { min: 0, max: 0 },
@@ -225,21 +229,20 @@ function computeEstimation() {
   let totalMin = 0, totalMax = 0;
   let hasTravaux = false;
 
-  const realTravaux = ['hydrocurage', 'curage', 'faucardage', 'berges', 'broyage-forestier', 'broyage-roseaux'];
-  const hasReal = realTravaux.some(t => state.travaux.has(t));
-
-  if (hasReal) {
-    totalMin += TARIFS.mobilisation.min;
-    totalMax += TARIFS.mobilisation.max;
-    lines.push({ label: 'Mobilisation engin', val: fmtRange(TARIFS.mobilisation.min, TARIFS.mobilisation.max) });
+  function addMobi(t, label) {
+    if (!t?.mobilisation) return;
+    totalMin += t.mobilisation.min;
+    totalMax += t.mobilisation.max;
+    lines.push({ label: `Mobilisation – ${label}`, val: fmtRange(t.mobilisation.min, t.mobilisation.max) });
   }
 
   // HYDROCURAGE
   if (state.travaux.has('hydrocurage')) {
     hasTravaux = true;
+    const t = TARIFS.hydrocurage;
+    addMobi(t, 'pompe / hydrocureur');
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
     const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
-    const t = TARIFS.hydrocurage;
     const m = accMod(t, acces);
     const cMin = vol * t.base.min * m;
     const cMax = vol * t.base.max * m;
@@ -250,11 +253,12 @@ function computeEstimation() {
   // CURAGE MÉCANIQUE
   if (state.travaux.has('curage')) {
     hasTravaux = true;
+    const t = TARIFS.curage;
+    addMobi(t, 'drague / pelle amphibie');
     const surf = state.surface > 0 ? state.surface : 0.5;
     const surfM2 = surf * 10000 * (state.pctCurage / 100);
     const profM = state.profVase / 100;
     const volM3 = surfM2 * profM;
-    const t = TARIFS.curage;
     const m = accMod(t, acces);
     let cMin = volM3 * t.base.min * m;
     let cMax = volM3 * t.base.max * m;
@@ -269,8 +273,9 @@ function computeEstimation() {
   // FAUCARDAGE
   if (state.travaux.has('faucardage')) {
     hasTravaux = true;
-    const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
     const t = TARIFS.faucardage;
+    addMobi(t, 'bateau faucardeur');
+    const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
     const m = accMod(t, acces) * (state.faucJussie ? (1 + (t.jussie || 0) / 100) : 1);
     const cMin = surf * t.base.min * m;
     const cMax = surf * t.base.max * m;
@@ -281,10 +286,12 @@ function computeEstimation() {
   // DÉFENSES DE BERGES
   if (state.travaux.has('berges')) {
     hasTravaux = true;
+    const t = TARIFS.berges;
+    addMobi(t, 'pelle + matériaux');
+    const tp = t[state.typeBerge] || t.conseil;
     const lg = state.lgBerges;
-    const t = TARIFS.berges[state.typeBerge] || TARIFS.berges.conseil;
-    const cMin = lg * t.min;
-    const cMax = lg * t.max;
+    const cMin = lg * tp.min;
+    const cMax = lg * tp.max;
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Défenses berges (${lg.toLocaleString('fr')} ml)`, val: fmtRange(cMin, cMax) });
   }
@@ -292,10 +299,12 @@ function computeEstimation() {
   // BROYAGE FORESTIER
   if (state.travaux.has('broyage-forestier')) {
     hasTravaux = true;
+    const t = TARIFS['broyage-forestier'];
+    addMobi(t, 'broyeur forestier');
+    const tp = t[state.densiteBroyage] || t.moyenne;
     const surf = state.surfBroyageForestier;
-    const t = TARIFS['broyage-forestier'][state.densiteBroyage] || TARIFS['broyage-forestier'].moyenne;
-    const cMin = surf * t.min;
-    const cMax = surf * t.max;
+    const cMin = surf * tp.min;
+    const cMax = surf * tp.max;
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Broyage forestier (${surf.toLocaleString('fr')} ha)`, val: fmtRange(cMin, cMax) });
   }
@@ -303,8 +312,9 @@ function computeEstimation() {
   // BROYAGE DE ROSEAUX
   if (state.travaux.has('broyage-roseaux')) {
     hasTravaux = true;
-    const surf = state.surfBroyageRoseaux;
     const t = TARIFS['broyage-roseaux'];
+    addMobi(t, 'bateau + broyeur');
+    const surf = state.surfBroyageRoseaux;
     const m = accMod(t, acces) * (state.avecRamassage ? (1 + (t.ramassage || 0) / 100) : 1);
     const cMin = surf * t.base.min * m;
     const cMax = surf * t.base.max * m;
