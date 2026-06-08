@@ -119,8 +119,6 @@ function stopListener() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 }
 
-document.getElementById('btn-refresh')?.addEventListener('click', startListener);
-
 // ── GRILLE TARIFAIRE ─────────────────────────────────────────
 const TARIFS_DEFAULTS = {
   hydrocurage: {

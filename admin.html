@@ -107,6 +107,16 @@
       cursor: pointer; font-family: inherit; transition: background .2s;
     }
     .btn-logout:hover { background: rgba(255,255,255,.2); }
+    /* Grille tarifaire dans le header */
+    .btn-tarifs {
+      padding: .35rem .8rem; background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
+      color: var(--white); font-size: .78rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: background .2s;
+      white-space: nowrap;
+    }
+    .btn-tarifs:hover { background: rgba(255,255,255,.22); }
+    .btn-tarifs.active { background: var(--white); color: var(--green-800); border-color: var(--white); }
 
     /* ── 3-COLUMN LAYOUT ───────────────────────────────── */
     .admin-body {
@@ -147,13 +157,6 @@
     .filter-nav .fnav-btn:hover { background: var(--gray-100); }
     .filter-nav .fnav-btn.active { background: var(--green-50); color: var(--green-600); font-weight: 600; }
 
-    .btn-refresh {
-      padding: .5rem .75rem; background: none; border: 1.5px solid var(--gray-200);
-      border-radius: 8px; font-size: .8rem; color: var(--gray-600);
-      cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color .2s;
-      text-align: left;
-    }
-    .btn-refresh:hover { border-color: var(--green-400); }
 
     /* ── LIST PANE ─────────────────────────────────────── */
     .list-pane {
@@ -289,14 +292,6 @@
     .fnav-archived { margin-top: .35rem; border-top: 1px solid var(--gray-200); color: var(--gray-500) !important; }
     .fnav-archived.active { background: #f5f3ff !important; color: #7c3aed !important; }
 
-    .btn-tarifs {
-      padding: .55rem .75rem; background: var(--green-50); border: 1.5px solid #c6e8d4;
-      border-radius: 8px; font-size: .82rem; color: var(--green-600);
-      cursor: pointer; font-family: inherit; font-weight: 600; transition: background .2s;
-      text-align: left; margin-top: .5rem;
-    }
-    .btn-tarifs:hover { background: #d1f5e0; }
-    .btn-tarifs.active { background: var(--green-500); color: var(--white); border-color: var(--green-500); }
 
     /* ── TARIFS PANEL ──────────────────────────────────── */
     .tarifs-panel {
@@ -476,10 +471,6 @@
       .filter-nav .fnav-btn { font-size: .72rem; padding: .28rem .55rem; white-space: nowrap; flex-shrink: 0; }
       .fnav-archived { margin-top: 0; border-top: none; }
 
-      /* Boutons utilitaires : petits, en ligne */
-      .admin-sidebar-actions { display: flex; gap: .4rem; }
-      .btn-refresh { padding: .3rem .65rem; font-size: .74rem; }
-      .btn-tarifs  { padding: .3rem .65rem; font-size: .74rem; margin-top: 0; }
 
       /* Grille tarifaire : 1 colonne sur mobile */
       .tarifs-panel { padding: .75rem; }
@@ -542,6 +533,7 @@
       </a>
       <div class="admin-user">
         <span id="user-email"></span>
+        <button class="btn-tarifs" id="btn-tarifs">⚙️ Grille tarifaire</button>
         <button id="logout-btn" class="btn-logout">Déconnexion</button>
       </div>
     </div>
@@ -568,10 +560,6 @@
         <button class="fnav-btn" data-status="sans_suite">⚫ Sans suite</button>
         <button class="fnav-btn fnav-archived" data-status="archived">📦 Archivées</button>
       </nav>
-      <div class="admin-sidebar-actions">
-        <button class="btn-refresh" id="btn-refresh">↻ Actualiser</button>
-        <button class="btn-tarifs" id="btn-tarifs">⚙️ Grille tarifaire</button>
-      </div>
     </aside>
 
     <!-- TARIFS PANEL -->
