@@ -737,8 +737,9 @@ if (mapEl && typeof L !== 'undefined') {
       state.lat = lls[mid].lat;
       state.lng = lls[mid].lng;
       computeEstimation();
-      if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
+      if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong> &nbsp;·&nbsp; <span style="font-size:.85em;">⬇️ Vérification des zones en cours…</span>`;
       resetDrawingUI();
+      checkEnvironmentalZones(state.lat, state.lng);
     }
   });
 
