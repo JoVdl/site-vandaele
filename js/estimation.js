@@ -28,55 +28,61 @@ try {
 }
 
 // ── TARIFS (fourchettes min/max en €) ─────────────────────────
+// mobilisation + modificateurs % = partagés tous profils
+// prix de prestation = par profil client (particulier / professionnel / collectivite / association)
 let TARIFS = {
   hydrocurage: {
-    mobilisation: { min: 800,  max: 2000 }, // pompe + groupe
-    base:         { min: 15,   max: 30   }, // €/m³
-    moyen:        20,                        // +20 %
-    difficile:    40,                        // +40 %
-    evacuation:   { min: 8,    max: 15   }, // €/m³ supplément évacuation
+    mobilisation:  { min: 800,  max: 2000 },
+    moyen:         20,
+    difficile:     40,
+    particulier:   { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
+    professionnel: { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
+    collectivite:  { base: { min: 17, max: 33 }, evacuation: { min: 9,  max: 17 } },
+    association:   { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
   },
-
   curage: {
-    mobilisation: { min: 1200, max: 3000 }, // drague / pelle amphibie
-    base:         { min: 12,   max: 22   }, // €/m³
-    moyen:        20,
-    difficile:    40,
-    evacuation:   { min: 5, max: 10 },      // €/m³ supplément
+    mobilisation:  { min: 1200, max: 3000 },
+    moyen:         20,
+    difficile:     40,
+    particulier:   { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
+    professionnel: { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
+    collectivite:  { base: { min: 13, max: 25 }, evacuation: { min: 6,  max: 12 } },
+    association:   { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
   },
-
   faucardage: {
-    mobilisation: { min: 600,  max: 1500 }, // bateau faucardeur
-    base:         { min: 700,  max: 1200 }, // €/ha
-    moyen:        20,
-    difficile:    40,
-    jussie:       40,                        // +40 %
+    mobilisation:  { min: 600,  max: 1500 },
+    moyen:         20,
+    difficile:     40,
+    jussie:        40,
+    particulier:   { base: { min: 700, max: 1200 } },
+    professionnel: { base: { min: 700, max: 1200 } },
+    collectivite:  { base: { min: 770, max: 1320 } },
+    association:   { base: { min: 700, max: 1200 } },
   },
-
   berges: {
-    mobilisation: { min: 800,  max: 2000 }, // pelle + matériaux
-    enrochement:  { min: 150,  max: 280  },
-    palplanche:   { min: 200,  max: 400  },
-    gabion:       { min: 120,  max: 220  },
-    vegetal:      { min: 50,   max: 100  },
-    conseil:      { min: 150,  max: 280  },
+    mobilisation:  { min: 800,  max: 2000 },
+    particulier:   { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
+    professionnel: { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
+    collectivite:  { enrochement: { min: 165, max: 308 }, palplanche: { min: 220, max: 440 }, gabion: { min: 132, max: 242 }, vegetal: { min: 55,  max: 110 }, conseil: { min: 165, max: 308 } },
+    association:   { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
   },
-
   'broyage-forestier': {
-    mobilisation: { min: 600,  max: 1500 }, // broyeur forestier
-    legere:       { min: 900,  max: 1600 },
-    moyenne:      { min: 1500, max: 2800 },
-    dense:        { min: 2500, max: 4500 },
+    mobilisation:  { min: 600,  max: 1500 },
+    particulier:   { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
+    professionnel: { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
+    collectivite:  { legere: { min: 990,  max: 1760 }, moyenne: { min: 1650, max: 3080 }, dense: { min: 2750, max: 4950 } },
+    association:   { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
   },
-
   'broyage-roseaux': {
-    mobilisation: { min: 500,  max: 1200 }, // bateau + broyeur
-    base:         { min: 500,  max: 800  }, // €/ha
-    ramassage:    80,                        // +80 % avec ramassage
-    moyen:        30,
-    difficile:    60,
+    mobilisation:  { min: 500,  max: 1200 },
+    moyen:         30,
+    difficile:     60,
+    ramassage:     80,
+    particulier:   { base: { min: 500, max: 800 } },
+    professionnel: { base: { min: 500, max: 800 } },
+    collectivite:  { base: { min: 550, max: 880 } },
+    association:   { base: { min: 500, max: 800 } },
   },
-
   diagnostic: { min: 0, max: 0 },
 };
 
@@ -85,8 +91,8 @@ if (typeof db !== 'undefined' && db) {
   db.collection('config').doc('tarifs').get().then(snap => {
     if (snap.exists) {
       const data = snap.data();
-      // Ignorer si ancien format (avant base+modifiers)
-      if (data.hydrocurage?.base) {
+      // Ignorer si ancien format (avant structure par profil client)
+      if (data.hydrocurage?.particulier?.base) {
         TARIFS = data;
         if (typeof computeEstimation === 'function') computeEstimation();
       }
@@ -285,19 +291,22 @@ function computeEstimation() {
     lines.push({ label: `Mobilisation – ${label}`, val: fmtRange(t.mobilisation.min, t.mobilisation.max) });
   }
 
+  const tc_ = svc => TARIFS[svc][state.typeClient] ?? TARIFS[svc].particulier;
+
   // HYDROCURAGE
   if (state.travaux.has('hydrocurage')) {
     hasTravaux = true;
     const t = TARIFS.hydrocurage;
+    const tc = tc_('hydrocurage');
     addMobi(t, 'pompe / hydrocureur');
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
     const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
     const m = accMod(t, acces);
-    let cMin = vol * t.base.min * m;
-    let cMax = vol * t.base.max * m;
-    if (state.destinationVaseHydro === 'evacuation' && t.evacuation) {
-      cMin += vol * t.evacuation.min;
-      cMax += vol * t.evacuation.max;
+    let cMin = vol * tc.base.min * m;
+    let cMax = vol * tc.base.max * m;
+    if (state.destinationVaseHydro === 'evacuation' && tc.evacuation) {
+      cMin += vol * tc.evacuation.min;
+      cMax += vol * tc.evacuation.max;
     }
     totalMin += cMin; totalMax += cMax;
     const hydLabel = state.destinationVaseHydro === 'evacuation'
@@ -310,17 +319,18 @@ function computeEstimation() {
   if (state.travaux.has('curage')) {
     hasTravaux = true;
     const t = TARIFS.curage;
+    const tc = tc_('curage');
     addMobi(t, 'drague / pelle amphibie');
     const surf = state.surface > 0 ? state.surface : 0.5;
     const surfM2 = surf * 10000 * (state.pctCurage / 100);
     const profM = state.profVase / 100;
     const volM3 = surfM2 * profM;
     const m = accMod(t, acces);
-    let cMin = volM3 * t.base.min * m;
-    let cMax = volM3 * t.base.max * m;
-    if (state.destinationVase === 'evacuation' || state.destinationVase === 'valorisation') {
-      cMin += volM3 * t.evacuation.min;
-      cMax += volM3 * t.evacuation.max;
+    let cMin = volM3 * tc.base.min * m;
+    let cMax = volM3 * tc.base.max * m;
+    if ((state.destinationVase === 'evacuation' || state.destinationVase === 'valorisation') && tc.evacuation) {
+      cMin += volM3 * tc.evacuation.min;
+      cMax += volM3 * tc.evacuation.max;
     }
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Curage mécanique (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
@@ -330,11 +340,12 @@ function computeEstimation() {
   if (state.travaux.has('faucardage')) {
     hasTravaux = true;
     const t = TARIFS.faucardage;
+    const tc = tc_('faucardage');
     addMobi(t, 'bateau faucardeur');
     const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
     const m = accMod(t, acces) * (state.faucJussie ? (1 + (t.jussie || 0) / 100) : 1);
-    const cMin = surf * t.base.min * m;
-    const cMax = surf * t.base.max * m;
+    const cMin = surf * tc.base.min * m;
+    const cMax = surf * tc.base.max * m;
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Faucardage (~${surf.toFixed(2)} ha)`, val: fmtRange(cMin, cMax) });
   }
@@ -343,8 +354,9 @@ function computeEstimation() {
   if (state.travaux.has('berges')) {
     hasTravaux = true;
     const t = TARIFS.berges;
+    const tc = tc_('berges');
     addMobi(t, 'pelle + matériaux');
-    const tp = t[state.typeBerge] || t.conseil;
+    const tp = tc[state.typeBerge] || tc.conseil;
     const lg = state.lgBerges;
     const cMin = lg * tp.min;
     const cMax = lg * tp.max;
@@ -356,8 +368,9 @@ function computeEstimation() {
   if (state.travaux.has('broyage-forestier')) {
     hasTravaux = true;
     const t = TARIFS['broyage-forestier'];
+    const tc = tc_('broyage-forestier');
     addMobi(t, 'broyeur forestier');
-    const tp = t[state.densiteBroyage] || t.moyenne;
+    const tp = tc[state.densiteBroyage] || tc.moyenne;
     const surf = state.surfBroyageForestier;
     const cMin = surf * tp.min;
     const cMax = surf * tp.max;
@@ -369,11 +382,12 @@ function computeEstimation() {
   if (state.travaux.has('broyage-roseaux')) {
     hasTravaux = true;
     const t = TARIFS['broyage-roseaux'];
+    const tc = tc_('broyage-roseaux');
     addMobi(t, 'bateau + broyeur');
     const surf = state.surfBroyageRoseaux;
     const m = accMod(t, acces) * (state.avecRamassage ? (1 + (t.ramassage || 0) / 100) : 1);
-    const cMin = surf * t.base.min * m;
-    const cMax = surf * t.base.max * m;
+    const cMin = surf * tc.base.min * m;
+    const cMax = surf * tc.base.max * m;
     totalMin += cMin; totalMax += cMax;
     const label = state.avecRamassage ? 'Roseaux + ramassage' : 'Broyage roseaux';
     lines.push({ label: `${label} (${surf.toLocaleString('fr')} ha)`, val: fmtRange(cMin, cMax) });
@@ -385,12 +399,6 @@ function computeEstimation() {
     lines.push({ label: 'Diagnostic & visite technique', val: 'Gratuit' });
   }
 
-  // Modificateur type de client
-  if (state.typeClient === 'collectivite' && (totalMin > 0 || totalMax > 0)) {
-    totalMin = Math.round(totalMin * 1.1);
-    totalMax = Math.round(totalMax * 1.1);
-    lines.push({ label: '↳ Majoration collectivité (+10%)', val: 'incluse' });
-  }
   const isTtcNote = state.typeClient === 'professionnel' || state.typeClient === 'collectivite';
 
   // Render

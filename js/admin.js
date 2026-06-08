@@ -124,52 +124,57 @@ document.getElementById('btn-refresh')?.addEventListener('click', startListener)
 // ── GRILLE TARIFAIRE ─────────────────────────────────────────
 const TARIFS_DEFAULTS = {
   hydrocurage: {
-    mobilisation: { min: 800,  max: 2000 },
-    base:         { min: 15,   max: 30   },
-    moyen:        20,
-    difficile:    40,
+    mobilisation:  { min: 800,  max: 2000 },
+    moyen:         20,
+    difficile:     40,
+    particulier:   { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
+    professionnel: { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
+    collectivite:  { base: { min: 17, max: 33 }, evacuation: { min: 9,  max: 17 } },
+    association:   { base: { min: 15, max: 30 }, evacuation: { min: 8,  max: 15 } },
   },
-
   curage: {
-    mobilisation: { min: 1200, max: 3000 },
-    base:         { min: 12,   max: 22   },
-    moyen:        20,
-    difficile:    40,
-    evacuation:   { min: 5,    max: 10   },
+    mobilisation:  { min: 1200, max: 3000 },
+    moyen:         20,
+    difficile:     40,
+    particulier:   { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
+    professionnel: { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
+    collectivite:  { base: { min: 13, max: 25 }, evacuation: { min: 6,  max: 12 } },
+    association:   { base: { min: 12, max: 22 }, evacuation: { min: 5,  max: 10 } },
   },
-
   faucardage: {
-    mobilisation: { min: 600,  max: 1500 },
-    base:         { min: 700,  max: 1200 },
-    moyen:        20,
-    difficile:    40,
-    jussie:       40,
+    mobilisation:  { min: 600,  max: 1500 },
+    moyen:         20,
+    difficile:     40,
+    jussie:        40,
+    particulier:   { base: { min: 700, max: 1200 } },
+    professionnel: { base: { min: 700, max: 1200 } },
+    collectivite:  { base: { min: 770, max: 1320 } },
+    association:   { base: { min: 700, max: 1200 } },
   },
-
   berges: {
-    mobilisation: { min: 800,  max: 2000 },
-    enrochement:  { min: 150,  max: 280  },
-    palplanche:   { min: 200,  max: 400  },
-    gabion:       { min: 120,  max: 220  },
-    vegetal:      { min: 50,   max: 100  },
-    conseil:      { min: 150,  max: 280  },
+    mobilisation:  { min: 800,  max: 2000 },
+    particulier:   { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
+    professionnel: { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
+    collectivite:  { enrochement: { min: 165, max: 308 }, palplanche: { min: 220, max: 440 }, gabion: { min: 132, max: 242 }, vegetal: { min: 55,  max: 110 }, conseil: { min: 165, max: 308 } },
+    association:   { enrochement: { min: 150, max: 280 }, palplanche: { min: 200, max: 400 }, gabion: { min: 120, max: 220 }, vegetal: { min: 50,  max: 100 }, conseil: { min: 150, max: 280 } },
   },
-
   'broyage-forestier': {
-    mobilisation: { min: 600,  max: 1500 },
-    legere:       { min: 900,  max: 1600 },
-    moyenne:      { min: 1500, max: 2800 },
-    dense:        { min: 2500, max: 4500 },
+    mobilisation:  { min: 600,  max: 1500 },
+    particulier:   { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
+    professionnel: { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
+    collectivite:  { legere: { min: 990,  max: 1760 }, moyenne: { min: 1650, max: 3080 }, dense: { min: 2750, max: 4950 } },
+    association:   { legere: { min: 900,  max: 1600 }, moyenne: { min: 1500, max: 2800 }, dense: { min: 2500, max: 4500 } },
   },
-
   'broyage-roseaux': {
-    mobilisation: { min: 500,  max: 1200 },
-    base:         { min: 500,  max: 800  },
-    ramassage:    80,
-    moyen:        30,
-    difficile:    60,
+    mobilisation:  { min: 500,  max: 1200 },
+    moyen:         30,
+    difficile:     60,
+    ramassage:     80,
+    particulier:   { base: { min: 500, max: 800 } },
+    professionnel: { base: { min: 500, max: 800 } },
+    collectivite:  { base: { min: 550, max: 880 } },
+    association:   { base: { min: 500, max: 800 } },
   },
-
   diagnostic: { min: 0, max: 0 },
 };
 
@@ -193,38 +198,62 @@ async function loadTarifsPanel() {
     const snap = await db.collection('config').doc('tarifs').get();
     if (snap.exists) {
       const data = snap.data();
-      if (data.hydrocurage?.base) t = data;
+      if (data.hydrocurage?.particulier?.base) t = data;
     }
   } catch (e) { console.error('[Firebase] Tarifs load failed:', e.code, e.message); }
 
-  // base row : label + unité + min – max
+  const CLIENT_TYPES = [
+    { key: 'particulier',   icon: '🏠', label: 'Particulier' },
+    { key: 'professionnel', icon: '🏢', label: 'Pro' },
+    { key: 'collectivite',  icon: '🏛️', label: 'Coll.' },
+    { key: 'association',   icon: '🤝', label: 'Asso' },
+  ];
+
+  // min–max field row
   const base = (field, label, unit, val) => `
     <div class="tg-row">
       <span class="tg-label">${label} <span class="tg-unit">${unit}</span></span>
-      <input type="number" class="tg-input" data-field="${field}.min" value="${val.min}" min="0" step="1">
+      <input type="number" class="tg-input" data-field="${field}.min" value="${val?.min ?? 0}" min="0" step="1">
       <span class="tg-sep">–</span>
-      <input type="number" class="tg-input" data-field="${field}.max" value="${val.max}" min="0" step="1">
+      <input type="number" class="tg-input" data-field="${field}.max" value="${val?.max ?? 0}" min="0" step="1">
     </div>`;
 
-  // ligne modificateur : % (ignorée par l'ajustement global)
+  // % modifier row (skipped by global coefficient apply)
   const mod = (field, label, val) => `
     <div class="tg-mod">
       <span class="tg-mod-lbl">↳ ${label}</span>
-      <input type="number" class="tg-mod-input" data-field="${field}" data-mod="true" value="${val}" min="0" max="300" step="1">
+      <input type="number" class="tg-mod-input" data-field="${field}" data-mod="true" value="${val ?? 0}" min="0" max="300" step="1">
       <span class="tg-pct">%</span>
     </div>`;
 
-  const card = (title, content) => `
+  // tab section for per-client prices
+  const tabs = (svc, contentFn) => `
+    <div class="tg-tabs" data-svc="${svc}">
+      <div class="tg-tab-lbl">Tarifs par profil client</div>
+      <div class="tg-tab-bar">
+        ${CLIENT_TYPES.map((c, i) => `<button type="button" class="tg-tab-btn${i === 0 ? ' active' : ''}" data-svc="${svc}" data-client="${c.key}">${c.icon} ${c.label}</button>`).join('')}
+      </div>
+      ${CLIENT_TYPES.map((c, i) => `
+        <div class="tg-tab-pane${i === 0 ? ' active' : ''}" data-svc="${svc}" data-pane="${c.key}">
+          ${contentFn(svc, c.key)}
+        </div>`).join('')}
+    </div>`;
+
+  // helpers to get per-client value safely
+  const tc = (svc, client) => (t[svc]?.[client]) ?? (TARIFS_DEFAULTS[svc]?.[client]) ?? {};
+
+  const card = (title, shared, tabsFn) => `
     <div class="tg-card">
       <div class="tg-title">${title}</div>
-      ${content}
+      ${shared}
+      ${tabsFn}
     </div>`;
 
   panel.innerHTML = `
     <div class="tarifs-panel-header">
       <div>
         <h2>⚙️ Grille tarifaire</h2>
-        <p>Fourchettes min–max + majorations en %. Sauvegardez pour appliquer aux estimations.</p>
+        <p>Mobilisation + modificateurs partagés tous profils · Prix de prestation par profil client.</p>
       </div>
       <button id="btn-tarifs-save" class="btn-tarifs-save">💾 Sauvegarder</button>
     </div>
@@ -242,49 +271,76 @@ async function loadTarifsPanel() {
     <div class="tarifs-grid">
       ${card('💧 Hydrocurage',
         base('hydrocurage.mobilisation', '🚛 Mobilisation pompe', '€', t.hydrocurage.mobilisation) +
-        base('hydrocurage.base',         'Prestation',            '€/m³', t.hydrocurage.base) +
         mod('hydrocurage.moyen',     'Accès moyen',     t.hydrocurage.moyen     ?? 20) +
-        mod('hydrocurage.difficile', 'Accès difficile', t.hydrocurage.difficile ?? 40)
+        mod('hydrocurage.difficile', 'Accès difficile', t.hydrocurage.difficile ?? 40),
+        tabs('hydrocurage', (svc, cl) =>
+          base(`${svc}.${cl}.base`,       'Prestation',       '€/m³', tc(svc,cl).base) +
+          base(`${svc}.${cl}.evacuation`, 'Suppl. évacuation','€/m³', tc(svc,cl).evacuation)
+        )
       )}
       ${card('🚜 Curage mécanique',
         base('curage.mobilisation', '🚛 Mobilisation drague', '€', t.curage.mobilisation) +
-        base('curage.base',         'Prestation',             '€/m³', t.curage.base) +
         mod('curage.moyen',     'Accès moyen',     t.curage.moyen     ?? 20) +
-        mod('curage.difficile', 'Accès difficile', t.curage.difficile ?? 40) +
-        base('curage.evacuation', 'Suppl. évacuation', '€/m³', t.curage.evacuation)
+        mod('curage.difficile', 'Accès difficile', t.curage.difficile ?? 40),
+        tabs('curage', (svc, cl) =>
+          base(`${svc}.${cl}.base`,       'Prestation',       '€/m³', tc(svc,cl).base) +
+          base(`${svc}.${cl}.evacuation`, 'Suppl. évacuation','€/m³', tc(svc,cl).evacuation)
+        )
       )}
       ${card('🌿 Faucardage',
         base('faucardage.mobilisation', '🚛 Mobilisation bateau', '€', t.faucardage.mobilisation) +
-        base('faucardage.base',         'Prestation',             '€/ha', t.faucardage.base) +
         mod('faucardage.moyen',     'Accès moyen',     t.faucardage.moyen     ?? 20) +
         mod('faucardage.difficile', 'Accès difficile', t.faucardage.difficile ?? 40) +
-        mod('faucardage.jussie',    'Jussie',           t.faucardage.jussie    ?? 40)
+        mod('faucardage.jussie',    'Jussie',          t.faucardage.jussie    ?? 40),
+        tabs('faucardage', (svc, cl) =>
+          base(`${svc}.${cl}.base`, 'Prestation', '€/ha', tc(svc,cl).base)
+        )
       )}
       ${card('🪨 Défenses de berges',
-        base('berges.mobilisation', '🚛 Mobilisation pelle', '€', t.berges.mobilisation) +
-        base('berges.enrochement', 'Enrochement',  '€/ml', t.berges.enrochement) +
-        base('berges.palplanche',  'Palplanches',  '€/ml', t.berges.palplanche)  +
-        base('berges.gabion',      'Gabions',      '€/ml', t.berges.gabion)      +
-        base('berges.vegetal',     'Génie végétal','€/ml', t.berges.vegetal)     +
-        base('berges.conseil',     'À définir',    '€/ml', t.berges.conseil)
+        base('berges.mobilisation', '🚛 Mobilisation pelle', '€', t.berges.mobilisation),
+        tabs('berges', (svc, cl) =>
+          base(`${svc}.${cl}.enrochement`, 'Enrochement',   '€/ml', tc(svc,cl).enrochement) +
+          base(`${svc}.${cl}.palplanche`,  'Palplanches',   '€/ml', tc(svc,cl).palplanche)  +
+          base(`${svc}.${cl}.gabion`,      'Gabions',       '€/ml', tc(svc,cl).gabion)      +
+          base(`${svc}.${cl}.vegetal`,     'Génie végétal', '€/ml', tc(svc,cl).vegetal)     +
+          base(`${svc}.${cl}.conseil`,     'À définir',     '€/ml', tc(svc,cl).conseil)
+        )
       )}
       ${card('🌲 Broyage forestier',
-        base('broyage-forestier.mobilisation', '🚛 Mobilisation broyeur', '€', t['broyage-forestier'].mobilisation) +
-        base('broyage-forestier.legere',  'Légère',  '€/ha', t['broyage-forestier'].legere)  +
-        base('broyage-forestier.moyenne', 'Moyenne', '€/ha', t['broyage-forestier'].moyenne) +
-        base('broyage-forestier.dense',   'Dense',   '€/ha', t['broyage-forestier'].dense)
+        base('broyage-forestier.mobilisation', '🚛 Mobilisation broyeur', '€', t['broyage-forestier'].mobilisation),
+        tabs('broyage-forestier', (svc, cl) =>
+          base(`${svc}.${cl}.legere`,  'Végétation légère', '€/ha', tc(svc,cl).legere)  +
+          base(`${svc}.${cl}.moyenne`, 'Végétation moyenne','€/ha', tc(svc,cl).moyenne) +
+          base(`${svc}.${cl}.dense`,   'Végétation dense',  '€/ha', tc(svc,cl).dense)
+        )
       )}
       ${card('🌾 Broyage roseaux',
         base('broyage-roseaux.mobilisation', '🚛 Mobilisation bateau', '€', t['broyage-roseaux'].mobilisation) +
-        base('broyage-roseaux.base',         'Prestation',             '€/ha', t['broyage-roseaux'].base) +
         mod('broyage-roseaux.ramassage', 'Avec ramassage',  t['broyage-roseaux'].ramassage ?? 80) +
         mod('broyage-roseaux.moyen',     'Accès moyen',     t['broyage-roseaux'].moyen     ?? 30) +
-        mod('broyage-roseaux.difficile', 'Accès difficile', t['broyage-roseaux'].difficile ?? 60)
+        mod('broyage-roseaux.difficile', 'Accès difficile', t['broyage-roseaux'].difficile ?? 60),
+        tabs('broyage-roseaux', (svc, cl) =>
+          base(`${svc}.${cl}.base`, 'Prestation', '€/ha', tc(svc,cl).base)
+        )
       )}
     </div>
     <div id="tarifs-status" class="tarifs-status" style="margin-top:.75rem"></div>`;
 
   document.getElementById('btn-tarifs-save')?.addEventListener('click', saveTarifs);
+
+  // Tab switching
+  panel.querySelectorAll('.tg-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const svc    = btn.dataset.svc;
+      const client = btn.dataset.client;
+      const tabsEl = panel.querySelector(`.tg-tabs[data-svc="${svc}"]`);
+      if (!tabsEl) return;
+      tabsEl.querySelectorAll('.tg-tab-btn').forEach(b => b.classList.remove('active'));
+      tabsEl.querySelectorAll('.tg-tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      tabsEl.querySelector(`.tg-tab-pane[data-pane="${client}"]`)?.classList.add('active');
+    });
+  });
 
   const slider   = document.getElementById('coeff-slider');
   const pctInput = document.getElementById('coeff-pct');
