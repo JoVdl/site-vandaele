@@ -614,12 +614,7 @@ if (mapEl && typeof L !== 'undefined') {
     }
   }
 
-  // ── FERMETURE MANUELLE (ne dépend pas de _finishShape) ──────────
-  let closeZoneMarker = null;
-  function removeCloseZone() {
-    if (closeZoneMarker) { map.removeLayer(closeZoneMarker); closeZoneMarker = null; }
-  }
-
+  // ── TERMINER LE TRACÉ (bouton "Terminer") ──────────────────────
   function finishCurrentDrawing() {
     if (drawPolygon._enabled) {
       const pts = (drawPolygon._markers || []).map(m => m.getLatLng());
@@ -627,7 +622,6 @@ if (mapEl && typeof L !== 'undefined') {
         if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 3 points pour créer une surface.';
         return;
       }
-      removeCloseZone();
       drawPolygon.disable();
       const layer = L.polygon(pts, { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
       map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
@@ -645,32 +639,18 @@ if (mapEl && typeof L !== 'undefined') {
     }
   }
 
-  // Marqueur cliquable élargi sur le 1er point (aide au clic)
-  map.on('draw:drawvertex', () => {
-    removeCloseZone();
-    if (!drawPolygon._enabled || !drawPolygon._markers || drawPolygon._markers.length < 3) return;
-    const firstLL = drawPolygon._markers[0].getLatLng();
-    closeZoneMarker = L.marker(firstLL, {
-      icon: L.divIcon({
-        html: '<div style="width:36px;height:36px;border:3px solid #3d9e62;border-radius:50%;background:rgba(61,158,98,.25);box-sizing:border-box;cursor:pointer;" title="Cliquer pour terminer"></div>',
-        className: '',
-        iconSize:   [36, 36],
-        iconAnchor: [18, 18],
-      }),
-      interactive: true,
-      zIndexOffset: 2000,
-    }).addTo(map);
-    closeZoneMarker.on('click', e => {
-      L.DomEvent.stopPropagation(e);
-      finishCurrentDrawing();
-    });
-  });
-  map.on('draw:drawstop', removeCloseZone);
+  // Remet l'UI en état neutre sans ré-activer le dessin
+  function resetDrawingUI() {
+    drawPolygon.disable();
+    drawPolyline.disable();
+    btnSurface && btnSurface.classList.remove('active-surface');
+    btnBerges  && btnBerges.classList.remove('active-berges');
+    if (btnFinish) btnFinish.style.display = 'none';
+  }
 
   if (btnSurface) btnSurface.addEventListener('click', () => setMode('surface'));
   if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
   if (btnReset)   btnReset.addEventListener('click', () => {
-    removeCloseZone();
     drawPolygon.disable(); drawPolyline.disable();
     drawnItems.clearLayers();
     btnSurface && btnSurface.classList.remove('active-surface');
@@ -709,9 +689,8 @@ if (mapEl && typeof L !== 'undefined') {
       const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
       if (infoBar) infoBar.innerHTML =
         `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
-      if (btnFinish) btnFinish.style.display = 'none';
+      resetDrawingUI();
       checkEnvironmentalZones(state.lat, state.lng);
-      setTimeout(() => setMode('surface'), 300);
     }
 
     if (e.layerType === 'polyline') {
@@ -727,7 +706,7 @@ if (mapEl && typeof L !== 'undefined') {
       state.lng = lls[mid].lng;
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
-      setTimeout(() => setMode('berges'), 300);
+      resetDrawingUI();
     }
   });
 
