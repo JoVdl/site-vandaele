@@ -184,49 +184,49 @@ async function loadTarifsPanel() {
   const panel = document.getElementById('tarifs-panel');
   panel.innerHTML = '<div class="state-msg">Chargement…</div>';
 
-  let tarifs = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
+  let t = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
   try {
     const snap = await db.collection('config').doc('tarifs').get();
     if (snap.exists) {
       const data = snap.data();
-      // Ignorer les données Firestore si elles ont l'ancien format (avant base+modifiers)
-      if (data.hydrocurage?.base) tarifs = data;
+      if (data.hydrocurage?.base) t = data;
     }
-  } catch (e) {
-    console.error('[Firebase] Tarifs load failed:', e.code, e.message);
-  }
+  } catch (e) { console.error('[Firebase] Tarifs load failed:', e.code, e.message); }
 
-  // Base row: min + max inputs
-  const row = (field, label, unit, val) => `
-    <tr>
-      <td class="tt-label">${label}</td>
-      <td class="tt-unit">${unit}</td>
-      <td><input type="number" class="tt-input" data-field="${field}.min" value="${val.min}" min="0" step="1"></td>
-      <td><input type="number" class="tt-input" data-field="${field}.max" value="${val.max}" min="0" step="1"></td>
-    </tr>`;
+  // base row : label + unité + min – max
+  const base = (field, label, unit, val) => `
+    <div class="tg-row">
+      <span class="tg-label">${label} <span class="tg-unit">${unit}</span></span>
+      <input type="number" class="tg-input" data-field="${field}.min" value="${val.min}" min="0" step="1">
+      <span class="tg-sep">–</span>
+      <input type="number" class="tg-input" data-field="${field}.max" value="${val.max}" min="0" step="1">
+    </div>`;
 
-  // Modifier row: single % value, skipped by coefficient apply
+  // ligne modificateur : % (ignorée par l'ajustement global)
   const mod = (field, label, val) => `
-    <tr class="tt-mod">
-      <td class="tt-label">↳ ${label}</td>
-      <td class="tt-unit tt-pct">%</td>
-      <td colspan="2"><input type="number" class="tt-input tt-mod-input" data-field="${field}" data-mod="true" value="${val}" min="0" max="300" step="1"></td>
-    </tr>`;
+    <div class="tg-mod">
+      <span class="tg-mod-lbl">↳ ${label}</span>
+      <input type="number" class="tg-mod-input" data-field="${field}" data-mod="true" value="${val}" min="0" max="300" step="1">
+      <span class="tg-pct">%</span>
+    </div>`;
 
-  const sec = (label) =>
-    `<tr class="tt-section"><td colspan="4">${label}</td></tr>`;
+  const card = (title, content) => `
+    <div class="tg-card">
+      <div class="tg-title">${title}</div>
+      ${content}
+    </div>`;
 
   panel.innerHTML = `
     <div class="tarifs-panel-header">
       <div>
         <h2>⚙️ Grille tarifaire</h2>
-        <p>Fourchettes de base + modificateurs en %. L'accès et les options majorent le prix de base selon le pourcentage configuré.</p>
+        <p>Fourchettes min–max + majorations en %. Sauvegardez pour appliquer aux estimations.</p>
       </div>
       <button id="btn-tarifs-save" class="btn-tarifs-save">💾 Sauvegarder</button>
     </div>
 
     <div class="coeff-bar">
-      <span class="coeff-label">Ajustement global des prix de base</span>
+      <span class="coeff-label">Ajuster les bases de</span>
       <input type="range" id="coeff-slider" min="-50" max="100" value="0" step="1" class="coeff-slider">
       <span class="coeff-sign" id="coeff-sign">+</span>
       <input type="number" id="coeff-pct" value="0" min="-50" max="100" step="1" class="coeff-input">
@@ -235,80 +235,67 @@ async function loadTarifsPanel() {
       <button id="coeff-reset" class="btn-coeff-reset">Réinitialiser</button>
     </div>
 
-    <table class="tarifs-table">
-      <thead>
-        <tr>
-          <th>Prestation / Option</th>
-          <th>Unité</th>
-          <th style="text-align:center">Min (€)</th>
-          <th style="text-align:center">Max (€)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sec('🚛 Mobilisation')}
-        ${row('mobilisation', 'Déplacement engin', '€ forfait', tarifs.mobilisation)}
-
-        ${sec('💧 Hydrocurage')}
-        ${row('hydrocurage.base', 'Base', '€ / m³', tarifs.hydrocurage.base)}
-        ${mod('hydrocurage.moyen',     'Accès moyen',     tarifs.hydrocurage.moyen     ?? 20)}
-        ${mod('hydrocurage.difficile', 'Accès difficile', tarifs.hydrocurage.difficile ?? 40)}
-
-        ${sec('🚜 Curage mécanique')}
-        ${row('curage.base', 'Base', '€ / m³', tarifs.curage.base)}
-        ${mod('curage.moyen',     'Accès moyen',     tarifs.curage.moyen     ?? 20)}
-        ${mod('curage.difficile', 'Accès difficile', tarifs.curage.difficile ?? 40)}
-        ${row('curage.evacuation', 'Supplément évacuation', '€ / m³', tarifs.curage.evacuation)}
-
-        ${sec('🌿 Faucardage')}
-        ${row('faucardage.base', 'Base', '€ / ha', tarifs.faucardage.base)}
-        ${mod('faucardage.moyen',     'Accès moyen',     tarifs.faucardage.moyen     ?? 20)}
-        ${mod('faucardage.difficile', 'Accès difficile', tarifs.faucardage.difficile ?? 40)}
-        ${mod('faucardage.jussie',    'Jussie (invasive)', tarifs.faucardage.jussie   ?? 40)}
-
-        ${sec('🪨 Défenses de berges')}
-        ${row('berges.enrochement', 'Enrochement',   '€ / ml', tarifs.berges.enrochement)}
-        ${row('berges.palplanche',  'Palplanches',   '€ / ml', tarifs.berges.palplanche)}
-        ${row('berges.gabion',      'Gabions',       '€ / ml', tarifs.berges.gabion)}
-        ${row('berges.vegetal',     'Génie végétal', '€ / ml', tarifs.berges.vegetal)}
-        ${row('berges.conseil',     'À définir',     '€ / ml', tarifs.berges.conseil)}
-
-        ${sec('🌲 Broyage forestier')}
-        ${row('broyage-forestier.legere',  'Végétation légère',  '€ / ha', tarifs['broyage-forestier'].legere)}
-        ${row('broyage-forestier.moyenne', 'Végétation moyenne', '€ / ha', tarifs['broyage-forestier'].moyenne)}
-        ${row('broyage-forestier.dense',   'Végétation dense',   '€ / ha', tarifs['broyage-forestier'].dense)}
-
-        ${sec('🌾 Broyage roseaux')}
-        ${row('broyage-roseaux.base', 'Base (sans ramassage)', '€ / ha', tarifs['broyage-roseaux'].base)}
-        ${mod('broyage-roseaux.ramassage', 'Avec ramassage',  tarifs['broyage-roseaux'].ramassage ?? 80)}
-        ${mod('broyage-roseaux.moyen',     'Accès moyen',     tarifs['broyage-roseaux'].moyen     ?? 30)}
-        ${mod('broyage-roseaux.difficile', 'Accès difficile', tarifs['broyage-roseaux'].difficile ?? 60)}
-      </tbody>
-    </table>
-    <div id="tarifs-status" class="tarifs-status"></div>`;
+    <div class="tarifs-grid">
+      ${card('🚛 Mobilisation',
+        base('mobilisation', 'Forfait déplacement', '€', t.mobilisation)
+      )}
+      ${card('💧 Hydrocurage',
+        base('hydrocurage.base', 'Base', '€/m³', t.hydrocurage.base) +
+        mod('hydrocurage.moyen',     'Accès moyen',     t.hydrocurage.moyen     ?? 20) +
+        mod('hydrocurage.difficile', 'Accès difficile', t.hydrocurage.difficile ?? 40)
+      )}
+      ${card('🚜 Curage mécanique',
+        base('curage.base', 'Base', '€/m³', t.curage.base) +
+        mod('curage.moyen',     'Accès moyen',     t.curage.moyen     ?? 20) +
+        mod('curage.difficile', 'Accès difficile', t.curage.difficile ?? 40) +
+        base('curage.evacuation', 'Suppl. évacuation', '€/m³', t.curage.evacuation)
+      )}
+      ${card('🌿 Faucardage',
+        base('faucardage.base', 'Base', '€/ha', t.faucardage.base) +
+        mod('faucardage.moyen',     'Accès moyen',     t.faucardage.moyen     ?? 20) +
+        mod('faucardage.difficile', 'Accès difficile', t.faucardage.difficile ?? 40) +
+        mod('faucardage.jussie',    'Jussie',           t.faucardage.jussie    ?? 40)
+      )}
+      ${card('🪨 Défenses de berges',
+        base('berges.enrochement', 'Enrochement',  '€/ml', t.berges.enrochement) +
+        base('berges.palplanche',  'Palplanches',  '€/ml', t.berges.palplanche)  +
+        base('berges.gabion',      'Gabions',      '€/ml', t.berges.gabion)      +
+        base('berges.vegetal',     'Génie végétal','€/ml', t.berges.vegetal)     +
+        base('berges.conseil',     'À définir',    '€/ml', t.berges.conseil)
+      )}
+      ${card('🌲 Broyage forestier',
+        base('broyage-forestier.legere',  'Légère',  '€/ha', t['broyage-forestier'].legere)  +
+        base('broyage-forestier.moyenne', 'Moyenne', '€/ha', t['broyage-forestier'].moyenne) +
+        base('broyage-forestier.dense',   'Dense',   '€/ha', t['broyage-forestier'].dense)
+      )}
+      ${card('🌾 Broyage roseaux',
+        base('broyage-roseaux.base', 'Base', '€/ha', t['broyage-roseaux'].base) +
+        mod('broyage-roseaux.ramassage', 'Avec ramassage',  t['broyage-roseaux'].ramassage ?? 80) +
+        mod('broyage-roseaux.moyen',     'Accès moyen',     t['broyage-roseaux'].moyen     ?? 30) +
+        mod('broyage-roseaux.difficile', 'Accès difficile', t['broyage-roseaux'].difficile ?? 60)
+      )}
+    </div>
+    <div id="tarifs-status" class="tarifs-status" style="margin-top:.75rem"></div>`;
 
   document.getElementById('btn-tarifs-save')?.addEventListener('click', saveTarifs);
 
-  // Sync slider ↔ number input
-  const slider = document.getElementById('coeff-slider');
+  const slider   = document.getElementById('coeff-slider');
   const pctInput = document.getElementById('coeff-pct');
-  const sign = document.getElementById('coeff-sign');
+  const sign     = document.getElementById('coeff-sign');
   function updateSign(v) { sign.textContent = v >= 0 ? '+' : ''; sign.style.color = v < 0 ? 'var(--red)' : 'var(--green-600)'; }
-  slider?.addEventListener('input', () => { pctInput.value = slider.value; updateSign(+slider.value); });
-  pctInput?.addEventListener('input', () => { slider.value = pctInput.value; updateSign(+pctInput.value); });
+  slider?.addEventListener('input',  () => { pctInput.value = slider.value;  updateSign(+slider.value); });
+  pctInput?.addEventListener('input', () => { slider.value  = pctInput.value; updateSign(+pctInput.value); });
 
   document.getElementById('coeff-apply')?.addEventListener('click', () => {
-    const pct = parseFloat(pctInput.value) || 0;
-    const factor = 1 + pct / 100;
-    document.querySelectorAll('.tt-input[data-field]').forEach(input => {
-      if (input.dataset.mod) return; // skip modifier % rows
-      const v = parseFloat(input.value) || 0;
-      input.value = Math.round(v * factor);
+    const factor = 1 + (parseFloat(pctInput.value) || 0) / 100;
+    panel.querySelectorAll('.tg-input[data-field]').forEach(input => {
+      input.value = Math.round((parseFloat(input.value) || 0) * factor);
     });
   });
 
   document.getElementById('coeff-reset')?.addEventListener('click', () => {
     slider.value = 0; pctInput.value = 0; updateSign(0);
-    document.querySelectorAll('.tt-input[data-field]').forEach(input => {
+    panel.querySelectorAll('[data-field]').forEach(input => {
       const keys = input.dataset.field.split('.');
       let obj = TARIFS_DEFAULTS;
       try { for (const k of keys) obj = obj[k]; input.value = obj; } catch {}
@@ -318,8 +305,9 @@ async function loadTarifsPanel() {
 
 async function saveTarifs() {
   const tarifs = JSON.parse(JSON.stringify(TARIFS_DEFAULTS));
+  const panel  = document.getElementById('tarifs-panel');
 
-  document.querySelectorAll('.tt-input[data-field]').forEach(input => {
+  panel.querySelectorAll('[data-field]').forEach(input => {
     const keys  = input.dataset.field.split('.');
     let obj = tarifs;
     for (let i = 0; i < keys.length - 1; i++) {
