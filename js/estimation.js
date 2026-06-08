@@ -606,29 +606,55 @@ if (mapEl && typeof L !== 'undefined') {
     }
   }
 
-  // ── FERMETURE POLYGONE : marqueur cliquable élargi sur le 1er point ──
+  // ── FERMETURE MANUELLE (ne dépend pas de _finishShape) ──────────
   let closeZoneMarker = null;
   function removeCloseZone() {
     if (closeZoneMarker) { map.removeLayer(closeZoneMarker); closeZoneMarker = null; }
   }
-  map.on(L.Draw.Event.DRAWVERTEX, () => {
+
+  function finishCurrentDrawing() {
+    if (drawPolygon._enabled) {
+      const pts = (drawPolygon._markers || []).map(m => m.getLatLng());
+      if (pts.length < 3) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 3 points pour créer une surface.';
+        return;
+      }
+      removeCloseZone();
+      drawPolygon.disable();
+      const layer = L.polygon(pts, { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
+      map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
+      return;
+    }
+    if (drawPolyline._enabled) {
+      const pts = (drawPolyline._markers || []).map(m => m.getLatLng());
+      if (pts.length < 2) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 2 points pour mesurer les berges.';
+        return;
+      }
+      drawPolyline.disable();
+      const layer = L.polyline(pts, { color: '#56B57A', weight: 3 });
+      map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polyline' });
+    }
+  }
+
+  // Marqueur cliquable élargi sur le 1er point (aide au clic)
+  map.on('draw:drawvertex', () => {
     removeCloseZone();
     if (!drawPolygon._enabled || !drawPolygon._markers || drawPolygon._markers.length < 3) return;
     const firstLL = drawPolygon._markers[0].getLatLng();
     closeZoneMarker = L.marker(firstLL, {
       icon: L.divIcon({
-        html: '<div style="width:32px;height:32px;border:3px solid #3d9e62;border-radius:50%;background:rgba(61,158,98,.25);box-sizing:border-box;cursor:pointer;"></div>',
+        html: '<div style="width:36px;height:36px;border:3px solid #3d9e62;border-radius:50%;background:rgba(61,158,98,.25);box-sizing:border-box;cursor:pointer;" title="Cliquer pour terminer"></div>',
         className: '',
-        iconSize:   [32, 32],
-        iconAnchor: [16, 16],
+        iconSize:   [36, 36],
+        iconAnchor: [18, 18],
       }),
       interactive: true,
-      zIndexOffset: 1000,
+      zIndexOffset: 2000,
     }).addTo(map);
     closeZoneMarker.on('click', e => {
       L.DomEvent.stopPropagation(e);
-      removeCloseZone();
-      try { drawPolygon._finishShape(); } catch(err) { console.warn('finishShape:', err); }
+      finishCurrentDrawing();
     });
   });
   map.on('draw:drawstop', removeCloseZone);
@@ -637,8 +663,8 @@ if (mapEl && typeof L !== 'undefined') {
   if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
   if (btnReset)   btnReset.addEventListener('click', () => {
     removeCloseZone();
-    drawnItems.clearLayers();
     drawPolygon.disable(); drawPolyline.disable();
+    drawnItems.clearLayers();
     btnSurface && btnSurface.classList.remove('active-surface');
     btnBerges  && btnBerges.classList.remove('active-berges');
     if (btnFinish) btnFinish.style.display = 'none';
@@ -648,12 +674,7 @@ if (mapEl && typeof L !== 'undefined') {
     if (infoBar) infoBar.innerHTML = 'ℹ️ Dessin effacé. Choisissez un mode pour recommencer.';
   });
 
-  if (btnFinish) btnFinish.addEventListener('click', () => {
-    try {
-      if (drawPolygon._poly) drawPolygon._finishShape();
-      else if (drawPolyline._poly) drawPolyline._finishShape();
-    } catch(e) { console.warn('finishShape:', e); }
-  });
+  if (btnFinish) btnFinish.addEventListener('click', finishCurrentDrawing);
 
   map.on(L.Draw.Event.CREATED, e => {
     drawnItems.clearLayers();
