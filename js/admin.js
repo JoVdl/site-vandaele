@@ -588,6 +588,12 @@ function renderDetailPane(d) {
     }
 
     contentHtml = `
+      ${details.demandeAccompagnement ? `
+      <div class="adm-accomp-banner">
+        <strong>✋ Accompagnement administratif demandé</strong>
+        Le client souhaite que Vandaele prenne en charge les démarches (Loi sur l'eau, Natura 2000, dossier préfectoral…).
+      </div>` : ''}
+
       <div class="dsec">
         <h3>Contact</h3>
         <div class="info-grid">
@@ -624,7 +630,7 @@ function renderDetailPane(d) {
           : ''}</h3>
         ${d.adresse ? `<div style="margin-bottom:.65rem"><div class="info-label">Adresse</div><div class="info-value">${esc(d.adresse)}</div></div>` : ''}
         <div class="info-grid">
-          ${d.surface_ha   ? `<div><div class="info-label">Surface</div><div class="info-value">${d.surface_ha} ha</div></div>` : ''}
+          ${d.surface_ha   ? `<div><div class="info-label">Surface</div><div class="info-value">${fmtSurface(d.surface_ha)}</div></div>` : ''}
           ${d.perimetre_ml ? `<div><div class="info-label">Périmètre</div><div class="info-value">${d.perimetre_ml} ml</div></div>` : ''}
           ${d.acces ? `<div><div class="info-label">Accès</div><div class="info-value">${esc(accesMap[d.acces] || d.acces)}</div></div>` : ''}
           ${(() => { const m = cardMetric(d); return m ? `<div style="grid-column:1/-1"><div class="info-label">Volume / Dimensions</div><div class="info-value" style="font-size:.95rem;font-weight:700;color:var(--green-600)">${esc(m)}</div></div>` : ''; })()}
@@ -852,7 +858,7 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 function cardMetric(d) {
   const details = d.details || {};
   const parts   = [];
-  if (d.surface_ha)   parts.push(`${d.surface_ha} ha`);
+  if (d.surface_ha)   parts.push(fmtSurface(d.surface_ha));
   if (d.perimetre_ml) parts.push(`${d.perimetre_ml} ml`);
   if (details.curage && d.surface_ha) {
     const vol = Math.round(d.surface_ha * 10000 * (details.curage.pct_surface / 100) * (details.curage.prof_vase_cm / 100));
@@ -868,6 +874,12 @@ function cardMetric(d) {
 
 function drow(key, val) {
   return `<div class="drow"><span class="dk">${esc(key)}</span><span class="dv">${esc(String(val))}</span></div>`;
+}
+
+function fmtSurface(ha) {
+  const m2 = Math.round(parseFloat(ha) * 10000);
+  if (m2 < 10000) return `${m2.toLocaleString('fr')} m²`;
+  return `${parseFloat(ha).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ha`;
 }
 
 // ── UTILS ────────────────────────────────────────────────────
