@@ -367,7 +367,22 @@
     /* shared detail sections */
     .dsec { background: var(--white); border-radius: var(--radius); padding: 1rem 1.15rem; box-shadow: var(--shadow); }
     .dsec h3 { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gray-500); margin-bottom: .75rem; display: flex; align-items: center; gap: .6rem; }
-    .dist-badge { font-size: .68rem; font-weight: 600; background: #eff6ff; color: var(--blue); padding: .12rem .5rem; border-radius: 99px; text-transform: none; letter-spacing: 0; }
+    .dist-badge { font-size: .68rem; font-weight: 600; background: #eff6ff; color: var(--blue); padding: .12rem .5rem; border-radius: 99px; text-transform: none; letter-spacing: 0; cursor: pointer; transition: background .15s; }
+    .dist-badge:hover { background: #dbeafe; }
+
+    /* ── ROUTE MODAL ──────────────────────────────────── */
+    #route-modal { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    #route-modal[hidden] { display: none !important; }
+    #route-modal-inner { background: var(--white); border-radius: 12px; overflow: hidden; width: 100%; max-width: 680px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+    #route-modal-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .8rem 1rem; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+    #route-modal-title { font-weight: 700; font-size: .92rem; color: var(--gray-900); }
+    #route-modal-meta { font-size: .8rem; color: var(--gray-500); margin-top: .15rem; }
+    #route-modal-actions { display: flex; align-items: center; gap: .45rem; flex-shrink: 0; }
+    #route-map { flex: 1; min-height: 340px; }
+    .btn-route-ext { padding: .32rem .75rem; background: var(--gray-100); border: 1.5px solid var(--gray-200); border-radius: 7px; font-size: .76rem; color: var(--gray-700); text-decoration: none; font-weight: 500; white-space: nowrap; transition: background .15s; }
+    .btn-route-ext:hover { background: var(--gray-200); }
+    .btn-route-close { width: 1.9rem; height: 1.9rem; border-radius: 50%; border: none; background: var(--gray-100); color: var(--gray-600); cursor: pointer; font-size: .88rem; font-family: inherit; transition: background .15s; }
+    .btn-route-close:hover { background: var(--gray-200); }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem; }
     .info-label { font-size: .68rem; color: var(--gray-500); font-weight: 500; }
     .info-value { font-size: .85rem; color: var(--gray-900); font-weight: 500; margin-top: .05rem; }
@@ -592,6 +607,23 @@
 
     </div>
 
+  </div>
+</div>
+
+<!-- Route modal -->
+<div id="route-modal" hidden>
+  <div id="route-modal-inner">
+    <div id="route-modal-header">
+      <div>
+        <div id="route-modal-title">📍 Itinéraire depuis Tortefontaine</div>
+        <div id="route-modal-meta">Calcul en cours…</div>
+      </div>
+      <div id="route-modal-actions">
+        <a id="route-gmaps-link" href="#" target="_blank" rel="noopener" class="btn-route-ext">🗺️ Google Maps</a>
+        <button id="route-modal-close" class="btn-route-close">✕</button>
+      </div>
+    </div>
+    <div id="route-map"></div>
   </div>
 </div>
 

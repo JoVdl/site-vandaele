@@ -22,6 +22,7 @@ let allDemandes   = [];
 let currentFilter = 'all';
 let currentSearch = '';
 let adminMap      = null;
+let routeMap      = null;
 let currentSort   = 'desc';
 let openId        = null;
 let unsubscribe   = null;
@@ -810,6 +811,76 @@ function renderAdminMap(geojson, lat, lng) {
   } catch (err) {
     console.error('Map render error:', err);
   }
+}
+
+// ── ROUTE MODAL ──────────────────────────────────────────────
+detailPane.addEventListener('click', e => {
+  const badge = e.target.closest('.dist-badge');
+  if (!badge) return;
+  const d = allDemandes.find(x => x.id === openId);
+  if (!d?.lat || !d?.lng) return;
+  showRouteModal(d.lat, d.lng);
+});
+
+document.getElementById('route-modal-close')?.addEventListener('click', closeRouteModal);
+document.getElementById('route-modal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('route-modal')) closeRouteModal();
+});
+
+function closeRouteModal() {
+  document.getElementById('route-modal').hidden = true;
+  if (routeMap) { routeMap.remove(); routeMap = null; }
+}
+
+function showRouteModal(lat, lng) {
+  const modal = document.getElementById('route-modal');
+  const meta  = document.getElementById('route-modal-meta');
+  const gmaps = document.getElementById('route-gmaps-link');
+
+  meta.textContent = 'Calcul de l\'itinéraire…';
+  gmaps.href = `https://www.google.com/maps/dir/${DEPOT_LAT},${DEPOT_LNG}/${lat},${lng}`;
+  modal.hidden = false;
+
+  loadLeaflet(() => setTimeout(() => {
+    const el = document.getElementById('route-map');
+    if (!el) return;
+    if (routeMap) { routeMap.remove(); routeMap = null; }
+
+    routeMap = L.map(el, { zoomControl: true, scrollWheelZoom: true, attributionControl: false });
+    L.tileLayer(
+      'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+      '&FORMAT=image%2Fpng&STYLE=normal',
+      { attribution: '© IGN', maxZoom: 19 }
+    ).addTo(routeMap);
+
+    const depotIcon    = L.divIcon({ html: '<div style="font-size:1.3rem;line-height:1">🏠</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+    const chantierIcon = L.divIcon({ html: '<div style="font-size:1.3rem;line-height:1">📍</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 24] });
+    L.marker([DEPOT_LAT, DEPOT_LNG], { icon: depotIcon }).bindPopup('<strong>Dépôt</strong><br>Tortefontaine').addTo(routeMap);
+    L.marker([lat, lng], { icon: chantierIcon }).bindPopup('<strong>Chantier</strong>').addTo(routeMap);
+
+    routeMap.fitBounds([[DEPOT_LAT, DEPOT_LNG], [lat, lng]], { padding: [48, 48] });
+    routeMap.invalidateSize();
+
+    // Route via OSRM (free, pas de clé API requise)
+    const url = `https://router.project-osrm.org/route/v1/driving/${DEPOT_LNG},${DEPOT_LAT};${lng},${lat}?overview=full&geometries=geojson`;
+    fetch(url, { signal: AbortSignal.timeout(8000) })
+      .then(r => r.json())
+      .then(data => {
+        const route = data.routes?.[0];
+        if (!route) { meta.textContent = `~${Math.round(haversineKm(DEPOT_LAT, DEPOT_LNG, lat, lng))} km (vol d'oiseau)`; return; }
+        const km   = (route.distance / 1000).toFixed(1);
+        const mins = Math.round(route.duration / 60);
+        const h = Math.floor(mins / 60), m = mins % 60;
+        const t = h > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${mins} min`;
+        meta.innerHTML = `<strong>${km} km</strong> &nbsp;·&nbsp; ${t} de trajet estimé`;
+        const line = L.geoJSON(route.geometry, { style: { color: '#1d4ed8', weight: 4, opacity: .8 } }).addTo(routeMap);
+        routeMap.fitBounds(line.getBounds(), { padding: [48, 48] });
+      })
+      .catch(() => {
+        meta.textContent = `~${Math.round(haversineKm(DEPOT_LAT, DEPOT_LNG, lat, lng))} km (vol d'oiseau — routage indisponible)`;
+      });
+  }, 60));
 }
 
 async function archiveDetail(id) {
