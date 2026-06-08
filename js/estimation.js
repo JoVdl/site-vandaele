@@ -664,6 +664,19 @@ if (mapEl && typeof L !== 'undefined') {
 
   if (btnFinish) btnFinish.addEventListener('click', finishCurrentDrawing);
 
+  // Intercepte le clic sur le 1er sommet dès que ≥3 points existent.
+  // On remplace le handler natif Leaflet.draw (_finishShape) par notre
+  // finishCurrentDrawing() qui désactive l'outil AVANT de créer le polygone,
+  // ce qui garantit la suppression des guides avant l'événement draw:created.
+  map.on('draw:drawvertex', () => {
+    if (!drawPolygon._enabled || !drawPolygon._markers || drawPolygon._markers.length < 3) return;
+    const firstMarker = drawPolygon._markers[0];
+    firstMarker.off('click').on('click', ev => {
+      L.DomEvent.stop(ev);
+      finishCurrentDrawing();
+    });
+  });
+
   map.on(L.Draw.Event.CREATED, e => {
     drawnItems.clearLayers();
     drawnItems.addLayer(e.layer);
@@ -690,11 +703,6 @@ if (mapEl && typeof L !== 'undefined') {
       if (infoBar) infoBar.innerHTML =
         `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
       resetDrawingUI();
-      // Supprime les pointillés guide de Leaflet.draw directement dans le DOM
-      // (_clearGuides interne peut manquer selon la version/timing)
-      map.getContainer().querySelectorAll('.leaflet-draw-guide-dash,.leaflet-draw-guides').forEach(el => {
-        while (el.firstChild) el.removeChild(el.firstChild);
-      });
       checkEnvironmentalZones(state.lat, state.lng);
     }
 
@@ -712,9 +720,6 @@ if (mapEl && typeof L !== 'undefined') {
       computeEstimation();
       if (infoBar) infoBar.innerHTML = `✅ Longueur tracée : <strong>${dist.toLocaleString('fr')} m</strong>`;
       resetDrawingUI();
-      map.getContainer().querySelectorAll('.leaflet-draw-guide-dash,.leaflet-draw-guides').forEach(el => {
-        while (el.firstChild) el.removeChild(el.firstChild);
-      });
     }
   });
 
