@@ -754,27 +754,38 @@ async function checkEnvironmentalZones(lat, lng) {
 
   const checks = [
     {
+      url:    `${base}zone-humide?geom=${geom}`,
+      name:   'Zone humide (Loi sur l\'eau)',
+      icon:   '💧',
+      type:   'zh',
+      impact: 'Tout remblai, assèchement ou travaux affectant une zone humide est soumis à déclaration (> 0,1 ha) ou autorisation préfectorale (> 1 ha) au titre de la rubrique 3.3.1.0 du Code de l\'environnement (IOTA). Un dossier Loi sur l\'eau est obligatoire avant tout démarrage de chantier.',
+    },
+    {
       url:    `${base}natura-habitat?geom=${geom}`,
       name:   'Natura 2000 – Habitats (ZSC/SIC)',
       icon:   '🐸',
-      impact: 'Travaux en eau soumis à évaluation des incidences. Un dossier préalable est généralement requis (délai : 2 à 6 mois).',
+      type:   'eco',
+      impact: 'Travaux en eau soumis à évaluation des incidences Natura 2000. Un dossier préalable est généralement requis (délai : 2 à 6 mois).',
     },
     {
       url:    `${base}natura-oiseaux?geom=${geom}`,
       name:   'Natura 2000 – Oiseaux (ZPS)',
       icon:   '🦅',
+      type:   'eco',
       impact: 'Zone de protection spéciale. Travaux conditionnés hors période de nidification. Évaluation d\'incidences requise.',
     },
     {
       url:    `${base}znieff1?geom=${geom}`,
       name:   'ZNIEFF de type I',
       icon:   '🌿',
+      type:   'eco',
       impact: 'Zone d\'intérêt écologique majeur. Une étude d\'impact peut être demandée lors de l\'instruction du dossier.',
     },
     {
       url:    `${base}znieff2?geom=${geom}`,
       name:   'ZNIEFF de type II',
       icon:   '🌿',
+      type:   'eco',
       impact: 'Grand ensemble naturel. Travaux possibles avec précautions environnementales adaptées.',
     },
   ];
@@ -792,7 +803,8 @@ async function checkEnvironmentalZones(lat, lng) {
       const data = await res.json();
       if (data.features?.length > 0) {
         const props = data.features[0].properties;
-        const siteName = props?.sitename || props?.nom_site || props?.nom_zone || props?.nom || '';
+        const siteName = props?.sitename || props?.nom_site || props?.nom_zone || props?.nom
+          || props?.code_zh || props?.lb_zh || props?.type_zh || '';
         found.push({ ...c, siteName });
       }
     } catch { errors++; }
@@ -810,33 +822,48 @@ async function checkEnvironmentalZones(lat, lng) {
   if (found.length === 0) {
     zoneEl.innerHTML = `
       <div class="zone-ok">
-        ✅ <strong>Aucune zone protégée détectée</strong> (Natura 2000, ZNIEFF) à cette localisation.<br>
-        <span>Pensez à vérifier les zones humides locales auprès de votre DDT.</span>
+        ✅ <strong>Aucune zone protégée détectée</strong> (zone humide, Natura 2000, ZNIEFF) à cette localisation.<br>
+        <span>Ces données sont indicatives — vérification définitive lors de la visite technique.</span>
       </div>`;
     return;
   }
 
-  const zonesHtml = found.map(z => `
-    <div class="zone-item">
-      <div class="zone-item-name">${z.icon} ${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
-      <div class="zone-item-impact">${z.impact}</div>
-    </div>`).join('');
+  const zhFound  = found.filter(z => z.type === 'zh');
+  const ecoFound = found.filter(z => z.type === 'eco');
 
-  zoneEl.innerHTML = `
-    <div class="zone-alert">
-      <div class="zone-alert-title">⚠️ Zone(s) protégée(s) détectée(s) — réglementation spécifique</div>
-      ${zonesHtml}
-      <div class="zone-alert-footer">
-        Ces informations sont indicatives et basées sur les données IGN. Nous vous accompagnons dans toutes les démarches administratives liées à ces zones.
-      </div>
-      <label class="zone-accomp-label">
-        <input type="checkbox" id="cb-accompagnement" />
-        <span class="zone-accomp-text">
-          <strong>Je souhaite être accompagné(e) dans les démarches administratives</strong>
-          <em>Loi sur l'eau · dossier d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
-        </span>
-      </label>
-    </div>`;
+  const zhHtml = zhFound.length > 0 ? `
+    <div class="zone-alert zone-alert-zh">
+      <div class="zone-alert-title">💧 Zone humide détectée — Loi sur l'eau applicable</div>
+      ${zhFound.map(z => `
+        <div class="zone-item">
+          <div class="zone-item-name">${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
+          <div class="zone-item-impact">${z.impact}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const ecoHtml = ecoFound.length > 0 ? `
+    <div class="zone-alert${zhFound.length > 0 ? ' zone-alert-mt' : ''}">
+      <div class="zone-alert-title">⚠️ Zone(s) écologique(s) protégée(s) — réglementation spécifique</div>
+      ${ecoFound.map(z => `
+        <div class="zone-item">
+          <div class="zone-item-name">${z.icon} ${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
+          <div class="zone-item-impact">${z.impact}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const accompHtml = `
+    <label class="zone-accomp-label" style="margin-top:.5rem;">
+      <input type="checkbox" id="cb-accompagnement" />
+      <span class="zone-accomp-text">
+        <strong>Je souhaite être accompagné(e) dans les démarches administratives</strong>
+        <em>Dossier Loi sur l'eau · évaluation d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
+      </span>
+    </label>`;
+
+  zoneEl.innerHTML = zhHtml + ecoHtml + `
+    <div class="zone-alert-footer-global">
+      Ces informations sont basées sur les données IGN et sont indicatives. La vérification définitive est effectuée lors de la visite technique.
+    </div>` + accompHtml;
 
   const cb = document.getElementById('cb-accompagnement');
   if (cb) cb.addEventListener('change', () => { state.demandeAccompagnement = cb.checked; });
