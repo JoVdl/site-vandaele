@@ -406,7 +406,7 @@ function computeEstimation() {
   const totalEl = document.getElementById('result-total-amount');
   if (!linesEl || !totalEl) return;
 
-  if (!hasTravaux && !hasReal) {
+  if (!hasTravaux) {
     linesEl.innerHTML = '<p class="result-empty">Sélectionnez vos travaux pour voir l\'estimation.</p>';
     totalEl.textContent = '– €';
     return;
