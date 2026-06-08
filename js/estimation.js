@@ -617,25 +617,19 @@ if (mapEl && typeof L !== 'undefined') {
   // ── TERMINER LE TRACÉ (bouton "Terminer") ──────────────────────
   function finishCurrentDrawing() {
     if (drawPolygon._enabled) {
-      const pts = (drawPolygon._markers || []).map(m => m.getLatLng());
-      if (pts.length < 3) {
+      if ((drawPolygon._markers || []).length < 3) {
         if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 3 points pour créer une surface.';
         return;
       }
-      drawPolygon.disable();
-      const layer = L.polygon([pts], { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
-      map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
+      drawPolygon._finishShape();
       return;
     }
     if (drawPolyline._enabled) {
-      const pts = (drawPolyline._markers || []).map(m => m.getLatLng());
-      if (pts.length < 2) {
+      if ((drawPolyline._markers || []).length < 2) {
         if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 2 points pour mesurer les berges.';
         return;
       }
-      drawPolyline.disable();
-      const layer = L.polyline(pts, { color: '#56B57A', weight: 3 });
-      map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polyline' });
+      drawPolyline._finishShape();
     }
   }
 
@@ -647,6 +641,24 @@ if (mapEl && typeof L !== 'undefined') {
     btnBerges  && btnBerges.classList.remove('active-berges');
     if (btnFinish) btnFinish.style.display = 'none';
   }
+
+  // Override _finishShape on both draw tools so disable() (which clears guide dashes)
+  // runs BEFORE draw:created fires, regardless of how the drawing is finished.
+  drawPolygon._finishShape = function() {
+    const pts = (this._markers || []).map(m => m.getLatLng());
+    if (pts.length < 3) return;
+    this.disable();
+    const layer = L.polygon([pts], { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
+    map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
+  };
+
+  drawPolyline._finishShape = function() {
+    const pts = (this._markers || []).map(m => m.getLatLng());
+    if (pts.length < 2) return;
+    this.disable();
+    const layer = L.polyline(pts, { color: '#56B57A', weight: 3 });
+    map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polyline' });
+  };
 
   if (btnSurface) btnSurface.addEventListener('click', () => setMode('surface'));
   if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
@@ -683,7 +695,8 @@ if (mapEl && typeof L !== 'undefined') {
 
     if (e.layerType === 'polygon') {
       try {
-        const lls = e.layer.getLatLngs()[0];
+        const raw = e.layer.getLatLngs();
+        const lls = Array.isArray(raw[0]) ? raw[0] : raw;
         const areaM2 = L.GeometryUtil.geodesicArea(lls);
         const areaHa = (areaM2 / 10000).toFixed(4);
         let perim = 0;
