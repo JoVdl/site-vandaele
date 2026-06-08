@@ -400,6 +400,16 @@
     /* Override Leaflet draw tooltips */
     .leaflet-draw-tooltip { font-size: .8rem !important; }
 
+    /* ── ZONE ENVIRONNEMENTALE INFO ── */
+    .zone-checking { padding: .6rem .9rem; font-size: .82rem; color: var(--gray-500); font-style: italic; background: var(--gray-50); border-radius: var(--radius-sm); }
+    .zone-ok { padding: .6rem .9rem; font-size: .82rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); }
+    .zone-alert { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: var(--radius-md); padding: .85rem 1rem; font-size: .82rem; }
+    .zone-alert-title { font-weight: 700; color: #92400e; margin-bottom: .6rem; font-size: .88rem; }
+    .zone-item { margin-bottom: .5rem; }
+    .zone-item-name { font-weight: 600; color: #78350f; margin-bottom: .15rem; }
+    .zone-item-impact { color: #92400e; font-size: .79rem; line-height: 1.5; }
+    .zone-alert-footer { margin-top: .65rem; padding-top: .55rem; border-top: 1px solid #fcd34d; color: #78350f; font-size: .77rem; font-style: italic; }
+
     /* ── RESULT CARD ── */
     .result-card {
       background: linear-gradient(160deg, #0a1f12 0%, #1e5c34 60%, #3d9e62 100%);
@@ -612,6 +622,7 @@
                 <button class="map-tab active-surface" id="btn-draw-surface" type="button">📐 Tracer la surface</button>
                 <button class="map-tab" id="btn-draw-berges" type="button">📏 Tracer les berges</button>
                 <button class="map-tab" id="btn-draw-reset" type="button">🗑️ Effacer</button>
+                <button class="map-tab" id="btn-draw-finish" type="button" style="display:none; background:var(--green-500); border-color:var(--green-500); color:#fff;">✅ Terminer le tracé</button>
               </div>
 
               <div class="map-info-bar" id="map-info-bar">
@@ -621,6 +632,8 @@
               <div class="map-container">
                 <div id="leaflet-map"></div>
               </div>
+
+              <div id="zone-info" style="display:none; margin-bottom:.5rem;"></div>
 
               <p class="map-instruction">💡 Tracez le contour de l'étang → surface et périmètre se calculent automatiquement. Vous pouvez aussi saisir les valeurs manuellement ci-dessous.</p>
             </div>
@@ -668,7 +681,7 @@
                 <input type="checkbox" id="t-hydrocurage" name="travaux" value="hydrocurage" />
                 <label for="t-hydrocurage">
                   <span class="t-icon">💧</span>
-                  Hydrocurage
+                  Hydrocurage /<br>Curage par aspiration
                 </label>
               </div>
               <div class="travail-toggle">
@@ -736,14 +749,47 @@
 
             <!-- HYDROCURAGE details -->
             <div class="detail-section" id="detail-hydrocurage">
-              <div class="detail-section-title"><span class="ico">💧</span> Hydrocurage</div>
+              <div class="detail-section-title"><span class="ico">💧</span> Hydrocurage / Curage par aspiration</div>
               <div class="form-group">
-                <label>Épaisseur moyenne de vase (cm)</label>
+                <label>Épaisseur de vase estimée (cm)</label>
                 <div class="range-wrap">
                   <input type="range" id="ep-hydrocurage" min="5" max="150" value="30" step="5" />
                   <span class="range-val" id="ep-hydrocurage-val">30 cm</span>
                 </div>
-                <p class="form-hint">Le volume (m³) sera calculé automatiquement à partir de la surface mesurée × épaisseur.</p>
+                <p class="form-hint">Le volume (m³) sera calculé à partir de la surface mesurée × épaisseur estimée.</p>
+              </div>
+              <div class="form-group">
+                <label>Devenir de la vase extraite</label>
+                <div class="radio-group" id="dest-vase-hydro-group">
+                  <label class="radio-option">
+                    <input type="radio" name="dest-vase-hydro" value="sur-place" checked />
+                    <span>Stockage sur terrain du propriétaire</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="dest-vase-hydro" value="evacuation" />
+                    <span>Évacuation du terrain par nos soins <em style="color:var(--gray-500); font-weight:400;">(surcoût)</em></span>
+                  </label>
+                </div>
+              </div>
+              <div id="hydro-stock-details">
+                <div class="form-group">
+                  <label for="nature-terrain-hydro">Nature du terrain de stockage</label>
+                  <select id="nature-terrain-hydro">
+                    <option value="pature">Pâture / Prairie</option>
+                    <option value="champ">Champ cultivé</option>
+                    <option value="bois">Bois / Forêt</option>
+                    <option value="friche">Friche / Terrain nu</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Distance approximative du plan d'eau (m)</label>
+                  <div class="range-wrap">
+                    <input type="range" id="dist-depot-hydro" min="10" max="500" value="50" step="10" />
+                    <span class="range-val" id="dist-depot-hydro-val">50 m</span>
+                  </div>
+                  <p class="form-hint">Distance entre le plan d'eau et la zone de dépôt de la vase.</p>
+                </div>
               </div>
             </div>
 

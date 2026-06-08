@@ -34,6 +34,7 @@ let TARIFS = {
     base:         { min: 15,   max: 30   }, // €/m³
     moyen:        20,                        // +20 %
     difficile:    40,                        // +40 %
+    evacuation:   { min: 8,    max: 15   }, // €/m³ supplément évacuation
   },
 
   curage: {
@@ -103,6 +104,9 @@ const state = {
   travaux: new Set(),
   // Hydrocurage
   epaisseurHydro: 30,
+  destinationVaseHydro: 'sur-place',
+  natureTerrainHydro: 'pature',
+  distanceDepotHydro: 50,
   // Curage mécanique
   profVase: 40,
   pctCurage: 100,
@@ -176,6 +180,7 @@ function bindRange(id, stateKey, displayId, fmt) {
 }
 
 bindRange('ep-hydrocurage',         'epaisseurHydro',        'ep-hydrocurage-val',        v => parseInt(v) + ' cm');
+bindRange('dist-depot-hydro',       'distanceDepotHydro',    'dist-depot-hydro-val',      v => parseInt(v) + ' m');
 bindRange('prof-vase',              'profVase',               'prof-vase-val',               v => v + ' cm');
 bindRange('pct-curage',             'pctCurage',              'pct-curage-val',              v => v + ' %');
 bindRange('pct-fauc',               'pctFauc',                'pct-fauc-val',                v => v + ' %');
@@ -201,6 +206,18 @@ if (accesEl) accesEl.addEventListener('change', () => { state.acces = accesEl.va
 
 const destVaseEl = document.getElementById('destination-vase');
 if (destVaseEl) destVaseEl.addEventListener('change', () => { state.destinationVase = destVaseEl.value; computeEstimation(); });
+
+document.querySelectorAll('input[name="dest-vase-hydro"]').forEach(r => {
+  r.addEventListener('change', () => {
+    state.destinationVaseHydro = r.value;
+    const stockDetails = document.getElementById('hydro-stock-details');
+    if (stockDetails) stockDetails.style.display = r.value === 'sur-place' ? '' : 'none';
+    computeEstimation();
+  });
+});
+
+const natureTerrainEl = document.getElementById('nature-terrain-hydro');
+if (natureTerrainEl) natureTerrainEl.addEventListener('change', () => { state.natureTerrainHydro = natureTerrainEl.value; });
 
 const jussieEl = document.getElementById('fauc-jussie');
 if (jussieEl) jussieEl.addEventListener('change', () => { state.faucJussie = jussieEl.checked; computeEstimation(); });
@@ -244,10 +261,17 @@ function computeEstimation() {
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
     const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
     const m = accMod(t, acces);
-    const cMin = vol * t.base.min * m;
-    const cMax = vol * t.base.max * m;
+    let cMin = vol * t.base.min * m;
+    let cMax = vol * t.base.max * m;
+    if (state.destinationVaseHydro === 'evacuation' && t.evacuation) {
+      cMin += vol * t.evacuation.min;
+      cMax += vol * t.evacuation.max;
+    }
     totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Hydrocurage (${vol.toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
+    const hydLabel = state.destinationVaseHydro === 'evacuation'
+      ? `Hydrocurage + évacuation (${vol.toLocaleString('fr')} m³)`
+      : `Hydrocurage (${vol.toLocaleString('fr')} m³)`;
+    lines.push({ label: hydLabel, val: fmtRange(cMin, cMax) });
   }
 
   // CURAGE MÉCANIQUE
@@ -516,6 +540,7 @@ if (mapEl && typeof L !== 'undefined') {
   const btnSurface = document.getElementById('btn-draw-surface');
   const btnBerges  = document.getElementById('btn-draw-berges');
   const btnReset   = document.getElementById('btn-draw-reset');
+  const btnFinish  = document.getElementById('btn-draw-finish');
   const infoBar    = document.getElementById('map-info-bar');
 
   function setMode(mode) {
@@ -523,15 +548,18 @@ if (mapEl && typeof L !== 'undefined') {
     drawPolyline.disable();
     btnSurface && btnSurface.classList.remove('active-surface');
     btnBerges  && btnBerges.classList.remove('active-berges');
+    if (btnFinish) btnFinish.style.display = 'none';
 
     if (mode === 'surface') {
       drawPolygon.enable();
       btnSurface && btnSurface.classList.add('active-surface');
-      if (infoBar) infoBar.innerHTML = '📐 Cliquez pour placer des points autour de l\'étang. Double-cliquez pour fermer le polygone.';
+      if (btnFinish) btnFinish.style.display = '';
+      if (infoBar) infoBar.innerHTML = '📐 Cliquez pour placer des points. Cliquez sur le 1<sup>er</sup> point ou appuyez sur <strong>Terminer</strong> pour fermer.';
     } else if (mode === 'berges') {
       drawPolyline.enable();
       btnBerges && btnBerges.classList.add('active-berges');
-      if (infoBar) infoBar.innerHTML = '📏 Cliquez pour tracer le long des berges à traiter. Double-cliquez pour terminer.';
+      if (btnFinish) btnFinish.style.display = '';
+      if (infoBar) infoBar.innerHTML = '📏 Cliquez pour tracer le long des berges. Appuyez sur <strong>Terminer</strong> pour valider.';
     }
   }
 
@@ -542,7 +570,17 @@ if (mapEl && typeof L !== 'undefined') {
     drawPolygon.disable(); drawPolyline.disable();
     btnSurface && btnSurface.classList.remove('active-surface');
     btnBerges  && btnBerges.classList.remove('active-berges');
+    if (btnFinish) btnFinish.style.display = 'none';
+    const zoneEl = document.getElementById('zone-info');
+    if (zoneEl) { zoneEl.innerHTML = ''; zoneEl.style.display = 'none'; }
     if (infoBar) infoBar.innerHTML = 'ℹ️ Dessin effacé. Choisissez un mode pour recommencer.';
+  });
+
+  if (btnFinish) btnFinish.addEventListener('click', () => {
+    try {
+      if (drawPolygon._poly) drawPolygon._finishShape();
+      else if (drawPolyline._poly) drawPolyline._finishShape();
+    } catch(e) { console.warn('finishShape:', e); }
   });
 
   map.on(L.Draw.Event.CREATED, e => {
@@ -566,8 +604,12 @@ if (mapEl && typeof L !== 'undefined') {
       state.lng = lls.reduce((s, ll) => s + ll.lng, 0) / lls.length;
       computeEstimation();
 
+      const areaM2display = Math.round(areaM2).toLocaleString('fr');
+      const areaHaDisplay = parseFloat(areaHa).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
       if (infoBar) infoBar.innerHTML =
-        `✅ Surface : <strong>${parseFloat(areaHa).toLocaleString('fr')} ha</strong> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
+        `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong>`;
+      if (btnFinish) btnFinish.style.display = 'none';
+      checkEnvironmentalZones(state.lat, state.lng);
       setTimeout(() => setMode('surface'), 300);
     }
 
@@ -598,12 +640,102 @@ if (mapEl && typeof L !== 'undefined') {
   setTimeout(() => map.invalidateSize(), 400);
 }
 
+// ── VÉRIFICATION ZONES ENVIRONNEMENTALES ─────────────────
+async function checkEnvironmentalZones(lat, lng) {
+  const zoneEl = document.getElementById('zone-info');
+  if (!zoneEl || !lat || !lng) return;
+
+  zoneEl.innerHTML = '<div class="zone-checking">🔍 Vérification des zones environnementales en cours…</div>';
+  zoneEl.style.display = 'block';
+
+  const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
+  const base  = 'https://apicarto.ign.fr/api/nature/';
+
+  const checks = [
+    {
+      url:    `${base}natura-habitat?geom=${geom}`,
+      name:   'Natura 2000 – Habitats (ZSC/SIC)',
+      icon:   '🐸',
+      impact: 'Les travaux en eau sont soumis à évaluation des incidences Natura 2000. Un dossier préalable est généralement requis. Délai administratif : 2 à 6 mois.',
+    },
+    {
+      url:    `${base}natura-oiseaux?geom=${geom}`,
+      name:   'Natura 2000 – Oiseaux (ZPS)',
+      icon:   '🦅',
+      impact: 'Zone de protection spéciale pour les oiseaux. Travaux conditionnés : hors période de nidification (mars–juillet conseillé). Évaluation d\'incidences requise.',
+    },
+    {
+      url:    `${base}znieff1?geom=${geom}`,
+      name:   'ZNIEFF de type I',
+      icon:   '🌿',
+      impact: 'Zone d\'intérêt écologique majeur. Pas d\'interdiction automatique, mais une étude d\'impact environnemental peut être demandée lors de l\'instruction.',
+    },
+    {
+      url:    `${base}znieff2?geom=${geom}`,
+      name:   'ZNIEFF de type II',
+      icon:   '🌿',
+      impact: 'Grand ensemble naturel. Les travaux restent possibles avec précautions environnementales adaptées.',
+    },
+  ];
+
+  const found  = [];
+  let   errors = 0;
+
+  await Promise.allSettled(checks.map(async c => {
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 9000);
+      const res  = await fetch(c.url, { signal: controller.signal });
+      clearTimeout(tid);
+      if (!res.ok) { errors++; return; }
+      const data = await res.json();
+      if (data.features?.length > 0) {
+        const siteName = data.features[0].properties?.sitename
+          || data.features[0].properties?.nom_site
+          || data.features[0].properties?.nom
+          || '';
+        found.push({ ...c, siteName });
+      }
+    } catch { errors++; }
+  }));
+
+  if (found.length === 0 && errors === checks.length) {
+    zoneEl.innerHTML = '';
+    zoneEl.style.display = 'none';
+    return;
+  }
+
+  if (found.length === 0) {
+    zoneEl.innerHTML = '<div class="zone-ok">✅ Aucune zone Natura 2000 / ZNIEFF détectée à cette localisation. Pensez à vérifier les zones humides locales auprès de votre DDT.</div>';
+    return;
+  }
+
+  zoneEl.innerHTML = `
+    <div class="zone-alert">
+      <div class="zone-alert-title">⚠️ Zone(s) protégée(s) détectée(s) — réglementation spécifique</div>
+      ${found.map(z => `
+        <div class="zone-item">
+          <div class="zone-item-name">${z.icon} ${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
+          <div class="zone-item-impact">${z.impact}</div>
+        </div>`).join('')}
+      <div class="zone-alert-footer">
+        ⚖️ Ces informations sont indicatives. Nous vous accompagnons dans les démarches administratives (Loi sur l'eau, dossier d'incidences, déclaration préfectorale…). Contactez-nous pour en savoir plus.
+      </div>
+    </div>`;
+}
+
 // ── BUILD DETAILS (pour Supabase) ─────────────────────────────
 function buildDetails() {
   const d = {};
   if (state.travaux.has('hydrocurage')) {
     const vol = Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100));
-    d.hydrocurage = { epaisseur_cm: state.epaisseurHydro, volume_m3: vol };
+    d.hydrocurage = {
+      epaisseur_cm:      state.epaisseurHydro,
+      volume_m3:         vol,
+      destination_vase:  state.destinationVaseHydro,
+      nature_terrain:    state.destinationVaseHydro === 'sur-place' ? state.natureTerrainHydro : null,
+      distance_depot_m:  state.destinationVaseHydro === 'sur-place' ? state.distanceDepotHydro : null,
+    };
   }
   if (state.travaux.has('curage'))
     d.curage = { prof_vase_cm: state.profVase, pct_surface: state.pctCurage, destination_vase: state.destinationVase };
@@ -663,8 +795,9 @@ async function submitEstimation() {
     'Type de travaux':        travaux,
     'Estimation indicative':  estimation,
     ...(state.travaux.has('hydrocurage') ? {
-      'Hydrocurage – épaisseur vase (cm)': state.epaisseurHydro,
+      'Hydrocurage – épaisseur vase estimée (cm)': state.epaisseurHydro,
       'Hydrocurage – volume estimé (m³)': Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100)),
+      'Hydrocurage – destination vase': state.destinationVaseHydro === 'evacuation' ? 'Évacuation par nos soins' : `Stockage sur terrain (${state.natureTerrainHydro}, ${state.distanceDepotHydro} m)`,
     } : {}),
     ...(state.travaux.has('curage') ? {
       'Curage – prof. vase (cm)':   state.profVase,
