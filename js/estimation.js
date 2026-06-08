@@ -32,30 +32,26 @@ let TARIFS = {
   mobilisation: { min: 800, max: 2000 },
 
   hydrocurage: {
-    // €/ml selon accès
-    facile:    { min: 18, max: 30 },
-    moyen:     { min: 28, max: 48 },
-    difficile: { min: 40, max: 70 },
+    base:      { min: 15, max: 30 },  // €/m³
+    moyen:     20,                     // +20 %
+    difficile: 40,                     // +40 %
   },
 
   curage: {
-    // €/m³ de vase extraite selon accès
-    facile:    { min: 12, max: 22 },
-    moyen:     { min: 18, max: 32 },
-    difficile: { min: 28, max: 50 },
-    evacuation: { min: 5, max: 10 },
+    base:       { min: 12, max: 22 }, // €/m³
+    moyen:      20,
+    difficile:  40,
+    evacuation: { min: 5, max: 10 },  // €/m³ supplément
   },
 
   faucardage: {
-    // €/ha de surface traitée selon accès
-    facile:    { min: 700,  max: 1200 },
-    moyen:     { min: 900,  max: 1600 },
-    difficile: { min: 1300, max: 2200 },
-    jussie: 1.4,
+    base:      { min: 700, max: 1200 }, // €/ha
+    moyen:     20,
+    difficile: 40,
+    jussie:    40,                       // +40 %
   },
 
   berges: {
-    // €/ml selon type de protection
     enrochement: { min: 150, max: 280 },
     palplanche:  { min: 200, max: 400 },
     gabion:      { min: 120, max: 220 },
@@ -64,23 +60,16 @@ let TARIFS = {
   },
 
   'broyage-forestier': {
-    // €/ha selon densité de végétation
     legere:  { min: 900,  max: 1600 },
     moyenne: { min: 1500, max: 2800 },
     dense:   { min: 2500, max: 4500 },
   },
 
   'broyage-roseaux': {
-    sans: {
-      facile:    { min: 500, max: 800  },
-      moyen:     { min: 700, max: 1100 },
-      difficile: { min: 900, max: 1500 },
-    },
-    avec: {
-      facile:    { min: 1000, max: 1600 },
-      moyen:     { min: 1200, max: 2000 },
-      difficile: { min: 1600, max: 2800 },
-    },
+    base:      { min: 500, max: 800 }, // €/ha sans ramassage
+    ramassage: 80,                      // +80 % avec ramassage
+    moyen:     30,
+    difficile: 60,
   },
 
   diagnostic: { min: 0, max: 0 },
@@ -220,6 +209,12 @@ const ramassageEl = document.getElementById('avec-ramassage');
 if (ramassageEl) ramassageEl.addEventListener('change', () => { state.avecRamassage = ramassageEl.checked; computeEstimation(); });
 
 // ── CALCUL ESTIMATION ─────────────────────────────────────────
+function accMod(t, acces) {
+  if (acces === 'difficile') return 1 + (t.difficile || 0) / 100;
+  if (acces === 'moyen')     return 1 + (t.moyen     || 0) / 100;
+  return 1;
+}
+
 function computeEstimation() {
   const acces = state.acces || 'moyen';
   const lines = [];
@@ -240,9 +235,10 @@ function computeEstimation() {
     hasTravaux = true;
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
     const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
-    const t = TARIFS.hydrocurage[acces];
-    const cMin = vol * t.min;
-    const cMax = vol * t.max;
+    const t = TARIFS.hydrocurage;
+    const m = accMod(t, acces);
+    const cMin = vol * t.base.min * m;
+    const cMax = vol * t.base.max * m;
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Hydrocurage (${vol.toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
   }
@@ -254,12 +250,13 @@ function computeEstimation() {
     const surfM2 = surf * 10000 * (state.pctCurage / 100);
     const profM = state.profVase / 100;
     const volM3 = surfM2 * profM;
-    const t = TARIFS.curage[acces];
-    let cMin = volM3 * t.min;
-    let cMax = volM3 * t.max;
-    if (state.destinationVase === 'evacuation') {
-      cMin += volM3 * TARIFS.curage.evacuation.min;
-      cMax += volM3 * TARIFS.curage.evacuation.max;
+    const t = TARIFS.curage;
+    const m = accMod(t, acces);
+    let cMin = volM3 * t.base.min * m;
+    let cMax = volM3 * t.base.max * m;
+    if (state.destinationVase === 'evacuation' || state.destinationVase === 'valorisation') {
+      cMin += volM3 * t.evacuation.min;
+      cMax += volM3 * t.evacuation.max;
     }
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Curage mécanique (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
@@ -269,10 +266,10 @@ function computeEstimation() {
   if (state.travaux.has('faucardage')) {
     hasTravaux = true;
     const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
-    const t = TARIFS.faucardage[acces];
-    let cMin = surf * t.min;
-    let cMax = surf * t.max;
-    if (state.faucJussie) { cMin *= TARIFS.faucardage.jussie; cMax *= TARIFS.faucardage.jussie; }
+    const t = TARIFS.faucardage;
+    const m = accMod(t, acces) * (state.faucJussie ? (1 + (t.jussie || 0) / 100) : 1);
+    const cMin = surf * t.base.min * m;
+    const cMax = surf * t.base.max * m;
     totalMin += cMin; totalMax += cMax;
     lines.push({ label: `Faucardage (~${surf.toFixed(2)} ha)`, val: fmtRange(cMin, cMax) });
   }
@@ -303,10 +300,10 @@ function computeEstimation() {
   if (state.travaux.has('broyage-roseaux')) {
     hasTravaux = true;
     const surf = state.surfBroyageRoseaux;
-    const key = state.avecRamassage ? 'avec' : 'sans';
-    const t = TARIFS['broyage-roseaux'][key][acces];
-    const cMin = surf * t.min;
-    const cMax = surf * t.max;
+    const t = TARIFS['broyage-roseaux'];
+    const m = accMod(t, acces) * (state.avecRamassage ? (1 + (t.ramassage || 0) / 100) : 1);
+    const cMin = surf * t.base.min * m;
+    const cMax = surf * t.base.max * m;
     totalMin += cMin; totalMax += cMax;
     const label = state.avecRamassage ? 'Roseaux + ramassage' : 'Broyage roseaux';
     lines.push({ label: `${label} (${surf.toLocaleString('fr')} ha)`, val: fmtRange(cMin, cMax) });

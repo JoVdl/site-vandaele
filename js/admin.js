@@ -124,23 +124,27 @@ document.getElementById('btn-refresh')?.addEventListener('click', startListener)
 // ── GRILLE TARIFAIRE ─────────────────────────────────────────
 const TARIFS_DEFAULTS = {
   mobilisation: { min: 800, max: 2000 },
+
   hydrocurage: {
-    facile:    { min: 18, max: 30 },
-    moyen:     { min: 28, max: 48 },
-    difficile: { min: 40, max: 70 },
+    base:      { min: 15, max: 30 },
+    moyen:     20,
+    difficile: 40,
   },
+
   curage: {
-    facile:    { min: 12, max: 22 },
-    moyen:     { min: 18, max: 32 },
-    difficile: { min: 28, max: 50 },
+    base:       { min: 12, max: 22 },
+    moyen:      20,
+    difficile:  40,
     evacuation: { min: 5, max: 10 },
   },
+
   faucardage: {
-    facile:    { min: 700,  max: 1200 },
-    moyen:     { min: 900,  max: 1600 },
-    difficile: { min: 1300, max: 2200 },
-    jussie: 1.4,
+    base:      { min: 700, max: 1200 },
+    moyen:     20,
+    difficile: 40,
+    jussie:    40,
   },
+
   berges: {
     enrochement: { min: 150, max: 280 },
     palplanche:  { min: 200, max: 400 },
@@ -148,23 +152,20 @@ const TARIFS_DEFAULTS = {
     vegetal:     { min: 50,  max: 100 },
     conseil:     { min: 150, max: 280 },
   },
+
   'broyage-forestier': {
     legere:  { min: 900,  max: 1600 },
     moyenne: { min: 1500, max: 2800 },
     dense:   { min: 2500, max: 4500 },
   },
+
   'broyage-roseaux': {
-    sans: {
-      facile:    { min: 500, max: 800  },
-      moyen:     { min: 700, max: 1100 },
-      difficile: { min: 900, max: 1500 },
-    },
-    avec: {
-      facile:    { min: 1000, max: 1600 },
-      moyen:     { min: 1200, max: 2000 },
-      difficile: { min: 1600, max: 2800 },
-    },
+    base:      { min: 500, max: 800 },
+    ramassage: 80,
+    moyen:     30,
+    difficile: 60,
   },
+
   diagnostic: { min: 0, max: 0 },
 };
 
@@ -191,12 +192,21 @@ async function loadTarifsPanel() {
     console.error('[Firebase] Tarifs load failed:', e.code, e.message);
   }
 
+  // Base row: min + max inputs
   const row = (field, label, unit, val) => `
     <tr>
       <td class="tt-label">${label}</td>
       <td class="tt-unit">${unit}</td>
       <td><input type="number" class="tt-input" data-field="${field}.min" value="${val.min}" min="0" step="1"></td>
       <td><input type="number" class="tt-input" data-field="${field}.max" value="${val.max}" min="0" step="1"></td>
+    </tr>`;
+
+  // Modifier row: single % value, skipped by coefficient apply
+  const mod = (field, label, val) => `
+    <tr class="tt-mod">
+      <td class="tt-label">↳ ${label}</td>
+      <td class="tt-unit tt-pct">%</td>
+      <td colspan="2"><input type="number" class="tt-input tt-mod-input" data-field="${field}" data-mod="true" value="${val}" min="0" max="300" step="1"></td>
     </tr>`;
 
   const sec = (label) =>
@@ -206,13 +216,13 @@ async function loadTarifsPanel() {
     <div class="tarifs-panel-header">
       <div>
         <h2>⚙️ Grille tarifaire</h2>
-        <p>Modifiez les fourchettes de prix utilisées pour les estimations en ligne. Les changements s'appliquent immédiatement après sauvegarde.</p>
+        <p>Fourchettes de base + modificateurs en %. L'accès et les options majorent le prix de base selon le pourcentage configuré.</p>
       </div>
       <button id="btn-tarifs-save" class="btn-tarifs-save">💾 Sauvegarder</button>
     </div>
 
     <div class="coeff-bar">
-      <span class="coeff-label">Ajustement global</span>
+      <span class="coeff-label">Ajustement global des prix de base</span>
       <input type="range" id="coeff-slider" min="-50" max="100" value="0" step="1" class="coeff-slider">
       <span class="coeff-sign" id="coeff-sign">+</span>
       <input type="number" id="coeff-pct" value="0" min="-50" max="100" step="1" class="coeff-input">
@@ -224,62 +234,50 @@ async function loadTarifsPanel() {
     <table class="tarifs-table">
       <thead>
         <tr>
-          <th>Prestation</th>
+          <th>Prestation / Option</th>
           <th>Unité</th>
           <th style="text-align:center">Min (€)</th>
           <th style="text-align:center">Max (€)</th>
         </tr>
       </thead>
       <tbody>
-        ${sec('🚛 Déplacement / Mobilisation')}
-        ${row('mobilisation', 'Mobilisation engin', '€ forfait', tarifs.mobilisation)}
+        ${sec('🚛 Mobilisation')}
+        ${row('mobilisation', 'Déplacement engin', '€ forfait', tarifs.mobilisation)}
 
         ${sec('💧 Hydrocurage')}
-        ${row('hydrocurage.facile',    'Accès facile',    '€ / m³', tarifs.hydrocurage.facile)}
-        ${row('hydrocurage.moyen',     'Accès moyen',     '€ / m³', tarifs.hydrocurage.moyen)}
-        ${row('hydrocurage.difficile', 'Accès difficile', '€ / m³', tarifs.hydrocurage.difficile)}
+        ${row('hydrocurage.base', 'Base', '€ / m³', tarifs.hydrocurage.base)}
+        ${mod('hydrocurage.moyen',     'Accès moyen',     tarifs.hydrocurage.moyen     ?? 20)}
+        ${mod('hydrocurage.difficile', 'Accès difficile', tarifs.hydrocurage.difficile ?? 40)}
 
         ${sec('🚜 Curage mécanique')}
-        ${row('curage.facile',    'Accès facile',    '€ / m³', tarifs.curage.facile)}
-        ${row('curage.moyen',     'Accès moyen',     '€ / m³', tarifs.curage.moyen)}
-        ${row('curage.difficile', 'Accès difficile', '€ / m³', tarifs.curage.difficile)}
-        ${row('curage.evacuation', 'Supplément évacuation vase', '€ / m³', tarifs.curage.evacuation)}
+        ${row('curage.base', 'Base', '€ / m³', tarifs.curage.base)}
+        ${mod('curage.moyen',     'Accès moyen',     tarifs.curage.moyen     ?? 20)}
+        ${mod('curage.difficile', 'Accès difficile', tarifs.curage.difficile ?? 40)}
+        ${row('curage.evacuation', 'Supplément évacuation', '€ / m³', tarifs.curage.evacuation)}
 
         ${sec('🌿 Faucardage')}
-        ${row('faucardage.facile',    'Accès facile',    '€ / ha', tarifs.faucardage.facile)}
-        ${row('faucardage.moyen',     'Accès moyen',     '€ / ha', tarifs.faucardage.moyen)}
-        ${row('faucardage.difficile', 'Accès difficile', '€ / ha', tarifs.faucardage.difficile)}
-        <tr>
-          <td class="tt-label">Majoration jussie</td>
-          <td class="tt-unit">coefficient ×</td>
-          <td colspan="2" style="text-align:center">
-            <input type="number" class="tt-input" data-field="faucardage.jussie"
-              value="${tarifs.faucardage.jussie}" min="1" max="5" step="0.05"
-              style="width:90px;margin:0 auto">
-          </td>
-        </tr>
+        ${row('faucardage.base', 'Base', '€ / ha', tarifs.faucardage.base)}
+        ${mod('faucardage.moyen',     'Accès moyen',     tarifs.faucardage.moyen     ?? 20)}
+        ${mod('faucardage.difficile', 'Accès difficile', tarifs.faucardage.difficile ?? 40)}
+        ${mod('faucardage.jussie',    'Jussie (invasive)', tarifs.faucardage.jussie   ?? 40)}
 
         ${sec('🪨 Défenses de berges')}
-        ${row('berges.enrochement', 'Enrochement',    '€ / ml', tarifs.berges.enrochement)}
-        ${row('berges.palplanche',  'Palplanches',    '€ / ml', tarifs.berges.palplanche)}
-        ${row('berges.gabion',      'Gabions',        '€ / ml', tarifs.berges.gabion)}
-        ${row('berges.vegetal',     'Génie végétal',  '€ / ml', tarifs.berges.vegetal)}
-        ${row('berges.conseil',     'À définir',      '€ / ml', tarifs.berges.conseil)}
+        ${row('berges.enrochement', 'Enrochement',   '€ / ml', tarifs.berges.enrochement)}
+        ${row('berges.palplanche',  'Palplanches',   '€ / ml', tarifs.berges.palplanche)}
+        ${row('berges.gabion',      'Gabions',       '€ / ml', tarifs.berges.gabion)}
+        ${row('berges.vegetal',     'Génie végétal', '€ / ml', tarifs.berges.vegetal)}
+        ${row('berges.conseil',     'À définir',     '€ / ml', tarifs.berges.conseil)}
 
         ${sec('🌲 Broyage forestier')}
         ${row('broyage-forestier.legere',  'Végétation légère',  '€ / ha', tarifs['broyage-forestier'].legere)}
         ${row('broyage-forestier.moyenne', 'Végétation moyenne', '€ / ha', tarifs['broyage-forestier'].moyenne)}
         ${row('broyage-forestier.dense',   'Végétation dense',   '€ / ha', tarifs['broyage-forestier'].dense)}
 
-        ${sec('🌾 Broyage roseaux — sans ramassage')}
-        ${row('broyage-roseaux.sans.facile',    'Accès facile',    '€ / ha', tarifs['broyage-roseaux'].sans.facile)}
-        ${row('broyage-roseaux.sans.moyen',     'Accès moyen',     '€ / ha', tarifs['broyage-roseaux'].sans.moyen)}
-        ${row('broyage-roseaux.sans.difficile', 'Accès difficile', '€ / ha', tarifs['broyage-roseaux'].sans.difficile)}
-
-        ${sec('🌾 Broyage roseaux — avec ramassage')}
-        ${row('broyage-roseaux.avec.facile',    'Accès facile',    '€ / ha', tarifs['broyage-roseaux'].avec.facile)}
-        ${row('broyage-roseaux.avec.moyen',     'Accès moyen',     '€ / ha', tarifs['broyage-roseaux'].avec.moyen)}
-        ${row('broyage-roseaux.avec.difficile', 'Accès difficile', '€ / ha', tarifs['broyage-roseaux'].avec.difficile)}
+        ${sec('🌾 Broyage roseaux')}
+        ${row('broyage-roseaux.base', 'Base (sans ramassage)', '€ / ha', tarifs['broyage-roseaux'].base)}
+        ${mod('broyage-roseaux.ramassage', 'Avec ramassage',  tarifs['broyage-roseaux'].ramassage ?? 80)}
+        ${mod('broyage-roseaux.moyen',     'Accès moyen',     tarifs['broyage-roseaux'].moyen     ?? 30)}
+        ${mod('broyage-roseaux.difficile', 'Accès difficile', tarifs['broyage-roseaux'].difficile ?? 60)}
       </tbody>
     </table>
     <div id="tarifs-status" class="tarifs-status"></div>`;
@@ -298,7 +296,7 @@ async function loadTarifsPanel() {
     const pct = parseFloat(pctInput.value) || 0;
     const factor = 1 + pct / 100;
     document.querySelectorAll('.tt-input[data-field]').forEach(input => {
-      if (input.dataset.field.endsWith('.jussie')) return; // ne pas toucher au coefficient jussie
+      if (input.dataset.mod) return; // skip modifier % rows
       const v = parseFloat(input.value) || 0;
       input.value = Math.round(v * factor);
     });
