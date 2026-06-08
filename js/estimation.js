@@ -623,7 +623,7 @@ if (mapEl && typeof L !== 'undefined') {
         return;
       }
       drawPolygon.disable();
-      const layer = L.polygon(pts, { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
+      const layer = L.polygon([pts], { color: '#3d9e62', fillColor: '#3d9e62', fillOpacity: 0.15, weight: 2 });
       map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
       return;
     }
