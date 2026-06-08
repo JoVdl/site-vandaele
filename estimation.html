@@ -640,9 +640,9 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label for="surface">Surface de l'étang (ha)</label>
-                <input type="number" id="surface" min="0.01" max="100" step="0.0001" placeholder="Ex : 0.5 · ou tracez sur la carte" />
-                <p class="form-hint">Calculée depuis la carte · modifiable manuellement · 1 ha = 10 000 m²</p>
+                <label for="surface">Surface de l'étang</label>
+                <input type="number" id="surface" min="1" max="1000000" step="1" placeholder="Ex : 5000 m² · ou tracez sur la carte" />
+                <p class="form-hint" id="surface-hint">Calculée depuis la carte · modifiable manuellement</p>
               </div>
               <div class="form-group">
                 <label for="perimetre">Périmètre des berges (m)</label>

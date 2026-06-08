@@ -197,7 +197,21 @@ function bindInput(id, stateKey, parse) {
     computeEstimation();
   });
 }
-bindInput('surface',   'surface',   v => parseFloat(v) || 0);
+function updateSurfaceHint(m2) {
+  const hint = document.getElementById('surface-hint');
+  if (!hint || !m2) return;
+  const m2fmt = Math.round(m2).toLocaleString('fr');
+  const hafmt = (m2 / 10000).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  if (m2 < 10000) {
+    hint.textContent = `${m2fmt} m² (${hafmt} ha) · modifiable manuellement`;
+  } else {
+    hint.textContent = `${hafmt} ha (${m2fmt} m²) · modifiable manuellement`;
+  }
+}
+
+bindInput('surface',   'surface',   v => (parseFloat(v) || 0) / 10000);
+const surfInputEl = document.getElementById('surface');
+if (surfInputEl) surfInputEl.addEventListener('input', () => updateSurfaceHint(parseFloat(surfInputEl.value) || 0));
 bindInput('perimetre', 'perimetre', v => parseFloat(v) || 0);
 bindInput('infos-sup', 'infosSup',  v => v);
 
@@ -597,7 +611,7 @@ if (mapEl && typeof L !== 'undefined') {
 
       const surfEl  = document.getElementById('surface');
       const perimEl = document.getElementById('perimetre');
-      if (surfEl)  { surfEl.value  = areaHa; state.surface   = parseFloat(areaHa); }
+      if (surfEl)  { const m2 = Math.round(areaM2); surfEl.value = m2; state.surface = m2 / 10000; updateSurfaceHint(m2); }
       if (perimEl) { perimEl.value = perim;  state.perimetre = perim; }
       state.geojson = e.layer.toGeoJSON();
       state.lat = lls.reduce((s, ll) => s + ll.lat, 0) / lls.length;
