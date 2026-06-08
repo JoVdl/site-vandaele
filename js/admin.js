@@ -208,13 +208,19 @@ async function loadTarifsPanel() {
   ];
 
   // min–max field row
-  const base = (field, label, unit, val) => `
+  // haToM2 : stocké en €/ha, affiché en €/m² (÷10000 à l'affichage, ×10000 à la sauvegarde)
+  const base = (field, label, unit, val, haToM2 = false) => {
+    const fmt  = v => haToM2 ? ((v ?? 0) / 10000).toFixed(4) : (v ?? 0);
+    const step = haToM2 ? '0.0001' : '1';
+    const ha   = haToM2 ? ' data-ha2m2="true"' : '';
+    return `
     <div class="tg-row">
       <span class="tg-label">${label} <span class="tg-unit">${unit}</span></span>
-      <input type="number" class="tg-input" data-field="${field}.min" value="${val?.min ?? 0}" min="0" step="1">
+      <input type="number" class="tg-input" data-field="${field}.min"${ha} value="${fmt(val?.min)}" min="0" step="${step}">
       <span class="tg-sep">–</span>
-      <input type="number" class="tg-input" data-field="${field}.max" value="${val?.max ?? 0}" min="0" step="1">
+      <input type="number" class="tg-input" data-field="${field}.max"${ha} value="${fmt(val?.max)}" min="0" step="${step}">
     </div>`;
+  };
 
   // % modifier row (skipped by global coefficient apply)
   const mod = (field, label, val) => `
@@ -291,7 +297,7 @@ async function loadTarifsPanel() {
         mod('faucardage.difficile', 'Accès difficile', t.faucardage.difficile ?? 40) +
         mod('faucardage.jussie',    'Jussie',          t.faucardage.jussie    ?? 40),
         tabs('faucardage', (svc, cl) =>
-          base(`${svc}.${cl}.base`, 'Prestation', '€/ha', tc(svc,cl).base)
+          base(`${svc}.${cl}.base`, 'Prestation', '€/m²', tc(svc,cl).base, true)
         )
       )}
       ${card('🪨 Défenses de berges',
@@ -307,9 +313,9 @@ async function loadTarifsPanel() {
       ${card('🌲 Broyage forestier',
         base('broyage-forestier.mobilisation', '🚛 Mobilisation broyeur', '€', t['broyage-forestier'].mobilisation),
         tabs('broyage-forestier', (svc, cl) =>
-          base(`${svc}.${cl}.legere`,  'Végétation légère', '€/ha', tc(svc,cl).legere)  +
-          base(`${svc}.${cl}.moyenne`, 'Végétation moyenne','€/ha', tc(svc,cl).moyenne) +
-          base(`${svc}.${cl}.dense`,   'Végétation dense',  '€/ha', tc(svc,cl).dense)
+          base(`${svc}.${cl}.legere`,  'Végétation légère', '€/m²', tc(svc,cl).legere,  true) +
+          base(`${svc}.${cl}.moyenne`, 'Végétation moyenne','€/m²', tc(svc,cl).moyenne, true) +
+          base(`${svc}.${cl}.dense`,   'Végétation dense',  '€/m²', tc(svc,cl).dense,   true)
         )
       )}
       ${card('🌾 Broyage roseaux',
@@ -318,7 +324,7 @@ async function loadTarifsPanel() {
         mod('broyage-roseaux.moyen',     'Accès moyen',     t['broyage-roseaux'].moyen     ?? 30) +
         mod('broyage-roseaux.difficile', 'Accès difficile', t['broyage-roseaux'].difficile ?? 60),
         tabs('broyage-roseaux', (svc, cl) =>
-          base(`${svc}.${cl}.base`, 'Prestation', '€/ha', tc(svc,cl).base)
+          base(`${svc}.${cl}.base`, 'Prestation', '€/m²', tc(svc,cl).base, true)
         )
       )}
     </div>
@@ -350,7 +356,10 @@ async function loadTarifsPanel() {
   document.getElementById('coeff-apply')?.addEventListener('click', () => {
     const factor = 1 + (parseFloat(pctInput.value) || 0) / 100;
     panel.querySelectorAll('.tg-input[data-field]').forEach(input => {
-      input.value = Math.round((parseFloat(input.value) || 0) * factor);
+      const newVal = (parseFloat(input.value) || 0) * factor;
+      input.value = input.dataset.ha2m2 === 'true'
+        ? newVal.toFixed(4)
+        : Math.round(newVal);
     });
   });
 
@@ -359,7 +368,10 @@ async function loadTarifsPanel() {
     panel.querySelectorAll('[data-field]').forEach(input => {
       const keys = input.dataset.field.split('.');
       let obj = TARIFS_DEFAULTS;
-      try { for (const k of keys) obj = obj[k]; input.value = obj; } catch {}
+      try {
+        for (const k of keys) obj = obj[k];
+        input.value = input.dataset.ha2m2 === 'true' ? (obj / 10000).toFixed(4) : obj;
+      } catch {}
     });
   });
 }
@@ -370,12 +382,14 @@ async function saveTarifs() {
 
   panel.querySelectorAll('[data-field]').forEach(input => {
     const keys  = input.dataset.field.split('.');
+    const raw   = parseFloat(input.value) || 0;
+    const value = input.dataset.ha2m2 === 'true' ? raw * 10000 : raw;
     let obj = tarifs;
     for (let i = 0; i < keys.length - 1; i++) {
       if (obj[keys[i]] === undefined) obj[keys[i]] = {};
       obj = obj[keys[i]];
     }
-    obj[keys[keys.length - 1]] = parseFloat(input.value) || 0;
+    obj[keys[keys.length - 1]] = value;
   });
 
   const btn    = document.getElementById('btn-tarifs-save');
