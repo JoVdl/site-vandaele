@@ -123,11 +123,14 @@ const state = {
   // Broyage roseaux
   surfBroyageRoseaux: 1.0,
   avecRamassage: false,
+  // Profil client
+  typeClient: 'particulier',
   // Infos libres
   infosSup: '',
   geojson: null,
   lat: null,
   lng: null,
+  demandeAccompagnement: false,
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
@@ -214,6 +217,21 @@ const surfInputEl = document.getElementById('surface');
 if (surfInputEl) surfInputEl.addEventListener('input', () => updateSurfaceHint(parseFloat(surfInputEl.value) || 0));
 bindInput('perimetre', 'perimetre', v => parseFloat(v) || 0);
 bindInput('infos-sup', 'infosSup',  v => v);
+
+document.querySelectorAll('input[name="type-client"]').forEach(r => {
+  r.addEventListener('change', () => {
+    state.typeClient = r.value;
+    const hints = {
+      particulier:  'Tarif indicatif TTC · Devis définitif sur visite technique.',
+      professionnel: 'Prix hors taxes · TVA 20% applicable sur facture.',
+      collectivite:  'Prix hors taxes · Majoration de 10% pour démarches administratives et marchés publics.',
+      association:   'Tarif indicatif TTC · Devis définitif sur visite technique.',
+    };
+    const hintEl = document.getElementById('client-type-hint');
+    if (hintEl) hintEl.textContent = hints[r.value] || '';
+    computeEstimation();
+  });
+});
 
 const accesEl = document.getElementById('acces');
 if (accesEl) accesEl.addEventListener('change', () => { state.acces = accesEl.value || 'moyen'; computeEstimation(); });
@@ -367,6 +385,14 @@ function computeEstimation() {
     lines.push({ label: 'Diagnostic & visite technique', val: 'Gratuit' });
   }
 
+  // Modificateur type de client
+  if (state.typeClient === 'collectivite' && (totalMin > 0 || totalMax > 0)) {
+    totalMin = Math.round(totalMin * 1.1);
+    totalMax = Math.round(totalMax * 1.1);
+    lines.push({ label: '↳ Majoration collectivité (+10%)', val: 'incluse' });
+  }
+  const isTtcNote = state.typeClient === 'professionnel' || state.typeClient === 'collectivite';
+
   // Render
   const linesEl = document.getElementById('result-lines');
   const totalEl = document.getElementById('result-total-amount');
@@ -388,6 +414,9 @@ function computeEstimation() {
   lastEstMin = totalMin;
   lastEstMax = totalMax;
   totalEl.textContent = fmtRange(totalMin, totalMax);
+
+  const tvaNote = document.getElementById('result-tva-note');
+  if (tvaNote) tvaNote.style.display = isTtcNote ? '' : 'none';
 }
 
 function fmtRange(min, max) {
@@ -577,9 +606,37 @@ if (mapEl && typeof L !== 'undefined') {
     }
   }
 
+  // ── FERMETURE POLYGONE : marqueur cliquable élargi sur le 1er point ──
+  let closeZoneMarker = null;
+  function removeCloseZone() {
+    if (closeZoneMarker) { map.removeLayer(closeZoneMarker); closeZoneMarker = null; }
+  }
+  map.on(L.Draw.Event.DRAWVERTEX, () => {
+    removeCloseZone();
+    if (!drawPolygon._enabled || !drawPolygon._markers || drawPolygon._markers.length < 3) return;
+    const firstLL = drawPolygon._markers[0].getLatLng();
+    closeZoneMarker = L.marker(firstLL, {
+      icon: L.divIcon({
+        html: '<div style="width:32px;height:32px;border:3px solid #3d9e62;border-radius:50%;background:rgba(61,158,98,.25);box-sizing:border-box;cursor:pointer;"></div>',
+        className: '',
+        iconSize:   [32, 32],
+        iconAnchor: [16, 16],
+      }),
+      interactive: true,
+      zIndexOffset: 1000,
+    }).addTo(map);
+    closeZoneMarker.on('click', e => {
+      L.DomEvent.stopPropagation(e);
+      removeCloseZone();
+      try { drawPolygon._finishShape(); } catch(err) { console.warn('finishShape:', err); }
+    });
+  });
+  map.on('draw:drawstop', removeCloseZone);
+
   if (btnSurface) btnSurface.addEventListener('click', () => setMode('surface'));
   if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
   if (btnReset)   btnReset.addEventListener('click', () => {
+    removeCloseZone();
     drawnItems.clearLayers();
     drawPolygon.disable(); drawPolyline.disable();
     btnSurface && btnSurface.classList.remove('active-surface');
@@ -587,6 +644,7 @@ if (mapEl && typeof L !== 'undefined') {
     if (btnFinish) btnFinish.style.display = 'none';
     const zoneEl = document.getElementById('zone-info');
     if (zoneEl) { zoneEl.innerHTML = ''; zoneEl.style.display = 'none'; }
+    state.demandeAccompagnement = false;
     if (infoBar) infoBar.innerHTML = 'ℹ️ Dessin effacé. Choisissez un mode pour recommencer.';
   });
 
@@ -659,8 +717,8 @@ async function checkEnvironmentalZones(lat, lng) {
   const zoneEl = document.getElementById('zone-info');
   if (!zoneEl || !lat || !lng) return;
 
-  zoneEl.innerHTML = '<div class="zone-checking">🔍 Vérification des zones environnementales en cours…</div>';
   zoneEl.style.display = 'block';
+  zoneEl.innerHTML = '<div class="zone-checking">🔍 Vérification des zones environnementales en cours…</div>';
 
   const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
   const base  = 'https://apicarto.ign.fr/api/nature/';
@@ -670,25 +728,25 @@ async function checkEnvironmentalZones(lat, lng) {
       url:    `${base}natura-habitat?geom=${geom}`,
       name:   'Natura 2000 – Habitats (ZSC/SIC)',
       icon:   '🐸',
-      impact: 'Les travaux en eau sont soumis à évaluation des incidences Natura 2000. Un dossier préalable est généralement requis. Délai administratif : 2 à 6 mois.',
+      impact: 'Travaux en eau soumis à évaluation des incidences. Un dossier préalable est généralement requis (délai : 2 à 6 mois).',
     },
     {
       url:    `${base}natura-oiseaux?geom=${geom}`,
       name:   'Natura 2000 – Oiseaux (ZPS)',
       icon:   '🦅',
-      impact: 'Zone de protection spéciale pour les oiseaux. Travaux conditionnés : hors période de nidification (mars–juillet conseillé). Évaluation d\'incidences requise.',
+      impact: 'Zone de protection spéciale. Travaux conditionnés hors période de nidification. Évaluation d\'incidences requise.',
     },
     {
       url:    `${base}znieff1?geom=${geom}`,
       name:   'ZNIEFF de type I',
       icon:   '🌿',
-      impact: 'Zone d\'intérêt écologique majeur. Pas d\'interdiction automatique, mais une étude d\'impact environnemental peut être demandée lors de l\'instruction.',
+      impact: 'Zone d\'intérêt écologique majeur. Une étude d\'impact peut être demandée lors de l\'instruction du dossier.',
     },
     {
       url:    `${base}znieff2?geom=${geom}`,
       name:   'ZNIEFF de type II',
       icon:   '🌿',
-      impact: 'Grand ensemble naturel. Les travaux restent possibles avec précautions environnementales adaptées.',
+      impact: 'Grand ensemble naturel. Travaux possibles avec précautions environnementales adaptées.',
     },
   ];
 
@@ -704,43 +762,60 @@ async function checkEnvironmentalZones(lat, lng) {
       if (!res.ok) { errors++; return; }
       const data = await res.json();
       if (data.features?.length > 0) {
-        const siteName = data.features[0].properties?.sitename
-          || data.features[0].properties?.nom_site
-          || data.features[0].properties?.nom
-          || '';
+        const props = data.features[0].properties;
+        const siteName = props?.sitename || props?.nom_site || props?.nom_zone || props?.nom || '';
         found.push({ ...c, siteName });
       }
     } catch { errors++; }
   }));
 
   if (found.length === 0 && errors === checks.length) {
-    zoneEl.innerHTML = '';
-    zoneEl.style.display = 'none';
+    zoneEl.innerHTML = `
+      <div class="zone-indispo">
+        ⚠️ La vérification automatique des zones environnementales n'a pas abouti (service IGN indisponible).<br>
+        <span>Nous effectuerons ce contrôle lors du rendez-vous technique.</span>
+      </div>`;
     return;
   }
 
   if (found.length === 0) {
-    zoneEl.innerHTML = '<div class="zone-ok">✅ Aucune zone Natura 2000 / ZNIEFF détectée à cette localisation. Pensez à vérifier les zones humides locales auprès de votre DDT.</div>';
+    zoneEl.innerHTML = `
+      <div class="zone-ok">
+        ✅ <strong>Aucune zone protégée détectée</strong> (Natura 2000, ZNIEFF) à cette localisation.<br>
+        <span>Pensez à vérifier les zones humides locales auprès de votre DDT.</span>
+      </div>`;
     return;
   }
+
+  const zonesHtml = found.map(z => `
+    <div class="zone-item">
+      <div class="zone-item-name">${z.icon} ${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
+      <div class="zone-item-impact">${z.impact}</div>
+    </div>`).join('');
 
   zoneEl.innerHTML = `
     <div class="zone-alert">
       <div class="zone-alert-title">⚠️ Zone(s) protégée(s) détectée(s) — réglementation spécifique</div>
-      ${found.map(z => `
-        <div class="zone-item">
-          <div class="zone-item-name">${z.icon} ${z.name}${z.siteName ? ` — <em>${z.siteName}</em>` : ''}</div>
-          <div class="zone-item-impact">${z.impact}</div>
-        </div>`).join('')}
+      ${zonesHtml}
       <div class="zone-alert-footer">
-        ⚖️ Ces informations sont indicatives. Nous vous accompagnons dans les démarches administratives (Loi sur l'eau, dossier d'incidences, déclaration préfectorale…). Contactez-nous pour en savoir plus.
+        Ces informations sont indicatives et basées sur les données IGN. Nous vous accompagnons dans toutes les démarches administratives liées à ces zones.
       </div>
+      <label class="zone-accomp-label">
+        <input type="checkbox" id="cb-accompagnement" />
+        <span class="zone-accomp-text">
+          <strong>Je souhaite être accompagné(e) dans les démarches administratives</strong>
+          <em>Loi sur l'eau · dossier d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
+        </span>
+      </label>
     </div>`;
+
+  const cb = document.getElementById('cb-accompagnement');
+  if (cb) cb.addEventListener('change', () => { state.demandeAccompagnement = cb.checked; });
 }
 
 // ── BUILD DETAILS (pour Supabase) ─────────────────────────────
 function buildDetails() {
-  const d = {};
+  const d = { typeClient: state.typeClient };
   if (state.travaux.has('hydrocurage')) {
     const vol = Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100));
     d.hydrocurage = {
@@ -761,6 +836,7 @@ function buildDetails() {
     d['broyage-forestier'] = { surface_ha: state.surfBroyageForestier, densite: state.densiteBroyage };
   if (state.travaux.has('broyage-roseaux'))
     d['broyage-roseaux'] = { surface_ha: state.surfBroyageRoseaux, avec_ramassage: state.avecRamassage };
+  if (state.demandeAccompagnement) d.demandeAccompagnement = true;
   return d;
 }
 
