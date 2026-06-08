@@ -611,6 +611,10 @@ function renderDetailPane(d) {
             <div class="info-label">Délai envisagé</div>
             <div class="info-value">${esc(delaiMap[d.delai] || d.delai || '–')}</div>
           </div>
+          ${details.typeClient ? `<div>
+            <div class="info-label">Type client (tarification)</div>
+            <div class="info-value">${esc({ particulier:'Particulier', professionnel:'Professionnel', collectivite:'Collectivité', association:'Association' }[details.typeClient] || details.typeClient)}</div>
+          </div>` : ''}
         </div>
       </div>
 
@@ -643,6 +647,13 @@ function renderDetailPane(d) {
       <div class="dsec">
         <h3>Informations complémentaires</h3>
         <p style="font-size:.85rem;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;">${esc(d.infos_sup)}</p>
+      </div>` : ''}
+
+      ${d.lat && d.lng ? `
+      <div class="dsec" id="dsec-zones">
+        <h3>Zones environnementales &amp; démarches</h3>
+        ${details.demandeAccompagnement ? '<div class="adm-accomp-badge">✋ Accompagnement administratif demandé par le client</div>' : ''}
+        <div id="admin-zones-content"><div class="adm-zones-loading">🔍 Vérification en cours…</div></div>
       </div>` : ''}
 
       <div class="est-total">
@@ -723,6 +734,8 @@ function renderDetailPane(d) {
       }
     }, 800);
   });
+
+  if (!isContact && d.lat && d.lng) checkAdminZones(d.lat, d.lng, d);
 
   // Carte du tracé client — setTimeout pour laisser le navigateur calculer le layout
   if (d.geojson || (d.lat && d.lng)) {
@@ -904,4 +917,214 @@ function travailLabel(t) {
 
 function travailShort(t) {
   return { hydrocurage:'💧 Hydro.', curage:'🚜 Curage', faucardage:'🌿 Fauc.', berges:'🪨 Berges', 'broyage-forestier':'🌲 Broyage', 'broyage-roseaux':'🌾 Roseaux', diagnostic:'🔍 Diag.' }[t] || t;
+}
+
+// ── ZONES ENVIRONNEMENTALES (panneau détail admin) ────────────
+async function checkAdminZones(lat, lng, d) {
+  const container = document.getElementById('admin-zones-content');
+  if (!container) return;
+
+  const geom  = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
+  const base  = 'https://apicarto.ign.fr/api/nature/';
+  const checks = [
+    { url: `${base}zone-humide?geom=${geom}`,    name: 'Zone humide (Loi sur l\'eau)',     icon: '💧', type: 'zh'  },
+    { url: `${base}natura-habitat?geom=${geom}`, name: 'Natura 2000 – Habitats (ZSC/SIC)', icon: '🐸', type: 'nat' },
+    { url: `${base}natura-oiseaux?geom=${geom}`, name: 'Natura 2000 – Oiseaux (ZPS)',      icon: '🦅', type: 'nat' },
+    { url: `${base}znieff1?geom=${geom}`,        name: 'ZNIEFF de type I',                 icon: '🌿', type: 'zni' },
+    { url: `${base}znieff2?geom=${geom}`,        name: 'ZNIEFF de type II',                icon: '🌿', type: 'zni' },
+  ];
+
+  const found = [];
+  let   errors = 0;
+
+  await Promise.allSettled(checks.map(async c => {
+    try {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 9000);
+      const res  = await fetch(c.url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (!res.ok) { errors++; return; }
+      const data = await res.json();
+      if (data.features?.length > 0) {
+        const p = data.features[0].properties;
+        const siteName = p?.sitename || p?.nom_site || p?.nom_zone || p?.nom || p?.code_zh || p?.lb_zh || p?.type_zh || '';
+        found.push({ ...c, siteName });
+      }
+    } catch { errors++; }
+  }));
+
+  if (!document.getElementById('admin-zones-content')) return;
+
+  const details       = d.details || {};
+  const demandeAccomp = !!details.demandeAccompagnement;
+  const surfaceHa     = d.surface_ha || null;
+
+  if (found.length === 0 && errors === checks.length) {
+    container.innerHTML = '<p class="adm-zone-indispo">⚠️ Service IGN indisponible – vérification manuelle requise.</p>';
+    return;
+  }
+  if (found.length === 0) {
+    container.innerHTML = '<p class="adm-zone-ok">✅ Aucune zone protégée détectée à cette localisation.</p>';
+    return;
+  }
+
+  const zhFound  = found.filter(z => z.type === 'zh');
+  const natFound = found.filter(z => z.type === 'nat');
+  const zniFound = found.filter(z => z.type === 'zni');
+
+  let html = '<div class="adm-zone-tags">';
+  zhFound.forEach (z => { html += `<span class="adm-ztag adm-ztag-zh">${z.icon} Zone humide${z.siteName ? ` — ${esc(z.siteName)}` : ''}</span>`; });
+  natFound.forEach(z => { html += `<span class="adm-ztag adm-ztag-eco">${z.icon} ${esc(z.name)}${z.siteName ? ` — ${esc(z.siteName)}` : ''}</span>`; });
+  zniFound.forEach(z => { html += `<span class="adm-ztag adm-ztag-eco">${z.icon} ${esc(z.name)}${z.siteName ? ` — ${esc(z.siteName)}` : ''}</span>`; });
+  html += '</div>';
+
+  html += buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa);
+  container.innerHTML = html;
+}
+
+function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa) {
+  if (!zhFound.length && !natFound.length && !zniFound.length) return '';
+  const sh = parseFloat(surfaceHa) || null;
+  let html = '<div class="adm-demarches"><div class="adm-demarches-title">Démarches à anticiper</div>';
+
+  // ── ZONE HUMIDE / LOI SUR L\'EAU ───────────────────────────
+  if (zhFound.length) {
+    const s0 = sh !== null && sh < 0.1;
+    const s1 = sh !== null && sh >= 0.1 && sh < 1;
+    const s2 = sh !== null && sh >= 1;
+    const lvl = s2 ? 'Autorisation' : s1 ? 'Déclaration' : 'À évaluer';
+    html += `
+    <div class="adm-demarche-card adm-dc-zh">
+      <div class="adm-dc-header">
+        <span class="adm-dc-icon">💧</span>
+        <div>
+          <div class="adm-dc-title">Loi sur l'eau — Procédure IOTA</div>
+          <div class="adm-dc-subtitle">Rubrique 3.3.1.0 — Zones humides (art. L.214-1 C. env.)</div>
+        </div>
+        <span class="adm-dc-level adm-dc-lv-zh">${lvl}</span>
+      </div>
+      <div class="adm-dc-body">
+        <div class="adm-dc-seuils">
+          <div class="adm-dc-seuil${s0 ? ' adm-dc-seuil-ok' : ''}">&#60; 0,1 ha — Pas d'obligation IOTA zone humide${s0 ? ' ✓ surface estimée' : ''}</div>
+          <div class="adm-dc-seuil${s1 ? ' adm-dc-seuil-warn' : ''}">0,1 – 1 ha — Déclaration à la DDT(M)${s1 ? ' ← surface estimée' : ''}</div>
+          <div class="adm-dc-seuil${s2 ? ' adm-dc-seuil-danger' : ''}">&#62; 1 ha — Autorisation préfectorale${s2 ? ' ← surface estimée' : ''}</div>
+        </div>
+        <div class="adm-dc-steps">
+          <div class="adm-dc-step"><span class="adm-dc-step-num">1</span><div>
+            <strong>Délimitation réglementaire de la zone humide</strong>
+            <p>Relevé pédologique + floristique selon arrêté du 24/06/2008. Confier à un bureau d'études hydraulique (ARTELIA, EGIS, ou cabinet local agréé).</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
+            <strong>Constitution du dossier ${s2 ? 'd\'autorisation' : 'de déclaration'}</strong>
+            <p>${s2
+              ? 'Dossier complet : notice d\'incidence, cartographies, mesures ERC (Éviter/Réduire/Compenser), mesures compensatoires éventuelles. Enquête publique possible.'
+              : 'Formulaire Cerfa n° 13617* + notice d\'incidence simplifiée avec description du projet, état initial et mesures d\'atténuation.'
+            }</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
+            <strong>Dépôt auprès de la DDT du Pas-de-Calais</strong>
+            <p>Service Eau et Risques — 62000 Arras — ddt@pas-de-calais.gouv.fr — Tél. 03 21 21 20 00<br>Dépôt en ligne : portail IOTA.eau (eau.gouv.fr)</p>
+          </div></div>
+          ${s2 ? `<div class="adm-dc-step"><span class="adm-dc-step-num">4</span><div>
+            <strong>Instruction et enquête publique éventuelle</strong>
+            <p>L'arrêté préfectoral doit être obtenu avant tout démarrage de chantier. Délai : 6 à 12 mois.</p>
+          </div></div>` : ''}
+          <div class="adm-dc-step"><span class="adm-dc-step-num">${s2 ? '5' : '4'}</span><div>
+            <strong>${s2 ? 'Arrêté préfectoral' : 'Récépissé de déclaration'} — démarrage chantier</strong>
+            <p>${s2
+              ? 'Conservation de l\'arrêté sur chantier obligatoire.'
+              : 'Délai 2 mois (recours). Les travaux peuvent débuter à réception, sauf opposition préfectorale.'
+            }</p>
+          </div></div>
+        </div>
+        <div class="adm-dc-alert">⚠️ Sans dossier : arrêt de chantier + remise en état + amende jusqu'à <strong>15 000 €</strong></div>
+      </div>
+    </div>`;
+  }
+
+  // ── NATURA 2000 ─────────────────────────────────────────────
+  if (natFound.length) {
+    const sites = natFound.map(z => z.name.includes('Habitats') ? 'ZSC/SIC' : 'ZPS').join(' + ');
+    html += `
+    <div class="adm-demarche-card adm-dc-eco">
+      <div class="adm-dc-header">
+        <span class="adm-dc-icon">🌿</span>
+        <div>
+          <div class="adm-dc-title">Évaluation des incidences Natura 2000 (EIN)</div>
+          <div class="adm-dc-subtitle">Art. L.414-4 C. env. — Sites ${esc(sites)} détectés</div>
+        </div>
+        <span class="adm-dc-level adm-dc-lv-eco">EIN requise</span>
+      </div>
+      <div class="adm-dc-body">
+        <div class="adm-dc-steps">
+          <div class="adm-dc-step"><span class="adm-dc-step-num">1</span><div>
+            <strong>Vérifier les listes nationale et locale</strong>
+            <p>Consulter l'art. R.414-19 (liste nationale) et la liste locale Pas-de-Calais. Les travaux en cours d'eau en zone Natura 2000 sont généralement listés.</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
+            <strong>Niveau 1 — Fiche simplifiée (sans incidence notable)</strong>
+            <p>Localisation, distance au site Natura, espèces/habitats visés par le FSD, justification de l'absence d'impact. Annexée au dossier principal.</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
+            <strong>Niveau 2 — Dossier complet (si incidences probables)</strong>
+            <p>Analyse des effets cumulés, mesures d'atténuation, justification de l'absence d'atteinte aux objectifs de conservation. Instruit par la DREAL Hauts-de-France.</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">4</span><div>
+            <strong>Joindre l'EIN à la demande d'autorisation principale</strong>
+            <p>L'EIN est annexée au dossier Loi sur l'eau ou autre autorisation. La DDT est l'autorité instructrice de premier niveau.</p>
+          </div></div>
+        </div>
+        <div class="adm-dc-alert">📞 DREAL Hauts-de-France — Tél. 03 20 13 48 48 · Formulaire sur natura2000.fr · Délai : 2 à 6 mois</div>
+      </div>
+    </div>`;
+  }
+
+  // ── ZNIEFF ──────────────────────────────────────────────────
+  if (zniFound.length) {
+    const types = [...new Set(zniFound.map(z => z.name.includes('type I') ? 'Type I' : 'Type II'))].join(' + ');
+    html += `
+    <div class="adm-demarche-card adm-dc-zni">
+      <div class="adm-dc-header">
+        <span class="adm-dc-icon">🌱</span>
+        <div>
+          <div class="adm-dc-title">ZNIEFF ${esc(types)} — Vigilance environnementale</div>
+          <div class="adm-dc-subtitle">Inventaire scientifique — pas d'obligation directe mais enjeu écologique fort</div>
+        </div>
+        <span class="adm-dc-level adm-dc-lv-zni">Vigilance</span>
+      </div>
+      <div class="adm-dc-body">
+        <div class="adm-dc-steps">
+          <div class="adm-dc-step"><span class="adm-dc-step-num">!</span><div>
+            <strong>Pas de procédure réglementaire autonome</strong>
+            <p>La ZNIEFF ne crée pas d'obligation légale directe, mais signale une forte valeur biologique qui influence l'instruction des autres dossiers.</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">1</span><div>
+            <strong>Mentionner la ZNIEFF dans tous les dossiers</strong>
+            <p>Signaler systématiquement sa présence dans les notices d'incidence Loi sur l'eau et EIN. Le service instructeur sera plus exigeant.</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
+            <strong>Étude faune-flore possible (ZNIEFF I)</strong>
+            <p>En ZNIEFF de type I, le service instructeur peut imposer une étude d'impact par un écologue agréé (état initial, mesures ERC).</p>
+          </div></div>
+          <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
+            <strong>Précautions opérationnelles</strong>
+            <p>Adapter les dates (hors nidification mars–août, hors fraye printanière), baliser les zones sensibles, interdire les rejets directs dans le milieu aquatique.</p>
+          </div></div>
+        </div>
+        <div class="adm-dc-alert">ℹ️ Inventaire ZNIEFF : inpn.mnhn.fr · Avis préalable informel DREAL Hauts-de-France conseillé</div>
+      </div>
+    </div>`;
+  }
+
+  // ── ACCOMPAGNEMENT DEMANDÉ ──────────────────────────────────
+  if (demandeAccomp) {
+    html += `
+    <div class="adm-accomp-info">
+      ✋ <strong>Le client a demandé un accompagnement dans les démarches administratives.</strong><br>
+      Préparer un devis spécifique pour la constitution et le suivi des dossiers réglementaires. Si nécessaire, s'appuyer sur un bureau d'études partenaire (hydraulique/environnement).
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
 }
