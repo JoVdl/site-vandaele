@@ -770,35 +770,35 @@ async function checkEnvironmentalZones(lat, lng) {
       name:   'Zone humide (Loi sur l\'eau)',
       icon:   '💧',
       type:   'zh',
-      impact: 'Tout remblai, assèchement ou travaux affectant une zone humide est soumis à déclaration (> 0,1 ha) ou autorisation préfectorale (> 1 ha) au titre de la rubrique 3.3.1.0 du Code de l\'environnement (IOTA). Un dossier Loi sur l\'eau est obligatoire avant tout démarrage de chantier.',
+      impact: `Tout remblai, assèchement ou travaux affectant une zone humide est soumis à déclaration (> 0,1 ha) ou autorisation préfectorale (> 1 ha) au titre de la rubrique 3.3.1.0 du Code de l'environnement (<abbr title="Installations, Ouvrages, Travaux et Activités">IOTA</abbr>). Un dossier Loi sur l'eau est obligatoire avant tout démarrage de chantier.`,
     },
     {
       url:    `${base}natura-habitat?geom=${geom}`,
-      name:   'Natura 2000 – Habitats (ZSC/SIC)',
+      name:   'Natura 2000 – Habitats (<abbr title="Zone Spéciale de Conservation">ZSC</abbr>/<abbr title="Site d\'Importance Communautaire">SIC</abbr>)',
       icon:   '🐸',
       type:   'eco',
-      impact: 'Travaux en eau soumis à évaluation des incidences Natura 2000. Un dossier préalable est généralement requis (délai : 2 à 6 mois).',
+      impact: `Travaux en eau soumis à <abbr title="Évaluation des Incidences Natura 2000">évaluation des incidences Natura 2000 (EIN)</abbr>. Un dossier préalable est généralement requis (délai : 2 à 6 mois).`,
     },
     {
       url:    `${base}natura-oiseaux?geom=${geom}`,
-      name:   'Natura 2000 – Oiseaux (ZPS)',
+      name:   'Natura 2000 – Oiseaux (<abbr title="Zone de Protection Spéciale">ZPS</abbr>)',
       icon:   '🦅',
       type:   'eco',
-      impact: 'Zone de protection spéciale. Travaux conditionnés hors période de nidification. Évaluation d\'incidences requise.',
+      impact: `<abbr title="Zone de Protection Spéciale">Zone de protection spéciale (ZPS)</abbr>. Travaux conditionnés hors période de nidification. <abbr title="Évaluation des Incidences Natura 2000">Évaluation d'incidences (EIN)</abbr> requise.`,
     },
     {
       url:    `${base}znieff1?geom=${geom}`,
-      name:   'ZNIEFF de type I',
+      name:   '<abbr title="Zone Naturelle d\'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr> de type I',
       icon:   '🌿',
       type:   'eco',
-      impact: 'Zone d\'intérêt écologique majeur. Une étude d\'impact peut être demandée lors de l\'instruction du dossier.',
+      impact: `<abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">Zone Naturelle d'Intérêt Écologique (ZNIEFF)</abbr> de type I — intérêt écologique majeur. Une étude d'impact peut être demandée lors de l'instruction du dossier.`,
     },
     {
       url:    `${base}znieff2?geom=${geom}`,
-      name:   'ZNIEFF de type II',
+      name:   '<abbr title="Zone Naturelle d\'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr> de type II',
       icon:   '🌿',
       type:   'eco',
-      impact: 'Grand ensemble naturel. Travaux possibles avec précautions environnementales adaptées.',
+      impact: `<abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">Zone Naturelle d'Intérêt Écologique (ZNIEFF)</abbr> de type II — grand ensemble naturel. Travaux possibles avec précautions environnementales adaptées.`,
     },
   ];
 
@@ -835,7 +835,7 @@ async function checkEnvironmentalZones(lat, lng) {
   if (found.length === 0) {
     zoneEl.innerHTML = `
       <div class="zone-ok">
-        ✅ <strong>Aucune zone protégée détectée</strong> (zone humide, Natura 2000, ZNIEFF) à cette localisation.<br>
+        ✅ <strong>Aucune zone protégée détectée</strong> (zone humide, Natura 2000, <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>) à cette localisation.<br>
         <span>Ces données sont indicatives — vérification définitive lors de la visite technique.</span>
       </div>`;
     zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -877,6 +877,15 @@ async function checkEnvironmentalZones(lat, lng) {
   zoneEl.innerHTML = zhHtml + ecoHtml + `
     <div class="zone-alert-footer-global">
       Ces informations sont basées sur les données IGN et sont indicatives. La vérification définitive est effectuée lors de la visite technique.
+    </div>
+    <div class="zone-glossaire">
+      <strong>Sigles</strong> :
+      <abbr title="Installations, Ouvrages, Travaux et Activités">IOTA</abbr> (régime Loi sur l'eau) ·
+      <abbr title="Évaluation des Incidences Natura 2000">EIN</abbr> ·
+      <abbr title="Zone Spéciale de Conservation">ZSC</abbr> ·
+      <abbr title="Site d'Importance Communautaire">SIC</abbr> ·
+      <abbr title="Zone de Protection Spéciale">ZPS</abbr> ·
+      <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>
     </div>` + accompHtml;
 
   zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
