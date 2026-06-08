@@ -997,6 +997,22 @@ async function checkAdminZones(lat, lng, d) {
 function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa) {
   if (!zhFound.length && !natFound.length && !zniFound.length) return '';
   const sh = parseFloat(surfaceHa) || null;
+
+  // Helpers abbr pour éviter la répétition
+  const A = {
+    IOTA:   `<abbr title="Installations, Ouvrages, Travaux et Activités">IOTA</abbr>`,
+    DREAL:  `<abbr title="Direction Régionale de l'Environnement, de l'Aménagement et du Logement">DREAL</abbr>`,
+    DDT:    `<abbr title="Direction Départementale des Territoires">DDT</abbr>`,
+    DDTM:   `<abbr title="Direction Départementale des Territoires et de la Mer">DDT(M)</abbr>`,
+    ERC:    `<abbr title="Éviter, Réduire, Compenser">ERC</abbr>`,
+    EIN:    `<abbr title="Évaluation des Incidences Natura 2000">EIN</abbr>`,
+    ZSC:    `<abbr title="Zone Spéciale de Conservation">ZSC</abbr>`,
+    SIC:    `<abbr title="Site d'Importance Communautaire">SIC</abbr>`,
+    ZPS:    `<abbr title="Zone de Protection Spéciale">ZPS</abbr>`,
+    FSD:    `<abbr title="Formulaire Standard de Données Natura 2000">FSD</abbr>`,
+    ZNIEFF: `<abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>`,
+  };
+
   let html = '<div class="adm-demarches"><div class="adm-demarches-title">Démarches à anticiper</div>';
 
   // ── ZONE HUMIDE / LOI SUR L\'EAU ───────────────────────────
@@ -1010,15 +1026,15 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
       <div class="adm-dc-header">
         <span class="adm-dc-icon">💧</span>
         <div>
-          <div class="adm-dc-title">Loi sur l'eau — Procédure IOTA</div>
+          <div class="adm-dc-title">Loi sur l'eau — Procédure ${A.IOTA}</div>
           <div class="adm-dc-subtitle">Rubrique 3.3.1.0 — Zones humides (art. L.214-1 C. env.)</div>
         </div>
         <span class="adm-dc-level adm-dc-lv-zh">${lvl}</span>
       </div>
       <div class="adm-dc-body">
         <div class="adm-dc-seuils">
-          <div class="adm-dc-seuil${s0 ? ' adm-dc-seuil-ok' : ''}">&#60; 0,1 ha — Pas d'obligation IOTA zone humide${s0 ? ' ✓ surface estimée' : ''}</div>
-          <div class="adm-dc-seuil${s1 ? ' adm-dc-seuil-warn' : ''}">0,1 – 1 ha — Déclaration à la DDT(M)${s1 ? ' ← surface estimée' : ''}</div>
+          <div class="adm-dc-seuil${s0 ? ' adm-dc-seuil-ok' : ''}">&#60; 0,1 ha — Pas d'obligation ${A.IOTA} zone humide${s0 ? ' ✓ surface estimée' : ''}</div>
+          <div class="adm-dc-seuil${s1 ? ' adm-dc-seuil-warn' : ''}">0,1 – 1 ha — Déclaration à la ${A.DDTM}${s1 ? ' ← surface estimée' : ''}</div>
           <div class="adm-dc-seuil${s2 ? ' adm-dc-seuil-danger' : ''}">&#62; 1 ha — Autorisation préfectorale${s2 ? ' ← surface estimée' : ''}</div>
         </div>
         <div class="adm-dc-steps">
@@ -1029,13 +1045,13 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
           <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
             <strong>Constitution du dossier ${s2 ? 'd\'autorisation' : 'de déclaration'}</strong>
             <p>${s2
-              ? 'Dossier complet : notice d\'incidence, cartographies, mesures ERC (Éviter/Réduire/Compenser), mesures compensatoires éventuelles. Enquête publique possible.'
-              : 'Formulaire Cerfa n° 13617* + notice d\'incidence simplifiée avec description du projet, état initial et mesures d\'atténuation.'
+              ? `Dossier complet : notice d'incidence, cartographies, mesures ${A.ERC} (Éviter / Réduire / Compenser), mesures compensatoires éventuelles. Enquête publique possible.`
+              : `Formulaire Cerfa n° 13617* + notice d'incidence simplifiée avec description du projet, état initial et mesures d'atténuation.`
             }</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
-            <strong>Dépôt auprès de la DDT du Pas-de-Calais</strong>
-            <p>Service Eau et Risques — 62000 Arras — ddt@pas-de-calais.gouv.fr — Tél. 03 21 21 20 00<br>Dépôt en ligne : portail IOTA.eau (eau.gouv.fr)</p>
+            <strong>Dépôt auprès de la ${A.DDT} du Pas-de-Calais</strong>
+            <p>Service Eau et Risques — 62000 Arras — ddt@pas-de-calais.gouv.fr — Tél. 03 21 21 20 00<br>Dépôt en ligne : portail ${A.IOTA}.eau (eau.gouv.fr)</p>
           </div></div>
           ${s2 ? `<div class="adm-dc-step"><span class="adm-dc-step-num">4</span><div>
             <strong>Instruction et enquête publique éventuelle</strong>
@@ -1056,16 +1072,16 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
 
   // ── NATURA 2000 ─────────────────────────────────────────────
   if (natFound.length) {
-    const sites = natFound.map(z => z.name.includes('Habitats') ? 'ZSC/SIC' : 'ZPS').join(' + ');
+    const sites = natFound.map(z => z.name.includes('Habitats') ? `${A.ZSC}/${A.SIC}` : A.ZPS).join(' + ');
     html += `
     <div class="adm-demarche-card adm-dc-eco">
       <div class="adm-dc-header">
         <span class="adm-dc-icon">🌿</span>
         <div>
-          <div class="adm-dc-title">Évaluation des incidences Natura 2000 (EIN)</div>
-          <div class="adm-dc-subtitle">Art. L.414-4 C. env. — Sites ${esc(sites)} détectés</div>
+          <div class="adm-dc-title">${A.EIN} — Évaluation des Incidences Natura 2000</div>
+          <div class="adm-dc-subtitle">Art. L.414-4 C. env. — Sites ${sites} détectés</div>
         </div>
-        <span class="adm-dc-level adm-dc-lv-eco">EIN requise</span>
+        <span class="adm-dc-level adm-dc-lv-eco">${A.EIN} requise</span>
       </div>
       <div class="adm-dc-body">
         <div class="adm-dc-steps">
@@ -1075,18 +1091,18 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
             <strong>Niveau 1 — Fiche simplifiée (sans incidence notable)</strong>
-            <p>Localisation, distance au site Natura, espèces/habitats visés par le FSD, justification de l'absence d'impact. Annexée au dossier principal.</p>
+            <p>Localisation, distance au site Natura, espèces/habitats visés par le ${A.FSD} (Formulaire Standard de Données), justification de l'absence d'impact. Annexée au dossier principal.</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
             <strong>Niveau 2 — Dossier complet (si incidences probables)</strong>
-            <p>Analyse des effets cumulés, mesures d'atténuation, justification de l'absence d'atteinte aux objectifs de conservation. Instruit par la DREAL Hauts-de-France.</p>
+            <p>Analyse des effets cumulés, mesures d'atténuation, justification de l'absence d'atteinte aux objectifs de conservation. Instruit par la ${A.DREAL} Hauts-de-France.</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">4</span><div>
-            <strong>Joindre l'EIN à la demande d'autorisation principale</strong>
-            <p>L'EIN est annexée au dossier Loi sur l'eau ou autre autorisation. La DDT est l'autorité instructrice de premier niveau.</p>
+            <strong>Joindre l'${A.EIN} à la demande d'autorisation principale</strong>
+            <p>L'${A.EIN} est annexée au dossier Loi sur l'eau ou autre autorisation. La ${A.DDT} est l'autorité instructrice de premier niveau.</p>
           </div></div>
         </div>
-        <div class="adm-dc-alert">📞 DREAL Hauts-de-France — Tél. 03 20 13 48 48 · Formulaire sur natura2000.fr · Délai : 2 à 6 mois</div>
+        <div class="adm-dc-alert">📞 ${A.DREAL} Hauts-de-France — Tél. 03 20 13 48 48 · Formulaire sur natura2000.fr · Délai : 2 à 6 mois</div>
       </div>
     </div>`;
   }
@@ -1099,8 +1115,8 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
       <div class="adm-dc-header">
         <span class="adm-dc-icon">🌱</span>
         <div>
-          <div class="adm-dc-title">ZNIEFF ${esc(types)} — Vigilance environnementale</div>
-          <div class="adm-dc-subtitle">Inventaire scientifique — pas d'obligation directe mais enjeu écologique fort</div>
+          <div class="adm-dc-title">${A.ZNIEFF} ${esc(types)} — Vigilance environnementale</div>
+          <div class="adm-dc-subtitle">Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique — inventaire scientifique sans obligation directe</div>
         </div>
         <span class="adm-dc-level adm-dc-lv-zni">Vigilance</span>
       </div>
@@ -1108,22 +1124,22 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
         <div class="adm-dc-steps">
           <div class="adm-dc-step"><span class="adm-dc-step-num">!</span><div>
             <strong>Pas de procédure réglementaire autonome</strong>
-            <p>La ZNIEFF ne crée pas d'obligation légale directe, mais signale une forte valeur biologique qui influence l'instruction des autres dossiers.</p>
+            <p>La ${A.ZNIEFF} ne crée pas d'obligation légale directe, mais signale une forte valeur biologique qui influence l'instruction des autres dossiers.</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">1</span><div>
-            <strong>Mentionner la ZNIEFF dans tous les dossiers</strong>
-            <p>Signaler systématiquement sa présence dans les notices d'incidence Loi sur l'eau et EIN. Le service instructeur sera plus exigeant.</p>
+            <strong>Mentionner la ${A.ZNIEFF} dans tous les dossiers</strong>
+            <p>Signaler systématiquement sa présence dans les notices d'incidence Loi sur l'eau et ${A.EIN}. Le service instructeur sera plus exigeant.</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">2</span><div>
-            <strong>Étude faune-flore possible (ZNIEFF I)</strong>
-            <p>En ZNIEFF de type I, le service instructeur peut imposer une étude d'impact par un écologue agréé (état initial, mesures ERC).</p>
+            <strong>Étude faune-flore possible (${A.ZNIEFF} Type I)</strong>
+            <p>En ${A.ZNIEFF} de type I, le service instructeur peut imposer une étude d'impact par un écologue agréé (état initial, mesures ${A.ERC} : Éviter / Réduire / Compenser).</p>
           </div></div>
           <div class="adm-dc-step"><span class="adm-dc-step-num">3</span><div>
             <strong>Précautions opérationnelles</strong>
             <p>Adapter les dates (hors nidification mars–août, hors fraye printanière), baliser les zones sensibles, interdire les rejets directs dans le milieu aquatique.</p>
           </div></div>
         </div>
-        <div class="adm-dc-alert">ℹ️ Inventaire ZNIEFF : inpn.mnhn.fr · Avis préalable informel DREAL Hauts-de-France conseillé</div>
+        <div class="adm-dc-alert">ℹ️ Inventaire ${A.ZNIEFF} : inpn.mnhn.fr · Avis préalable informel ${A.DREAL} Hauts-de-France conseillé</div>
       </div>
     </div>`;
   }
@@ -1136,6 +1152,22 @@ function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceH
       Préparer un devis spécifique pour la constitution et le suivi des dossiers réglementaires. Si nécessaire, s'appuyer sur un bureau d'études partenaire (hydraulique/environnement).
     </div>`;
   }
+
+  // ── LÉGENDE DES SIGLES ───────────────────────────────────────
+  html += `
+  <div class="adm-glossaire">
+    <strong>Sigles utilisés</strong>
+    <ul>
+      <li>${A.IOTA} — Installations, Ouvrages, Travaux et Activités (régime d'autorisation Loi sur l'eau)</li>
+      <li>${A.DDT} / ${A.DDTM} — Direction Départementale des Territoires (et de la Mer)</li>
+      <li>${A.DREAL} — Direction Régionale de l'Environnement, de l'Aménagement et du Logement</li>
+      <li>${A.EIN} — Évaluation des Incidences Natura 2000</li>
+      <li>${A.ZSC} — Zone Spéciale de Conservation · ${A.SIC} — Site d'Importance Communautaire · ${A.ZPS} — Zone de Protection Spéciale</li>
+      <li>${A.FSD} — Formulaire Standard de Données Natura 2000</li>
+      <li>${A.ZNIEFF} — Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique</li>
+      <li>${A.ERC} — Éviter, Réduire, Compenser (séquence de mesures environnementales)</li>
+    </ul>
+  </div>`;
 
   html += '</div>';
   return html;
