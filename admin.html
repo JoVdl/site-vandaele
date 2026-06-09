@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <style>
     :root {
       --green-900: #0d2b1a;
@@ -379,8 +380,13 @@
     .btn-add-real { padding: .42rem 1rem; background: var(--green-500); color: var(--white); border: none; border-radius: 7px; font-size: .8rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; }
     .btn-add-real:hover { background: var(--green-600); }
     .real-list { display: flex; flex-direction: column; gap: .6rem; }
-    .real-row { display: flex; align-items: center; gap: .85rem; background: var(--white); border-radius: var(--radius); padding: .65rem .9rem; box-shadow: var(--shadow); }
-    .real-thumb { width: 72px; height: 50px; object-fit: cover; border-radius: 6px; background: var(--gray-100); flex-shrink: 0; }
+    .real-row { display: flex; align-items: center; gap: .85rem; background: var(--white); border-radius: var(--radius); padding: .65rem .9rem; box-shadow: var(--shadow); user-select: none; transition: opacity .15s, box-shadow .15s; }
+    .real-row.dragging { opacity: .4; box-shadow: none; }
+    .real-row.drag-over { box-shadow: 0 0 0 2px var(--green-400), var(--shadow); }
+    .real-drag-handle { color: var(--gray-300); cursor: grab; font-size: 1rem; flex-shrink: 0; padding: .2rem .1rem; line-height: 1; }
+    .real-drag-handle:active { cursor: grabbing; }
+    .real-thumb { width: 116px; height: 80px; object-fit: cover; border-radius: 7px; background: var(--gray-100); flex-shrink: 0; display: block; }
+    .real-thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--gray-300); font-size: 1.5rem; }
     .real-info { flex: 1; min-width: 0; }
     .real-titre { font-size: .86rem; font-weight: 600; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .real-meta { display: flex; align-items: center; gap: .4rem; margin-top: .15rem; font-size: .72rem; color: var(--gray-500); flex-wrap: wrap; }
@@ -389,7 +395,6 @@
     .real-actions { display: flex; gap: .28rem; flex-shrink: 0; }
     .real-btn { width: 1.85rem; height: 1.85rem; border: none; border-radius: 6px; background: var(--gray-100); color: var(--gray-600); cursor: pointer; font-size: .8rem; display: flex; align-items: center; justify-content: center; transition: background .15s; padding: 0; }
     .real-btn:hover { background: var(--gray-200); }
-    .real-btn:disabled { opacity: .35; cursor: default; }
     .real-btn.danger:hover { background: #fee2e2; color: var(--red); }
 
     /* Real modal */
@@ -405,10 +410,24 @@
     .rm-field input, .rm-field select, .rm-field textarea { padding: .5rem .7rem; border: 1.5px solid var(--gray-200); border-radius: 7px; font-family: inherit; font-size: .85rem; outline: none; transition: border-color .2s; resize: vertical; }
     .rm-field input:focus, .rm-field select:focus, .rm-field textarea:focus { border-color: var(--green-500); }
     .rm-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
-    .rm-img-row { display: flex; gap: .5rem; }
-    .rm-img-row input { flex: 1; }
-    .btn-rm-preview { padding: .5rem .8rem; background: var(--gray-100); border: 1.5px solid var(--gray-200); border-radius: 7px; font-size: .78rem; cursor: pointer; white-space: nowrap; font-family: inherit; }
-    #rm-preview-img { max-height: 100px; border-radius: 6px; margin-top: .35rem; object-fit: cover; display: none; }
+    /* Media upload zone */
+    .rm-upload-zone { border: 2px dashed var(--gray-200); border-radius: 8px; padding: 1.1rem 1rem; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+    .rm-upload-zone.drag-over { border-color: var(--green-400); background: var(--green-50); }
+    .rm-upload-hint { color: var(--gray-400); font-size: .82rem; line-height: 1.8; pointer-events: none; }
+    .rm-browse-label { color: var(--green-500); cursor: pointer; font-weight: 600; text-decoration: underline; pointer-events: auto; }
+    .rm-media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: .5rem; margin-top: .6rem; }
+    .rm-media-item { position: relative; border-radius: 7px; overflow: hidden; border: 2px solid transparent; background: var(--gray-100); transition: border-color .15s, opacity .15s; }
+    .rm-media-item.dragging { opacity: .35; }
+    .rm-media-item.drag-over { border-color: var(--green-400); }
+    .rm-media-item img, .rm-media-item video { width: 100%; height: 84px; object-fit: cover; display: block; }
+    .rm-media-drag { position: absolute; top: 3px; left: 3px; background: rgba(0,0,0,.52); color: #fff; font-size: .72rem; border-radius: 4px; padding: 1px 5px; cursor: grab; line-height: 1.6; z-index: 1; }
+    .rm-media-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,.52); color: #fff; border: none; border-radius: 4px; width: 1.3rem; height: 1.3rem; font-size: .7rem; cursor: pointer; z-index: 1; }
+    .rm-media-del:hover { background: var(--red); }
+    .rm-media-alt { width: 100%; padding: .22rem .35rem; font-size: .7rem; border: none; background: var(--gray-50); border-top: 1px solid var(--gray-200); font-family: inherit; outline: none; color: var(--gray-600); }
+    .rm-media-alt:focus { background: #fff; }
+    .rm-media-progress { position: absolute; inset: 0; background: rgba(0,0,0,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; color: #fff; font-size: .7rem; }
+    .rm-progress-bar-wrap { width: 68%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); }
+    .rm-progress-bar { height: 100%; background: var(--green-400); border-radius: 2px; transition: width .15s; width: 0%; }
     .rm-check label { display: flex; align-items: center; gap: .5rem; font-weight: 400; font-size: .85rem; cursor: pointer; }
     .rm-check input[type="checkbox"] { width: auto; accent-color: var(--green-500); }
     .rm-footer { display: flex; justify-content: flex-end; gap: .6rem; padding: .9rem 1.2rem; border-top: 1px solid var(--gray-200); }
@@ -720,16 +739,14 @@
           </div>
         </div>
         <div class="rm-field">
-          <label>Image — URL ou chemin</label>
-          <div class="rm-img-row">
-            <input id="rm-image" type="text" placeholder="assets/img/photo.jpg ou https://…">
-            <button type="button" class="btn-rm-preview" onclick="previewRealImg()">Aperçu</button>
+          <label>Photos &amp; Vidéos</label>
+          <div class="rm-upload-zone" id="rm-upload-zone">
+            <div class="rm-upload-hint">
+              📸 Glisser des photos / vidéos ici<br>
+              <small>ou <label class="rm-browse-label">parcourir<input type="file" id="rm-file-input" multiple accept="image/*,video/*" hidden></label></small>
+            </div>
           </div>
-          <img id="rm-preview-img" src="" alt="Aperçu">
-        </div>
-        <div class="rm-field">
-          <label>Texte alternatif <span style="font-weight:400;color:var(--gray-400)">(accessibilité)</span></label>
-          <input id="rm-alt" type="text" placeholder="Description courte de l'image">
+          <div class="rm-media-grid" id="rm-media-grid"></div>
         </div>
         <div class="rm-field">
           <label>Description *</label>

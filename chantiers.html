@@ -404,6 +404,12 @@
 
     function fv(f) { return f?.stringValue ?? f?.integerValue ?? f?.booleanValue ?? null; }
     function arr(f) { return f?.arrayValue?.values?.map(v => v.stringValue || '') || []; }
+    function parseMedia(f) {
+      return (f?.arrayValue?.values || []).map(v => {
+        const m = v.mapValue?.fields || {};
+        return { url: m.url?.stringValue || '', type: m.type?.stringValue || 'image', alt: m.alt?.stringValue || '' };
+      }).filter(m => m.url);
+    }
 
     const cards = data.documents
       .map(doc => {
@@ -416,6 +422,7 @@
           description: fv(f.description) || '',
           image:       fv(f.image) || '',
           imageAlt:    fv(f.imageAlt) || '',
+          media:       parseMedia(f.media),
           specs:       arr(f.specs),
           ordre:       parseInt(fv(f.ordre) || '0'),
           visible:     fv(f.visible) !== false,
@@ -427,10 +434,17 @@
     if (!cards.length) return;
 
     const grid = document.getElementById('real-dynamic');
-    grid.innerHTML = cards.map(r => `
+    grid.innerHTML = cards.map(r => {
+      const first = r.media?.[0] || (r.image ? { url: r.image, type: 'image', alt: r.imageAlt } : null);
+      const mediaHtml = first
+        ? first.type === 'video'
+          ? `<video src="${escHtml(first.url)}" muted autoplay loop playsinline></video>`
+          : `<img src="${escHtml(first.url)}" alt="${escHtml(first.alt || r.titre)}" loading="lazy" />`
+        : '';
+      return `
       <article class="chantier-card-full" data-cat="${escHtml(r.categorie)}">
         <div class="chantier-img">
-          <img src="${escHtml(r.image)}" alt="${escHtml(r.imageAlt || r.titre)}" loading="lazy" />
+          ${mediaHtml}
           <span class="chantier-badge">${escHtml(r.badge)}</span>
         </div>
         <div class="chantier-body">
@@ -441,8 +455,8 @@
             ${r.specs.map(s => `<span class="spec-chip">${escHtml(s)}</span>`).join('')}
           </div>
         </div>
-      </article>
-    `).join('');
+      </article>`;
+    }).join('');
 
     document.getElementById('real-static').hidden = true;
     grid.hidden = false;

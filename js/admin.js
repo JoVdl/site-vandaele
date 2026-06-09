@@ -13,7 +13,8 @@ const FIREBASE_CONFIG = {
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
-const db   = firebase.firestore();
+const db      = firebase.firestore();
+const storage = firebase.storage();
 
 const DEPOT_LAT = 50.317867;
 const DEPOT_LNG = 1.915533;
@@ -1268,6 +1269,7 @@ const REAL_SEED = [
 
 let allRealisations  = [];
 let realUnsubscribe  = null;
+let currentMedia     = [];
 
 function realCatLabel(c) {
   return { curage:'Curage', faucardage:'Faucardage', berges:'Berges', broyage:'Broyage' }[c] || c;
@@ -1337,38 +1339,74 @@ function renderRealList() {
     container.innerHTML = '<div class="state-msg">Aucune réalisation. Cliquez sur « Ajouter ».</div>';
     return;
   }
-  container.innerHTML = allRealisations.map((r, i) => `
-    <div class="real-row">
-      <img class="real-thumb" src="${esc(r.image || '')}" alt=""
-           onerror="this.style.visibility='hidden'">
+  container.innerHTML = allRealisations.map(r => {
+    const first = r.media?.[0] || (r.image ? { url: r.image, type: 'image' } : null);
+    const thumb = first
+      ? first.type === 'video'
+        ? `<video class="real-thumb" src="${esc(first.url)}" muted playsinline></video>`
+        : `<img class="real-thumb" src="${esc(first.url)}" alt="" onerror="this.style.visibility='hidden'">`
+      : `<div class="real-thumb real-thumb-empty">📷</div>`;
+    const mediaCount = r.media?.length ?? (r.image ? 1 : 0);
+    return `
+    <div class="real-row" draggable="true" data-id="${r.id}">
+      <span class="real-drag-handle" title="Glisser pour réorganiser">⠿</span>
+      ${thumb}
       <div class="real-info">
         <div class="real-titre">${esc(r.titre)}</div>
         <div class="real-meta">
           <span class="real-cat-badge">${realCatLabel(r.categorie)}</span>
           ${esc(r.lieu)}
           ${!r.visible ? '<span class="real-hidden-tag">· Masqué</span>' : ''}
+          ${mediaCount > 1 ? `<span style="color:var(--gray-400)">· ${mediaCount} médias</span>` : ''}
         </div>
       </div>
       <div class="real-actions">
-        <button class="real-btn" title="Monter" onclick="moveReal('${r.id}','up')" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="real-btn" title="Descendre" onclick="moveReal('${r.id}','down')" ${i === allRealisations.length - 1 ? 'disabled' : ''}>↓</button>
         <button class="real-btn" title="Modifier" onclick="openRealModal('${r.id}')">✏️</button>
         <button class="real-btn danger" title="Supprimer" onclick="deleteReal('${r.id}','${esc(r.titre).replace(/'/g,"\\'")}')">🗑️</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+  initRealListDnd();
 }
 
-async function moveReal(id, dir) {
-  const idx = allRealisations.findIndex(r => r.id === id);
-  if (idx < 0) return;
-  const other = dir === 'up' ? allRealisations[idx - 1] : allRealisations[idx + 1];
-  if (!other) return;
-  const curr = allRealisations[idx];
-  await Promise.all([
-    db.collection('realisations').doc(curr.id).update({ ordre: other.ordre }),
-    db.collection('realisations').doc(other.id).update({ ordre: curr.ordre }),
-  ]);
+function initRealListDnd() {
+  const list = document.getElementById('real-list');
+  if (!list) return;
+  let dragId = null;
+
+  list.querySelectorAll('.real-row').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragId = row.dataset.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.classList.add('dragging'), 0);
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      list.querySelectorAll('.real-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (row.dataset.id !== dragId) row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', async e => {
+      e.preventDefault();
+      const overId = row.dataset.id;
+      if (!dragId || overId === dragId) return;
+      const dragIdx = allRealisations.findIndex(r => r.id === dragId);
+      const overIdx = allRealisations.findIndex(r => r.id === overId);
+      if (dragIdx < 0 || overIdx < 0) return;
+      const reordered = [...allRealisations];
+      const [moved] = reordered.splice(dragIdx, 1);
+      reordered.splice(overIdx, 0, moved);
+      const batch = db.batch();
+      reordered.forEach((r, i) => {
+        if (r.ordre !== i + 1) batch.update(db.collection('realisations').doc(r.id), { ordre: i + 1 });
+      });
+      await batch.commit();
+      dragId = null;
+    });
+  });
 }
 
 function openRealModal(id = null) {
@@ -1379,31 +1417,147 @@ function openRealModal(id = null) {
   document.getElementById('rm-lieu').value        = r?.lieu || '';
   document.getElementById('rm-categorie').value   = r?.categorie || 'curage';
   document.getElementById('rm-badge').value       = r?.badge || '';
-  document.getElementById('rm-image').value       = r?.image || '';
-  document.getElementById('rm-alt').value         = r?.imageAlt || '';
   document.getElementById('rm-description').value = r?.description || '';
   document.getElementById('rm-specs').value       = (r?.specs || []).join('\n');
   document.getElementById('rm-visible').checked   = r?.visible !== false;
-  const img = document.getElementById('rm-preview-img');
-  img.src = r?.image || '';
-  img.style.display = r?.image ? 'block' : 'none';
+
+  // Load media
+  if (r?.media?.length) {
+    currentMedia = r.media.map(m => ({ ...m }));
+  } else if (r?.image) {
+    currentMedia = [{ url: r.image, type: 'image', alt: r.imageAlt || '' }];
+  } else {
+    currentMedia = [];
+  }
+  renderMediaGrid();
   document.getElementById('real-modal').hidden = false;
 }
 
 function closeRealModal() {
   document.getElementById('real-modal').hidden = true;
+  currentMedia = [];
 }
 
-function previewRealImg() {
-  const src = document.getElementById('rm-image').value.trim();
-  const img = document.getElementById('rm-preview-img');
-  if (!src) { img.style.display = 'none'; return; }
-  img.src = src;
-  img.style.display = 'block';
+// ── Media upload & gallery ────────────────────────────────────
+
+function initMediaZone() {
+  const zone = document.getElementById('rm-upload-zone');
+  const inp  = document.getElementById('rm-file-input');
+  if (!zone || !inp) return;
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    handleMediaFiles([...e.dataTransfer.files]);
+  });
+  zone.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+  inp.addEventListener('change', () => { handleMediaFiles([...inp.files]); inp.value = ''; });
+}
+
+async function handleMediaFiles(files) {
+  for (const file of files) {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) continue;
+    const ph = addMediaPlaceholder();
+    try {
+      const item = await uploadMediaFile(file, pct => {
+        const bar = ph.querySelector('.rm-progress-bar');
+        if (bar) bar.style.width = pct + '%';
+      });
+      currentMedia.push(item);
+      renderMediaGrid();
+    } catch (err) {
+      ph.remove();
+      alert('Erreur upload : ' + err.message);
+    }
+  }
+}
+
+function addMediaPlaceholder() {
+  const grid = document.getElementById('rm-media-grid');
+  const el = document.createElement('div');
+  el.className = 'rm-media-item';
+  el.innerHTML = `<div style="height:84px"></div><div class="rm-media-progress"><div class="rm-progress-bar-wrap"><div class="rm-progress-bar"></div></div><span>Upload…</span></div>`;
+  grid.appendChild(el);
+  return el;
+}
+
+async function uploadMediaFile(file, onProgress) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const name = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const ref  = storage.ref(`realisations/${name}`);
+  await new Promise((resolve, reject) => {
+    const task = ref.put(file);
+    task.on('state_changed', snap => onProgress(Math.round(snap.bytesTransferred / snap.totalBytes * 100)), reject, resolve);
+  });
+  return { url: await ref.getDownloadURL(), type: file.type.startsWith('video/') ? 'video' : 'image', alt: '' };
+}
+
+function buildMediaItemHtml(item, idx) {
+  const media = item.type === 'video'
+    ? `<video src="${esc(item.url)}" muted playsinline style="width:100%;height:84px;object-fit:cover;display:block"></video>`
+    : `<img src="${esc(item.url)}" alt="" style="width:100%;height:84px;object-fit:cover;display:block" onerror="this.style.opacity='.3'">`;
+  return `<div class="rm-media-item" data-idx="${idx}" draggable="true">
+    ${media}
+    <span class="rm-media-drag" title="Réorganiser">⠿</span>
+    <button class="rm-media-del" type="button" onclick="removeMedia(${idx})" title="Supprimer">✕</button>
+    <input class="rm-media-alt" type="text" placeholder="Légende (optionnel)" value="${esc(item.alt || '')}">
+  </div>`;
+}
+
+function renderMediaGrid() {
+  const grid = document.getElementById('rm-media-grid');
+  if (!grid) return;
+  grid.innerHTML = currentMedia.map((item, idx) => buildMediaItemHtml(item, idx)).join('');
+  initMediaItemDnd();
+}
+
+function initMediaItemDnd() {
+  const grid = document.getElementById('rm-media-grid');
+  if (!grid) return;
+  let dragIdx = null;
+  grid.querySelectorAll('.rm-media-item').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragIdx = parseInt(el.dataset.idx);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => el.classList.add('dragging'), 0);
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      grid.querySelectorAll('.rm-media-item').forEach(x => x.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (parseInt(el.dataset.idx) !== dragIdx) el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const overIdx = parseInt(el.dataset.idx);
+      if (dragIdx === null || overIdx === dragIdx) return;
+      syncMediaAlts();
+      const [moved] = currentMedia.splice(dragIdx, 1);
+      currentMedia.splice(overIdx, 0, moved);
+      renderMediaGrid();
+      dragIdx = null;
+    });
+  });
+}
+
+function removeMedia(idx) {
+  syncMediaAlts();
+  currentMedia.splice(idx, 1);
+  renderMediaGrid();
+}
+
+function syncMediaAlts() {
+  document.querySelectorAll('#rm-media-grid .rm-media-item').forEach((el, i) => {
+    if (currentMedia[i]) currentMedia[i].alt = el.querySelector('.rm-media-alt')?.value?.trim() || '';
+  });
 }
 
 async function saveReal(e) {
   e.preventDefault();
+  syncMediaAlts();
   const id        = document.getElementById('rm-id').value;
   const categorie = document.getElementById('rm-categorie').value;
   const BADGE_MAP = { curage:'Curage', faucardage:'Faucardage', berges:'Défenses de berges', broyage:'Broyage' };
@@ -1412,11 +1566,12 @@ async function saveReal(e) {
     lieu:        document.getElementById('rm-lieu').value.trim(),
     categorie,
     badge:       document.getElementById('rm-badge').value.trim() || BADGE_MAP[categorie],
-    image:       document.getElementById('rm-image').value.trim(),
-    imageAlt:    document.getElementById('rm-alt').value.trim(),
     description: document.getElementById('rm-description').value.trim(),
     specs:       document.getElementById('rm-specs').value.split('\n').map(s => s.trim()).filter(Boolean),
     visible:     document.getElementById('rm-visible').checked,
+    media:       currentMedia,
+    image:       currentMedia[0]?.url || '',
+    imageAlt:    currentMedia[0]?.alt || '',
   };
   const btn = document.getElementById('rm-save-btn');
   btn.disabled = true; btn.textContent = 'Enregistrement…';
@@ -1450,3 +1605,5 @@ async function deleteReal(id, titre) {
 document.getElementById('real-modal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('real-modal')) closeRealModal();
 });
+
+initMediaZone();
