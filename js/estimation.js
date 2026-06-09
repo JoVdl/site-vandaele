@@ -117,6 +117,9 @@ const state = {
   profVase: 40,
   pctCurage: 100,
   destinationVase: 'sur-place',
+  // Épandage
+  epandageSurfaceHydro: null,
+  epandageSurfaceCurage: null,
   // Faucardage
   pctFauc: 30,
   faucJussie: false,
@@ -165,6 +168,11 @@ function syncDetailSections() {
     const sec = document.getElementById('detail-' + t);
     if (sec) sec.classList.toggle('visible', state.travaux.has(t));
   });
+  // Sync épandage sections based on current destination selections
+  if (state.travaux.has('hydrocurage'))
+    toggleEpandageSection('hydro', state.destinationVaseHydro === 'sur-place');
+  if (state.travaux.has('curage'))
+    toggleEpandageSection('curage', state.destinationVase === 'sur-place');
 }
 
 // ── TRAVAUX CHECKBOXES ────────────────────────────────────────
@@ -243,13 +251,18 @@ const accesEl = document.getElementById('acces');
 if (accesEl) accesEl.addEventListener('change', () => { state.acces = accesEl.value || 'moyen'; computeEstimation(); });
 
 const destVaseEl = document.getElementById('destination-vase');
-if (destVaseEl) destVaseEl.addEventListener('change', () => { state.destinationVase = destVaseEl.value; computeEstimation(); });
+if (destVaseEl) destVaseEl.addEventListener('change', () => {
+  state.destinationVase = destVaseEl.value;
+  toggleEpandageSection('curage', destVaseEl.value === 'sur-place');
+  computeEstimation();
+});
 
 document.querySelectorAll('input[name="dest-vase-hydro"]').forEach(r => {
   r.addEventListener('change', () => {
     state.destinationVaseHydro = r.value;
     const stockDetails = document.getElementById('hydro-stock-details');
     if (stockDetails) stockDetails.style.display = r.value === 'sur-place' ? '' : 'none';
+    toggleEpandageSection('hydro', r.value === 'sur-place');
     computeEstimation();
   });
 });
@@ -425,6 +438,9 @@ function computeEstimation() {
 
   const tvaNote = document.getElementById('result-tva-note');
   if (tvaNote) tvaNote.style.display = isTtcNote ? '' : 'none';
+
+  updateEpandageInfo('hydro');
+  updateEpandageInfo('curage');
 }
 
 function fmtRange(min, max) {
@@ -753,6 +769,146 @@ if (mapEl && typeof L !== 'undefined') {
   setTimeout(() => map.invalidateSize(), 400);
 }
 
+// ── CARTES ÉPANDAGE ────────────────────────────────────────────
+const epandageMaps = {};
+
+function calcEpandageVol(type) {
+  const surfM2 = (state.surface > 0 ? state.surface : 0) * 10000;
+  if (!surfM2) return 0;
+  if (type === 'hydro')
+    return Math.round(surfM2 * state.epaisseurHydro / 100);
+  return Math.round(surfM2 * (state.pctCurage / 100) * (state.profVase / 100));
+}
+
+function updateEpandageInfo(type) {
+  const vol = calcEpandageVol(type);
+  const minSurf = vol > 0 ? Math.ceil(vol / 0.30 * 1.2 / 100) * 100 : 0;
+  const volEl  = document.getElementById(`epandage-vol-${type}`);
+  const minEl  = document.getElementById(`epandage-min-${type}`);
+  if (volEl) volEl.textContent = vol > 0 ? `${vol.toLocaleString('fr-FR')} m³` : '–';
+  if (minEl) minEl.textContent = minSurf > 0
+    ? `${minSurf.toLocaleString('fr-FR')} m² (${(minSurf / 10000).toFixed(2)} ha)`
+    : '–';
+}
+
+function toggleEpandageSection(type, show) {
+  if (type === 'curage') {
+    const wrap = document.getElementById('curage-epandage-wrap');
+    if (wrap) wrap.hidden = !show;
+  }
+  if (show) {
+    updateEpandageInfo(type);
+    // Only init map if user has "j'ai un terrain" selected
+    const radio = document.querySelector(`input[name="epandage-dispo-${type}"]:checked`);
+    if (!radio || radio.value === 'oui') {
+      setTimeout(() => initEpandageMap(type), 80);
+    }
+  }
+}
+
+function initEpandageMap(type) {
+  if (!window.L) return;
+  const mapEl = document.getElementById(`map-epandage-${type}`);
+  if (!mapEl) return;
+  if (epandageMaps[type]) {
+    epandageMaps[type].map.invalidateSize();
+    return;
+  }
+  const lat  = state.lat  || 46.8;
+  const lng  = state.lng  || 2.3;
+  const zoom = state.lat  ? 16 : 6;
+
+  const m = L.map(`map-epandage-${type}`, { zoomControl: true }).setView([lat, lng], zoom);
+  L.tileLayer(
+    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+    '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+    '&FORMAT=image%2Fjpeg&STYLE=normal',
+    { attribution: '© IGN', maxZoom: 21, maxNativeZoom: 19 }
+  ).addTo(m);
+
+  const drawnItems = new L.FeatureGroup().addTo(m);
+
+  m.on(L.Draw.Event.CREATED, e => {
+    drawnItems.clearLayers();
+    drawnItems.addLayer(e.layer);
+    const lls  = e.layer.getLatLngs()[0];
+    const area = Math.round(L.GeometryUtil.geodesicArea(lls));
+    if (type === 'hydro') state.epandageSurfaceHydro = area;
+    else                  state.epandageSurfaceCurage = area;
+    const valEl = document.getElementById(`epandage-surface-${type}-val`);
+    const resEl = document.getElementById(`epandage-result-${type}`);
+    if (valEl) valEl.textContent = `${area.toLocaleString('fr-FR')} m² (${(area / 10000).toFixed(2)} ha)`;
+    if (resEl) resEl.hidden = false;
+    // Check environmental zones on the épandage plot centroid
+    const bounds = e.layer.getBounds();
+    const center = bounds.getCenter();
+    checkEpandageZones(type, center.lat, center.lng);
+  });
+
+  epandageMaps[type] = { map: m, drawnItems };
+  setTimeout(() => m.invalidateSize(), 100);
+}
+
+window.startEpandageDraw = function(type) {
+  if (!epandageMaps[type]) { initEpandageMap(type); return; }
+  const { map } = epandageMaps[type];
+  new L.Draw.Polygon(map, {
+    allowIntersection: false,
+    showArea: true,
+    metric: true,
+    shapeOptions: { color: '#3d9e62', weight: 2, fillOpacity: 0.15 },
+  }).enable();
+};
+
+window.resetEpandageMap = function(type) {
+  const m = epandageMaps[type];
+  if (m) m.drawnItems.clearLayers();
+  if (type === 'hydro') state.epandageSurfaceHydro = null;
+  else                  state.epandageSurfaceCurage = null;
+  const resEl = document.getElementById(`epandage-result-${type}`);
+  if (resEl) resEl.hidden = true;
+  const zoneEl = document.getElementById(`epandage-zone-${type}`);
+  if (zoneEl) { zoneEl.hidden = true; zoneEl.innerHTML = ''; }
+};
+
+async function checkEpandageZones(type, lat, lng) {
+  const zoneEl = document.getElementById(`epandage-zone-${type}`);
+  if (!zoneEl || !lat || !lng) return;
+  zoneEl.hidden = false;
+  zoneEl.innerHTML = '<div class="zone-checking">🔍 Vérification des zones réglementaires en cours…</div>';
+
+  const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
+  const base  = 'https://apicarto.ign.fr/api/nature/';
+  const checks = [
+    { url: `${base}zone-humide?geom=${geom}`,  icon: '💧', name: 'Zone humide',   impact: 'Épandage soumis à autorisation préfectorale (Loi sur l'eau).' },
+    { url: `${base}natura-habitat?geom=${geom}`, icon: '🌿', name: 'Natura 2000 (Habitats)', impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
+    { url: `${base}natura-oiseaux?geom=${geom}`, icon: '🦅', name: 'Natura 2000 (Oiseaux)',  impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
+    { url: `${base}znieff1?geom=${geom}`,        icon: '🔬', name: 'ZNIEFF type I',          impact: 'Zone naturelle sensible — vérifier la compatibilité du projet.' },
+    { url: `${base}znieff2?geom=${geom}`,        icon: '🌲', name: 'ZNIEFF type II',         impact: 'Zone naturelle d\'inventaire — contraintes réglementaires possibles.' },
+  ];
+  try {
+    const results = await Promise.allSettled(checks.map(c => fetch(c.url).then(r => r.json())));
+    const found = results
+      .map((r, i) => ({ ...checks[i], features: r.status === 'fulfilled' ? (r.value.features || []) : [] }))
+      .filter(c => c.features.length > 0);
+    if (!found.length) {
+      zoneEl.innerHTML = '<div class="zone-ok">✅ Aucune zone réglementaire détectée sur cette parcelle.</div>';
+    } else {
+      zoneEl.innerHTML = `<div class="zone-alert">
+        <div class="zone-alert-title">⚠️ Zone(s) réglementaire(s) sur la parcelle d'épandage</div>
+        ${found.map(z => `<div class="zone-item">
+          <div class="zone-item-name">${z.icon} ${z.name}</div>
+          <div class="zone-item-impact">${z.impact}</div>
+        </div>`).join('')}
+        <div class="zone-alert-footer">Nous vous accompagnons dans les démarches administratives nécessaires.</div>
+      </div>`;
+    }
+  } catch {
+    zoneEl.innerHTML = '';
+    zoneEl.hidden = true;
+  }
+}
+
 // ── VÉRIFICATION ZONES ENVIRONNEMENTALES ─────────────────
 async function checkEnvironmentalZones(lat, lng) {
   const zoneEl = document.getElementById('zone-info');
@@ -900,15 +1056,21 @@ function buildDetails() {
   if (state.travaux.has('hydrocurage')) {
     const vol = Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100));
     d.hydrocurage = {
-      epaisseur_cm:      state.epaisseurHydro,
-      volume_m3:         vol,
-      destination_vase:  state.destinationVaseHydro,
-      nature_terrain:    state.destinationVaseHydro === 'sur-place' ? state.natureTerrainHydro : null,
-      distance_depot_m:  state.destinationVaseHydro === 'sur-place' ? state.distanceDepotHydro : null,
+      epaisseur_cm:          state.epaisseurHydro,
+      volume_m3:             vol,
+      destination_vase:      state.destinationVaseHydro,
+      nature_terrain:        state.destinationVaseHydro === 'sur-place' ? state.natureTerrainHydro : null,
+      distance_depot_m:      state.destinationVaseHydro === 'sur-place' ? state.distanceDepotHydro : null,
+      epandage_surface_m2:   state.destinationVaseHydro === 'sur-place' ? state.epandageSurfaceHydro : null,
     };
   }
   if (state.travaux.has('curage'))
-    d.curage = { prof_vase_cm: state.profVase, pct_surface: state.pctCurage, destination_vase: state.destinationVase };
+    d.curage = {
+      prof_vase_cm:        state.profVase,
+      pct_surface:         state.pctCurage,
+      destination_vase:    state.destinationVase,
+      epandage_surface_m2: state.destinationVase === 'sur-place' ? state.epandageSurfaceCurage : null,
+    };
   if (state.travaux.has('faucardage'))
     d.faucardage = { pct_couverture: state.pctFauc, jussie: state.faucJussie };
   if (state.travaux.has('berges'))
@@ -965,16 +1127,31 @@ async function submitEstimation() {
     'Accès chantier':         state.acces,
     'Type de travaux':        travaux,
     'Estimation indicative':  estimation,
-    ...(state.travaux.has('hydrocurage') ? {
-      'Hydrocurage – épaisseur vase estimée (cm)': state.epaisseurHydro,
-      'Hydrocurage – volume estimé (m³)': Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100)),
-      'Hydrocurage – destination vase': state.destinationVaseHydro === 'evacuation' ? 'Évacuation par nos soins' : `Stockage sur terrain (${state.natureTerrainHydro}, ${state.distanceDepotHydro} m)`,
-    } : {}),
-    ...(state.travaux.has('curage') ? {
-      'Curage – prof. vase (cm)':   state.profVase,
-      'Curage – % surface':         state.pctCurage,
-      'Curage – destination vase':  state.destinationVase,
-    } : {}),
+    ...(state.travaux.has('hydrocurage') ? (() => {
+      const dispoHydro = document.querySelector('input[name="epandage-dispo-hydro"]:checked')?.value || 'oui';
+      const vol = Math.max(1, Math.round((state.surface > 0 ? state.surface : 0.5) * 10000 * state.epaisseurHydro / 100));
+      return {
+        'Hydrocurage – épaisseur vase estimée (cm)': state.epaisseurHydro,
+        'Hydrocurage – volume estimé (m³)': vol,
+        'Hydrocurage – destination vase': state.destinationVaseHydro === 'evacuation' ? 'Évacuation par nos soins' : `Stockage sur terrain (${state.natureTerrainHydro}, ${state.distanceDepotHydro} m)`,
+        ...(state.destinationVaseHydro === 'sur-place' ? {
+          'Hydrocurage – terrain épandage disponible': dispoHydro === 'oui' ? 'Oui' : 'Non – pas de terrain disponible',
+          ...(state.epandageSurfaceHydro ? { 'Hydrocurage – surface épandage mesurée (m²)': state.epandageSurfaceHydro } : {}),
+        } : {}),
+      };
+    })() : {}),
+    ...(state.travaux.has('curage') ? (() => {
+      const dispoCurage = document.querySelector('input[name="epandage-dispo-curage"]:checked')?.value || 'oui';
+      return {
+        'Curage – prof. vase (cm)':   state.profVase,
+        'Curage – % surface':         state.pctCurage,
+        'Curage – destination vase':  state.destinationVase,
+        ...(state.destinationVase === 'sur-place' ? {
+          'Curage – terrain épandage disponible': dispoCurage === 'oui' ? 'Oui' : 'Non – pas de terrain disponible',
+          ...(state.epandageSurfaceCurage ? { 'Curage – surface épandage mesurée (m²)': state.epandageSurfaceCurage } : {}),
+        } : {}),
+      };
+    })() : {}),
     ...(state.travaux.has('faucardage') ? {
       'Faucardage – % couverture':  state.pctFauc,
       'Faucardage – jussie':        state.faucJussie ? 'Oui' : 'Non',

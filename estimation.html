@@ -569,6 +569,26 @@
       color: var(--blue-700);
     }
     .radio-option:hover { border-color: var(--blue-100); }
+
+    /* ── ÉPANDAGE WIDGET ── */
+    .epandage-widget { margin-top: 1.25rem; border-top: 1px solid var(--gray-200); padding-top: 1.25rem; }
+    .epandage-info-box {
+      background: var(--blue-50); border: 1px solid var(--blue-100);
+      border-radius: 8px; padding: .85rem 1rem; margin-bottom: 1rem; font-size: .88rem;
+    }
+    .epandage-row { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .3rem; flex-wrap: wrap; }
+    .epandage-row:last-of-type { margin-bottom: 0; }
+    .epandage-row strong { font-size: 1rem; color: var(--blue-800); }
+    .epandage-note { color: var(--gray-500); font-size: .78rem; display: block; margin-top: .35rem; }
+    .epandage-map { height: 280px; border-radius: 8px; border: 1px solid var(--gray-200); margin: .6rem 0 .5rem; overflow: hidden; background: var(--gray-100); }
+    .epandage-map-btns { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
+    .btn-epandage-draw { padding: .42rem .9rem; background: var(--blue-500); color: #fff; border: none; border-radius: 7px; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; }
+    .btn-epandage-draw:hover { background: var(--blue-600); }
+    .btn-epandage-reset { padding: .42rem .9rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); border-radius: 7px; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-epandage-reset:hover { background: var(--gray-200); }
+    .epandage-result { background: #dcfce7; border: 1px solid #86efac; border-radius: 7px; padding: .45rem .9rem; font-size: .88rem; color: #15803d; margin-bottom: .5rem; }
+    .epandage-no-storage { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: .85rem 1rem; margin-top: 1rem; font-size: .88rem; color: #9a3412; }
+    .epandage-no-storage p { margin: .3rem 0 0; color: var(--gray-700); font-size: .85rem; }
   </style>
 </head>
 <body>
@@ -852,6 +872,57 @@
                   </div>
                   <p class="form-hint">Distance entre le plan d'eau et la zone de dépôt de la vase.</p>
                 </div>
+
+                <!-- ── ÉPANDAGE WIDGET HYDROCURAGE ── -->
+                <div class="epandage-widget">
+                  <div class="form-group">
+                    <label>📐 Surface d'épandage disponible</label>
+                    <div class="epandage-info-box">
+                      <div class="epandage-row">
+                        <span>Volume de vase estimé :</span>
+                        <strong id="epandage-vol-hydro">–</strong>
+                      </div>
+                      <div class="epandage-row">
+                        <span>Surface minimale recommandée :</span>
+                        <strong id="epandage-min-hydro">–</strong>
+                      </div>
+                      <span class="epandage-note">ℹ️ Indicatif — épandage à ~30 cm, avec marge de sécurité de 20 %.</span>
+                    </div>
+
+                    <div class="radio-group" style="margin-bottom:.85rem;">
+                      <label class="radio-option">
+                        <input type="radio" name="epandage-dispo-hydro" value="oui" checked onchange="document.getElementById('epandage-map-wrap-hydro').hidden=false;document.getElementById('epandage-no-terrain-hydro').hidden=true;" />
+                        <span>J'ai une surface disponible sur mon terrain</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" name="epandage-dispo-hydro" value="non" onchange="document.getElementById('epandage-map-wrap-hydro').hidden=true;document.getElementById('epandage-no-terrain-hydro').hidden=false;" />
+                        <span>Je n'ai pas de surface disponible</span>
+                      </label>
+                    </div>
+
+                    <div id="epandage-map-wrap-hydro">
+                      <p class="form-hint">Délimitez la parcelle ou le champ disponible pour l'épandage (prairie, champ, friche…).</p>
+                      <div id="map-epandage-hydro" class="epandage-map"></div>
+                      <div class="epandage-map-btns">
+                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('hydro')">✏️ Dessiner la surface</button>
+                        <button type="button" class="btn-epandage-reset" onclick="resetEpandageMap('hydro')">🗑️ Effacer</button>
+                      </div>
+                      <div class="epandage-result" id="epandage-result-hydro" hidden>
+                        ✅ Surface mesurée : <strong id="epandage-surface-hydro-val">–</strong>
+                      </div>
+                      <div id="epandage-zone-hydro" hidden style="margin-top:.6rem;"></div>
+                    </div>
+
+                    <div id="epandage-no-terrain-hydro" hidden>
+                      <div class="epandage-no-storage">
+                        <strong>💡 Pas de surface disponible ?</strong>
+                        <p>Deux solutions possibles :</p>
+                        <p>• <strong>Terrain voisin :</strong> un accord avec un agriculteur ou voisin peut permettre l'épandage (bénéfique comme engrais naturel).</p>
+                        <p>• <strong>Évacuation par nos soins :</strong> sélectionnez « Évacuation du terrain par nos soins » ci-dessus — nous prenons en charge le transport et le dépôt en centre agréé (surcoût inclus dans l'estimation).</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -880,6 +951,59 @@
                   <option value="evacuation">Évacuation par nos soins (surcoût)</option>
                   <option value="valorisation">Valorisation agricole (à définir)</option>
                 </select>
+              </div>
+
+              <!-- ── ÉPANDAGE WIDGET CURAGE ── -->
+              <div id="curage-epandage-wrap" hidden>
+                <div class="epandage-widget">
+                  <div class="form-group">
+                    <label>📐 Surface d'épandage disponible</label>
+                    <div class="epandage-info-box">
+                      <div class="epandage-row">
+                        <span>Volume de vase estimé :</span>
+                        <strong id="epandage-vol-curage">–</strong>
+                      </div>
+                      <div class="epandage-row">
+                        <span>Surface minimale recommandée :</span>
+                        <strong id="epandage-min-curage">–</strong>
+                      </div>
+                      <span class="epandage-note">ℹ️ Indicatif — épandage à ~30 cm, avec marge de sécurité de 20 %.</span>
+                    </div>
+
+                    <div class="radio-group" style="margin-bottom:.85rem;">
+                      <label class="radio-option">
+                        <input type="radio" name="epandage-dispo-curage" value="oui" checked onchange="document.getElementById('epandage-map-wrap-curage').hidden=false;document.getElementById('epandage-no-terrain-curage').hidden=true;" />
+                        <span>J'ai une surface disponible sur mon terrain</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" name="epandage-dispo-curage" value="non" onchange="document.getElementById('epandage-map-wrap-curage').hidden=true;document.getElementById('epandage-no-terrain-curage').hidden=false;" />
+                        <span>Je n'ai pas de surface disponible</span>
+                      </label>
+                    </div>
+
+                    <div id="epandage-map-wrap-curage">
+                      <p class="form-hint">Délimitez la parcelle ou le champ disponible pour l'épandage.</p>
+                      <div id="map-epandage-curage" class="epandage-map"></div>
+                      <div class="epandage-map-btns">
+                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('curage')">✏️ Dessiner la surface</button>
+                        <button type="button" class="btn-epandage-reset" onclick="resetEpandageMap('curage')">🗑️ Effacer</button>
+                      </div>
+                      <div class="epandage-result" id="epandage-result-curage" hidden>
+                        ✅ Surface mesurée : <strong id="epandage-surface-curage-val">–</strong>
+                      </div>
+                      <div id="epandage-zone-curage" hidden style="margin-top:.6rem;"></div>
+                    </div>
+
+                    <div id="epandage-no-terrain-curage" hidden>
+                      <div class="epandage-no-storage">
+                        <strong>💡 Pas de surface disponible ?</strong>
+                        <p>Deux solutions possibles :</p>
+                        <p>• <strong>Terrain voisin :</strong> un accord avec un agriculteur ou voisin peut permettre l'épandage (bénéfique comme engrais naturel).</p>
+                        <p>• <strong>Évacuation par nos soins :</strong> changez la destination ci-dessus — nous prenons en charge le transport et le dépôt en centre agréé (surcoût inclus dans l'estimation).</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
