@@ -1343,8 +1343,8 @@ function renderRealList() {
     const first = r.media?.[0] || (r.image ? { url: r.image, type: 'image' } : null);
     const thumb = first
       ? first.type === 'video'
-        ? `<video class="real-thumb" src="${esc(first.url)}" muted playsinline></video>`
-        : `<img class="real-thumb" src="${esc(first.url)}" alt="" onerror="this.style.visibility='hidden'">`
+        ? `<video class="real-thumb" src="${esc(first.url)}" muted playsinline onclick="openLightboxForReal('${r.id}')" style="cursor:pointer"></video>`
+        : `<img class="real-thumb" src="${esc(first.url)}" alt="" onerror="this.style.visibility='hidden'" onclick="openLightboxForReal('${r.id}')" style="cursor:pointer">`
       : `<div class="real-thumb real-thumb-empty">📷</div>`;
     const mediaCount = r.media?.length ?? (r.image ? 1 : 0);
     return `
@@ -1494,8 +1494,8 @@ async function uploadMediaFile(file, onProgress) {
 
 function buildMediaItemHtml(item, idx) {
   const media = item.type === 'video'
-    ? `<video src="${esc(item.url)}" muted playsinline style="width:100%;height:84px;object-fit:cover;display:block"></video>`
-    : `<img src="${esc(item.url)}" alt="" style="width:100%;height:84px;object-fit:cover;display:block" onerror="this.style.opacity='.3'">`;
+    ? `<video src="${esc(item.url)}" muted playsinline style="width:100%;height:84px;object-fit:cover;display:block;cursor:pointer" onclick="openLightboxFromGallery(${idx})"></video>`
+    : `<img src="${esc(item.url)}" alt="" style="width:100%;height:84px;object-fit:cover;display:block;cursor:pointer" onerror="this.style.opacity='.3'" onclick="openLightboxFromGallery(${idx})">`;
   return `<div class="rm-media-item" data-idx="${idx}" draggable="true">
     ${media}
     <span class="rm-media-drag" title="Réorganiser">⠿</span>
@@ -1607,3 +1607,65 @@ document.getElementById('real-modal')?.addEventListener('click', e => {
 });
 
 initMediaZone();
+
+// ── LIGHTBOX ─────────────────────────────────────────────────
+
+let lbItems = [];
+let lbIdx   = 0;
+
+function openLightbox(items, startIdx = 0) {
+  lbItems = items;
+  lbIdx   = startIdx;
+  showLbItem();
+  document.getElementById('lightbox').hidden = false;
+  document.addEventListener('keydown', lbKey);
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').hidden = true;
+  document.removeEventListener('keydown', lbKey);
+  const vid = document.querySelector('#lb-content video');
+  if (vid) vid.pause();
+  document.getElementById('lb-content').innerHTML = '';
+}
+
+function lbKey(e) {
+  if (e.key === 'Escape')      closeLightbox();
+  if (e.key === 'ArrowLeft')   lbNav(-1);
+  if (e.key === 'ArrowRight')  lbNav(1);
+}
+
+function lbNav(dir) {
+  const next = lbIdx + dir;
+  if (next < 0 || next >= lbItems.length) return;
+  const vid = document.querySelector('#lb-content video');
+  if (vid) vid.pause();
+  lbIdx = next;
+  showLbItem();
+}
+
+function showLbItem() {
+  const item = lbItems[lbIdx];
+  const content = document.getElementById('lb-content');
+  content.innerHTML = item.type === 'video'
+    ? `<video src="${esc(item.url)}" controls autoplay style="max-width:92vw;max-height:88vh;border-radius:6px"></video>`
+    : `<img src="${esc(item.url)}" alt="${esc(item.alt || '')}" style="max-width:92vw;max-height:88vh;object-fit:contain;border-radius:6px">`;
+  document.getElementById('lb-prev').hidden = lbIdx === 0;
+  document.getElementById('lb-next').hidden = lbIdx === lbItems.length - 1;
+  const counter = document.getElementById('lb-counter');
+  counter.textContent = lbItems.length > 1 ? `${lbIdx + 1} / ${lbItems.length}` : '';
+}
+
+document.getElementById('lb-bg')?.addEventListener('click', closeLightbox);
+
+function openLightboxForReal(id) {
+  const r = allRealisations.find(x => x.id === id);
+  if (!r) return;
+  const items = r.media?.length ? r.media : (r.image ? [{ url: r.image, type: 'image', alt: r.imageAlt || '' }] : []);
+  if (items.length) openLightbox(items, 0);
+}
+
+function openLightboxFromGallery(idx) {
+  syncMediaAlts();
+  if (currentMedia.length) openLightbox(currentMedia, idx);
+}
