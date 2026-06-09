@@ -130,7 +130,37 @@
     .bg-c8 { background: linear-gradient(135deg,#1e1b4b,#312e81); }
 
     /* clickable media */
-    .chantier-img { cursor: pointer; }
+    .chantier-img { cursor: pointer; position: relative; }
+
+    /* media count badge */
+    .chantier-media-count {
+      position: absolute; top: .55rem; right: .55rem;
+      background: rgba(0,0,0,.55); color: #fff;
+      font-size: .72rem; font-weight: 600;
+      padding: .18rem .5rem; border-radius: 99px;
+      pointer-events: none;
+    }
+
+    /* extra photos strip */
+    .chantier-strip {
+      display: flex; gap: .35rem; padding: .35rem .35rem 0;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .chantier-strip::-webkit-scrollbar { display: none; }
+    .strip-thumb {
+      width: 62px; height: 46px; object-fit: cover;
+      border-radius: 5px; flex-shrink: 0; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .strip-thumb:hover { opacity: .8; }
+    .strip-more {
+      width: 46px; height: 46px; border-radius: 5px;
+      background: var(--gray-100); color: var(--gray-500);
+      font-size: .75rem; font-weight: 700; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1.5px dashed var(--gray-300);
+    }
+    .strip-more:hover { background: var(--gray-200); }
 
     /* lightbox */
     #clb { position:fixed; inset:0; z-index:3000; display:flex; align-items:center; justify-content:center; }
@@ -459,11 +489,11 @@ function openSingleLb(div) {
   if (img) openCLb([{ url: img.src, type: 'image', alt: img.alt }], 0);
   else if (vid) openCLb([{ url: vid.src, type: 'video', alt: '' }], 0);
 }
-function openChantierLb(ci) {
+function openChantierLb(ci, startIdx = 0) {
   const r = window.chantierCards?.[ci];
   if (!r) return;
   const items = r.media?.length ? r.media : (r.image ? [{ url: r.image, type: 'image', alt: r.imageAlt || '' }] : []);
-  openCLb(items, 0);
+  openCLb(items, Math.min(startIdx, items.length - 1));
 }
 </script>
 <script>
@@ -522,12 +552,23 @@ function openChantierLb(ci) {
           ? `<video src="${escHtml(first.url)}" muted autoplay loop playsinline></video>`
           : `<img src="${escHtml(first.url)}" alt="${escHtml(first.alt || r.titre)}" loading="lazy" />`
         : '';
+      const extraItems = items.slice(1, 4);
+      const extraCount = items.length - 4;
+      const stripHtml = items.length > 1
+        ? `<div class="chantier-strip">${extraItems.map((m, mi) =>
+            m.type === 'video'
+              ? `<video class="strip-thumb" src="${escHtml(m.url)}" muted playsinline onclick="event.stopPropagation();openChantierLb(${ci},${mi+1})"></video>`
+              : `<img class="strip-thumb" src="${escHtml(m.url)}" alt="" loading="lazy" onclick="event.stopPropagation();openChantierLb(${ci},${mi+1})">`
+          ).join('')}${extraCount > 0 ? `<div class="strip-more" onclick="event.stopPropagation();openChantierLb(${ci},4)">+${extraCount}</div>` : ''}</div>`
+        : '';
       return `
       <article class="chantier-card-full" data-cat="${escHtml(r.categorie)}">
         <div class="chantier-img" onclick="openChantierLb(${ci})" ${!items.length ? 'style="cursor:default"' : ''}>
           ${mediaHtml}
           <span class="chantier-badge">${escHtml(r.badge)}</span>
+          ${items.length > 1 ? `<span class="chantier-media-count">🖼 ${items.length}</span>` : ''}
         </div>
+        ${stripHtml}
         <div class="chantier-body">
           <div class="lieu">📍 ${escHtml(r.lieu)}</div>
           <h3>${escHtml(r.titre)}</h3>

@@ -420,20 +420,31 @@
     .real-header h2 { font-size: 1rem; font-weight: 700; color: var(--gray-900); }
     .btn-add-real { padding: .42rem 1rem; background: var(--green-500); color: var(--white); border: none; border-radius: 7px; font-size: .8rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; }
     .btn-add-real:hover { background: var(--green-600); }
-    .real-list { display: flex; flex-direction: column; gap: .6rem; }
-    .real-row { display: flex; align-items: center; gap: .85rem; background: var(--white); border-radius: var(--radius); padding: .65rem .9rem; box-shadow: var(--shadow); user-select: none; transition: opacity .15s, box-shadow .15s; }
+    .real-list { display: flex; flex-direction: column; gap: .7rem; }
+    .real-row { background: var(--white); border-radius: var(--radius); padding: .75rem .9rem; box-shadow: var(--shadow); user-select: none; transition: opacity .15s, box-shadow .15s; }
     .real-row.dragging { opacity: .4; box-shadow: none; }
     .real-row.drag-over { box-shadow: 0 0 0 2px var(--green-400), var(--shadow); }
-    .real-drag-handle { color: var(--gray-300); cursor: grab; font-size: 1rem; flex-shrink: 0; padding: .2rem .1rem; line-height: 1; }
+    .real-row-top { display: flex; align-items: flex-start; gap: .7rem; }
+    .real-drag-handle { color: var(--gray-300); cursor: grab; font-size: 1rem; flex-shrink: 0; padding: .3rem .1rem; line-height: 1; }
     .real-drag-handle:active { cursor: grabbing; }
-    .real-thumb { width: 116px; height: 80px; object-fit: cover; border-radius: 7px; background: var(--gray-100); flex-shrink: 0; display: block; cursor: pointer; }
-    .real-thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--gray-300); font-size: 1.5rem; }
-    .real-info { flex: 1; min-width: 0; }
-    .real-titre { font-size: .86rem; font-weight: 600; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .real-meta { display: flex; align-items: center; gap: .4rem; margin-top: .15rem; font-size: .72rem; color: var(--gray-500); flex-wrap: wrap; }
+    /* thumbnail strip */
+    .real-thumbs { display: flex; gap: .35rem; flex: 1; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+    .real-thumb { width: 88px; height: 62px; object-fit: cover; border-radius: 6px; background: var(--gray-100); flex-shrink: 0; display: block; cursor: pointer; transition: opacity .15s; }
+    .real-thumb:hover { opacity: .82; }
+    .real-thumb-empty { width: 88px; height: 62px; border-radius: 6px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; color: var(--gray-300); font-size: 1.4rem; flex-shrink: 0; }
+    .real-thumb-more { width: 62px; height: 62px; border-radius: 6px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; color: var(--gray-500); font-size: .78rem; font-weight: 700; flex-shrink: 0; cursor: pointer; border: 1.5px dashed var(--gray-300); }
+    .real-thumb-more:hover { background: var(--gray-200); }
+    /* row body */
+    .real-row-body { margin-top: .55rem; }
+    .real-titre { font-size: .88rem; font-weight: 600; color: var(--gray-900); }
+    .real-meta { display: flex; align-items: center; gap: .4rem; margin-top: .25rem; font-size: .72rem; color: var(--gray-500); flex-wrap: wrap; }
     .real-cat-badge { padding: .08rem .45rem; background: var(--green-50); color: var(--green-600); border: 1px solid var(--green-400); border-radius: 99px; font-weight: 600; font-size: .67rem; }
-    .real-hidden-tag { color: var(--gray-400); font-style: italic; }
-    .real-actions { display: flex; gap: .28rem; flex-shrink: 0; }
+    .real-vis-pill { padding: .1rem .5rem; border-radius: 99px; font-size: .67rem; font-weight: 700; }
+    .real-vis-pill.vis { background: #dcfce7; color: #16a34a; }
+    .real-vis-pill.hid { background: var(--gray-100); color: var(--gray-500); }
+    .real-specs { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+    .real-spec-chip { background: var(--gray-100); color: var(--gray-600); padding: .12rem .5rem; border-radius: 99px; font-size: .68rem; font-weight: 500; }
+    .real-actions { display: flex; gap: .28rem; flex-shrink: 0; margin-left: auto; }
     .real-btn { width: 1.85rem; height: 1.85rem; border: none; border-radius: 6px; background: var(--gray-100); color: var(--gray-600); cursor: pointer; font-size: .8rem; display: flex; align-items: center; justify-content: center; transition: background .15s; padding: 0; }
     .real-btn:hover { background: var(--gray-200); }
     .real-btn.danger:hover { background: #fee2e2; color: var(--red); }

@@ -1340,29 +1340,39 @@ function renderRealList() {
     return;
   }
   container.innerHTML = allRealisations.map(r => {
-    const first = r.media?.[0] || (r.image ? { url: r.image, type: 'image' } : null);
-    const thumb = first
-      ? first.type === 'video'
-        ? `<video class="real-thumb" src="${esc(first.url)}" muted playsinline onclick="openLightboxForReal('${r.id}')" style="cursor:pointer"></video>`
-        : `<img class="real-thumb" src="${esc(first.url)}" alt="" onerror="this.style.visibility='hidden'" onclick="openLightboxForReal('${r.id}')" style="cursor:pointer">`
-      : `<div class="real-thumb real-thumb-empty">📷</div>`;
-    const mediaCount = r.media?.length ?? (r.image ? 1 : 0);
+    const allMedia = r.media?.length ? r.media : (r.image ? [{ url: r.image, type: 'image' }] : []);
+    const showThumbs = allMedia.slice(0, 4);
+    const extra = allMedia.length - 4;
+    const thumbsHtml = allMedia.length === 0
+      ? `<div class="real-thumb-empty">📷</div>`
+      : showThumbs.map((m, mi) => m.type === 'video'
+          ? `<video class="real-thumb" src="${esc(m.url)}" muted playsinline onclick="openLightboxForReal('${r.id}',${mi})"></video>`
+          : `<img class="real-thumb" src="${esc(m.url)}" alt="" onerror="this.style.visibility='hidden'" onclick="openLightboxForReal('${r.id}',${mi})">`
+        ).join('')
+        + (extra > 0 ? `<div class="real-thumb-more" onclick="openLightboxForReal('${r.id}',4)">+${extra}</div>` : '');
+
+    const specsHtml = r.specs?.length
+      ? `<div class="real-specs">${r.specs.map(s => `<span class="real-spec-chip">${esc(s)}</span>`).join('')}</div>`
+      : '';
+
     return `
     <div class="real-row" draggable="true" data-id="${r.id}">
-      <span class="real-drag-handle" title="Glisser pour réorganiser">⠿</span>
-      ${thumb}
-      <div class="real-info">
-        <div class="real-titre">${esc(r.titre)}</div>
-        <div class="real-meta">
-          <span class="real-cat-badge">${realCatLabel(r.categorie)}</span>
-          ${esc(r.lieu)}
-          ${!r.visible ? '<span class="real-hidden-tag">· Masqué</span>' : ''}
-          ${mediaCount > 1 ? `<span style="color:var(--gray-400)">· ${mediaCount} médias</span>` : ''}
+      <div class="real-row-top">
+        <span class="real-drag-handle" title="Glisser pour réorganiser">⠿</span>
+        <div class="real-thumbs">${thumbsHtml}</div>
+        <div class="real-actions">
+          <button class="real-btn" title="Modifier" onclick="openRealModal('${r.id}')">✏️</button>
+          <button class="real-btn danger" title="Supprimer" onclick="deleteReal('${r.id}','${esc(r.titre).replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </div>
-      <div class="real-actions">
-        <button class="real-btn" title="Modifier" onclick="openRealModal('${r.id}')">✏️</button>
-        <button class="real-btn danger" title="Supprimer" onclick="deleteReal('${r.id}','${esc(r.titre).replace(/'/g,"\\'")}')">🗑️</button>
+      <div class="real-row-body">
+        <div class="real-titre">${esc(r.titre)}</div>
+        <div class="real-meta">
+          <span class="real-vis-pill ${r.visible ? 'vis' : 'hid'}">${r.visible ? '● Visible' : '○ Masqué'}</span>
+          <span class="real-cat-badge">${realCatLabel(r.categorie)}</span>
+          <span>📍 ${esc(r.lieu)}</span>
+        </div>
+        ${specsHtml}
       </div>
     </div>`;
   }).join('');
@@ -1658,11 +1668,11 @@ function showLbItem() {
 
 document.getElementById('lb-bg')?.addEventListener('click', closeLightbox);
 
-function openLightboxForReal(id) {
+function openLightboxForReal(id, startIdx = 0) {
   const r = allRealisations.find(x => x.id === id);
   if (!r) return;
   const items = r.media?.length ? r.media : (r.image ? [{ url: r.image, type: 'image', alt: r.imageAlt || '' }] : []);
-  if (items.length) openLightbox(items, 0);
+  if (items.length) openLightbox(items, Math.min(startIdx, items.length - 1));
 }
 
 function openLightboxFromGallery(idx) {
