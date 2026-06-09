@@ -33,7 +33,7 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.curagevandaele.fr/" },
-      { "@type": "ListItem", "position": 2, "name": "Chantiers", "item": "https://www.curagevandaele.fr/chantiers.html" }
+      { "@type": "ListItem", "position": 2, "name": "Nos réalisations", "item": "https://www.curagevandaele.fr/chantiers.html" }
     ]
   }
   </script>
@@ -141,7 +141,7 @@
     <ul class="nav-links" id="nav-links">
       <li><a href="index.html" class="nav-link">Accueil</a></li>
       <li><a href="services.html" class="nav-link">Services</a></li>
-      <li><a href="chantiers.html" class="nav-link active">Chantiers</a></li>
+      <li><a href="chantiers.html" class="nav-link active">Nos réalisations</a></li>
       <li><a href="conseils.html" class="nav-link">Conseils étangs</a></li>
       <li><a href="estimation.html" class="nav-link nav-cta">Estimation gratuite</a></li>
     </ul>
@@ -156,7 +156,7 @@
       <span>Chantiers</span>
     </nav>
     <h1>Nos réalisations</h1>
-    <p>Quelques exemples de chantiers réalisés ces dernières années dans les Hauts-de-France et les régions voisines.</p>
+    <p>Quelques exemples de nos réalisations ces dernières années dans les Hauts-de-France et les régions voisines.</p>
   </div>
 </section>
 
@@ -172,7 +172,7 @@
       <button class="filter-btn" data-filter="broyage">Broyage</button>
     </div>
 
-    <div class="chantiers-full-grid">
+    <div id="real-static" class="chantiers-full-grid">
 
       <article class="chantier-card-full" data-cat="curage">
         <div class="chantier-img">
@@ -305,6 +305,7 @@
       </article>
 
     </div>
+    <div id="real-dynamic" class="chantiers-full-grid" hidden></div>
 
     <!-- CTA -->
     <div style="text-align:center; margin-top:3rem; padding: 3rem; background: var(--blue-50); border-radius: var(--radius-xl); border: 1px solid var(--blue-100);">
@@ -340,7 +341,7 @@
       <ul>
         <li><a href="index.html">Accueil</a></li>
         <li><a href="services.html">Services</a></li>
-        <li><a href="chantiers.html">Chantiers</a></li>
+        <li><a href="chantiers.html">Nos réalisations</a></li>
         <li><a href="conseils.html">Conseils étangs</a></li>
         <li><a href="estimation.html">Estimation travaux</a></li>
       </ul>
@@ -387,6 +388,71 @@
   </div>
 </div>
 <script src="js/main.js"></script>
+<script>
+(async () => {
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  try {
+    const res = await fetch(
+      'https://firestore.googleapis.com/v1/projects/curage-vandaele/databases/(default)/documents/realisations?key=AIzaSyCedrdegva_01oxW1zqhMX-qrRdn_Xczjc&pageSize=100',
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.documents?.length) return;
+
+    function fv(f) { return f?.stringValue ?? f?.integerValue ?? f?.booleanValue ?? null; }
+    function arr(f) { return f?.arrayValue?.values?.map(v => v.stringValue || '') || []; }
+
+    const cards = data.documents
+      .map(doc => {
+        const f = doc.fields || {};
+        return {
+          titre:       fv(f.titre) || '',
+          lieu:        fv(f.lieu) || '',
+          categorie:   fv(f.categorie) || 'curage',
+          badge:       fv(f.badge) || 'Curage',
+          description: fv(f.description) || '',
+          image:       fv(f.image) || '',
+          imageAlt:    fv(f.imageAlt) || '',
+          specs:       arr(f.specs),
+          ordre:       parseInt(fv(f.ordre) || '0'),
+          visible:     fv(f.visible) !== false,
+        };
+      })
+      .filter(r => r.visible)
+      .sort((a, b) => a.ordre - b.ordre);
+
+    if (!cards.length) return;
+
+    const grid = document.getElementById('real-dynamic');
+    grid.innerHTML = cards.map(r => `
+      <article class="chantier-card-full" data-cat="${escHtml(r.categorie)}">
+        <div class="chantier-img">
+          <img src="${escHtml(r.image)}" alt="${escHtml(r.imageAlt || r.titre)}" loading="lazy" />
+          <span class="chantier-badge">${escHtml(r.badge)}</span>
+        </div>
+        <div class="chantier-body">
+          <div class="lieu">📍 ${escHtml(r.lieu)}</div>
+          <h3>${escHtml(r.titre)}</h3>
+          <p>${escHtml(r.description)}</p>
+          <div class="chantier-specs">
+            ${r.specs.map(s => `<span class="spec-chip">${escHtml(s)}</span>`).join('')}
+          </div>
+        </div>
+      </article>
+    `).join('');
+
+    document.getElementById('real-static').hidden = true;
+    grid.hidden = false;
+
+    // Re-apply active filter if any
+    const activeBtn = document.querySelector('.filter-btn.active');
+    if (activeBtn && activeBtn.dataset.filter !== 'all') activeBtn.click();
+  } catch (_) { /* silent fail — static cards remain visible */ }
+})();
+</script>
 </body>
 </html>
 
