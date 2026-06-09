@@ -119,7 +119,11 @@ const state = {
   destinationVase: 'sur-place',
   // Épandage
   epandageSurfaceHydro: null,
+  epandageCentroidHydro: null,
+  epandageGeojsonHydro: null,
   epandageSurfaceCurage: null,
+  epandageCentroidCurage: null,
+  epandageGeojsonCurage: null,
   // Faucardage
   pctFauc: 30,
   faucJussie: false,
@@ -832,16 +836,23 @@ function initEpandageMap(type) {
     drawnItems.clearLayers();
     drawnItems.addLayer(e.layer);
     const lls  = e.layer.getLatLngs()[0];
-    const area = Math.round(L.GeometryUtil.geodesicArea(lls));
-    if (type === 'hydro') state.epandageSurfaceHydro = area;
-    else                  state.epandageSurfaceCurage = area;
+    const area   = Math.round(L.GeometryUtil.geodesicArea(lls));
+    const bounds = e.layer.getBounds();
+    const center = bounds.getCenter();
+    const geojsonEp = e.layer.toGeoJSON();
+    if (type === 'hydro') {
+      state.epandageSurfaceHydro  = area;
+      state.epandageCentroidHydro = { lat: center.lat, lng: center.lng };
+      state.epandageGeojsonHydro  = geojsonEp;
+    } else {
+      state.epandageSurfaceCurage  = area;
+      state.epandageCentroidCurage = { lat: center.lat, lng: center.lng };
+      state.epandageGeojsonCurage  = geojsonEp;
+    }
     const valEl = document.getElementById(`epandage-surface-${type}-val`);
     const resEl = document.getElementById(`epandage-result-${type}`);
     if (valEl) valEl.textContent = `${area.toLocaleString('fr-FR')} m² (${(area / 10000).toFixed(2)} ha)`;
     if (resEl) resEl.hidden = false;
-    // Check environmental zones on the épandage plot centroid
-    const bounds = e.layer.getBounds();
-    const center = bounds.getCenter();
     checkEpandageZones(type, center.lat, center.lng);
   });
 
@@ -863,8 +874,15 @@ window.startEpandageDraw = function(type) {
 window.resetEpandageMap = function(type) {
   const m = epandageMaps[type];
   if (m) m.drawnItems.clearLayers();
-  if (type === 'hydro') state.epandageSurfaceHydro = null;
-  else                  state.epandageSurfaceCurage = null;
+  if (type === 'hydro') {
+    state.epandageSurfaceHydro  = null;
+    state.epandageCentroidHydro = null;
+    state.epandageGeojsonHydro  = null;
+  } else {
+    state.epandageSurfaceCurage  = null;
+    state.epandageCentroidCurage = null;
+    state.epandageGeojsonCurage  = null;
+  }
   const resEl = document.getElementById(`epandage-result-${type}`);
   if (resEl) resEl.hidden = true;
   const zoneEl = document.getElementById(`epandage-zone-${type}`);
@@ -1192,6 +1210,12 @@ async function submitEstimation() {
         geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
         lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
         lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
+        geojson_epandage_hydro:  state.epandageGeojsonHydro  ? JSON.stringify(state.epandageGeojsonHydro)  : null,
+        lat_epandage_hydro:      state.epandageCentroidHydro?.lat  || null,
+        lng_epandage_hydro:      state.epandageCentroidHydro?.lng  || null,
+        geojson_epandage_curage: state.epandageGeojsonCurage ? JSON.stringify(state.epandageGeojsonCurage) : null,
+        lat_epandage_curage:     state.epandageCentroidCurage?.lat || null,
+        lng_epandage_curage:     state.epandageCentroidCurage?.lng || null,
         statut:          'nouveau',
         created_at:      firebase.firestore.FieldValue.serverTimestamp(),
       });

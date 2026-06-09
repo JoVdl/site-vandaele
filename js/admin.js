@@ -577,12 +577,33 @@ function renderDetailPane(d) {
     const densMap   = { legere:'Légère', moyenne:'Moyenne', dense:'Dense' };
 
     let detailRows = '';
-    if (details.hydrocurage)
+    if (details.hydrocurage) {
       detailRows += drow('Hydrocurage', `Épaisseur : ${details.hydrocurage.epaisseur_cm ?? '–'} cm · Volume : ${details.hydrocurage.volume_m3 ?? details.hydrocurage.longueur_ml ?? '–'} m³`);
+      if (details.hydrocurage.destination_vase === 'sur-place') {
+        if (details.hydrocurage.epandage_surface_m2) {
+          const s = details.hydrocurage.epandage_surface_m2;
+          detailRows += drow('Épandage hydrocurage – surface', `${Math.round(s).toLocaleString('fr')} m² (${(s / 10000).toFixed(2)} ha)`);
+        }
+        if (d.lat && d.lng && d.lat_epandage_hydro && d.lng_epandage_hydro) {
+          const distM = Math.round(haversineKm(d.lat, d.lng, d.lat_epandage_hydro, d.lng_epandage_hydro) * 1000);
+          detailRows += drow('Épandage hydrocurage – distance étang', `${distM} m`);
+        }
+      }
+    }
     if (details.curage) {
       detailRows += drow('Curage – prof. vase', `${details.curage.prof_vase_cm} cm`);
       detailRows += drow('Curage – surface concernée', `${details.curage.pct_surface} %`);
       detailRows += drow('Destination de la vase', destMap[details.curage.destination_vase] || details.curage.destination_vase);
+      if (details.curage.destination_vase === 'sur-place') {
+        if (details.curage.epandage_surface_m2) {
+          const s = details.curage.epandage_surface_m2;
+          detailRows += drow('Épandage curage – surface', `${Math.round(s).toLocaleString('fr')} m² (${(s / 10000).toFixed(2)} ha)`);
+        }
+        if (d.lat && d.lng && d.lat_epandage_curage && d.lng_epandage_curage) {
+          const distM = Math.round(haversineKm(d.lat, d.lng, d.lat_epandage_curage, d.lng_epandage_curage) * 1000);
+          detailRows += drow('Épandage curage – distance étang', `${distM} m`);
+        }
+      }
     }
     if (details.faucardage) {
       detailRows += drow('Faucardage – couverture', `${details.faucardage.pct_couverture} %`);
@@ -654,7 +675,7 @@ function renderDetailPane(d) {
           <div class="info-label" style="margin-bottom:.35rem">Travaux demandés</div>
           <div class="work-chips">${travaux.map(t => `<span class="work-chip">${travailLabel(t)}</span>`).join('')}</div>
         </div>` : ''}
-        ${(d.geojson || (d.lat && d.lng)) ? `<div id="admin-map" style="height:220px;margin-top:.9rem;border-radius:8px;overflow:hidden;background:var(--gray-200);"></div>` : ''}
+        ${(d.geojson || (d.lat && d.lng) || d.lat_epandage_hydro || d.lat_epandage_curage) ? `<div id="admin-map" style="height:240px;margin-top:.9rem;border-radius:8px;overflow:hidden;background:var(--gray-200);"></div>` : ''}
       </div>
 
       ${detailRows ? `
@@ -758,14 +779,21 @@ function renderDetailPane(d) {
   if (!isContact && d.lat && d.lng) checkAdminZones(d.lat, d.lng, d);
 
   // Carte du tracé client — setTimeout pour laisser le navigateur calculer le layout
-  if (d.geojson || (d.lat && d.lng)) {
+  if (d.geojson || (d.lat && d.lng) || d.lat_epandage_hydro || d.lat_epandage_curage) {
     let geojson = null;
     try {
       geojson = d.geojson
         ? (typeof d.geojson === 'string' ? JSON.parse(d.geojson) : d.geojson)
         : null;
     } catch (e) { console.error('GeoJSON parse error:', e); }
-    loadLeaflet(() => setTimeout(() => renderAdminMap(geojson, d.lat, d.lng), 80));
+
+    const epandageOverlays = [];
+    if (d.lat_epandage_hydro && d.lng_epandage_hydro)
+      epandageOverlays.push({ geojsonStr: d.geojson_epandage_hydro, eLat: d.lat_epandage_hydro, eLng: d.lng_epandage_hydro, label: 'Zone d\'épandage' });
+    if (d.lat_epandage_curage && d.lng_epandage_curage)
+      epandageOverlays.push({ geojsonStr: d.geojson_epandage_curage, eLat: d.lat_epandage_curage, eLng: d.lng_epandage_curage, label: 'Zone d\'épandage (curage)' });
+
+    loadLeaflet(() => setTimeout(() => renderAdminMap(geojson, d.lat, d.lng, epandageOverlays), 80));
   }
 }
 
@@ -781,7 +809,7 @@ function loadLeaflet(cb) {
   document.head.appendChild(script);
 }
 
-function renderAdminMap(geojson, lat, lng) {
+function renderAdminMap(geojson, lat, lng, epandageOverlays = []) {
   const el = document.getElementById('admin-map');
   if (!el) return;
   try {
@@ -794,20 +822,62 @@ function renderAdminMap(geojson, lat, lng) {
       { attribution: '© IGN', maxZoom: 21, maxNativeZoom: 19 }
     ).addTo(adminMap);
 
-    // invalidateSize d'abord pour que le conteneur ait ses bonnes dimensions
     adminMap.invalidateSize();
+
+    const allBounds = [];
 
     if (geojson) {
       const layer = L.geoJSON(geojson, {
         style: { color: '#3d9e62', weight: 2.5, fillColor: '#56b57a', fillOpacity: 0.2 }
       }).addTo(adminMap);
-      try { adminMap.fitBounds(layer.getBounds(), { padding: [24, 24] }); } catch(e) {}
+      try { allBounds.push(layer.getBounds()); } catch(e) {}
     } else if (lat && lng) {
-      adminMap.setView([lat, lng], 15);
-      L.marker([lat, lng]).addTo(adminMap);
+      L.circleMarker([lat, lng], { radius: 7, color: '#3d9e62', fillColor: '#56b57a', fillOpacity: 0.8, weight: 2 }).addTo(adminMap);
+      allBounds.push(L.latLngBounds([[lat - 0.001, lng - 0.001], [lat + 0.001, lng + 0.001]]));
     }
 
-    // Second passage après rendu complet
+    const epandageColors = ['#f59e0b', '#3b82f6'];
+    epandageOverlays.forEach(({ geojsonStr, eLat, eLng }, idx) => {
+      const color = epandageColors[idx] || '#f59e0b';
+      let eGeo = null;
+      try { eGeo = geojsonStr ? (typeof geojsonStr === 'string' ? JSON.parse(geojsonStr) : geojsonStr) : null; } catch(e) {}
+      if (eGeo) {
+        const eLayer = L.geoJSON(eGeo, {
+          style: { color, weight: 2, fillColor: color, fillOpacity: 0.15, dashArray: '5 5' }
+        }).addTo(adminMap);
+        try { allBounds.push(eLayer.getBounds()); } catch(e) {}
+      } else if (eLat && eLng) {
+        L.circleMarker([eLat, eLng], { radius: 7, color, fillColor: color, fillOpacity: 0.8, weight: 2 }).addTo(adminMap);
+        allBounds.push(L.latLngBounds([[eLat - 0.001, eLng - 0.001], [eLat + 0.001, eLng + 0.001]]));
+      }
+    });
+
+    if (allBounds.length > 0) {
+      try {
+        const combined = allBounds.reduce((acc, b) => acc.extend(b));
+        adminMap.fitBounds(combined, { padding: [28, 28] });
+      } catch(e) {
+        if (lat && lng) adminMap.setView([lat, lng], 15);
+      }
+    }
+
+    // Légende si étang + épandage visibles ensemble
+    if ((geojson || (lat && lng)) && epandageOverlays.length > 0) {
+      const legend = L.control({ position: 'bottomleft' });
+      legend.onAdd = () => {
+        const div = L.DomUtil.create('div');
+        div.style.cssText = 'background:rgba(255,255,255,.92);padding:4px 8px;border-radius:6px;font-size:11px;line-height:1.8;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none;';
+        const rows = [`<div><span style="display:inline-block;width:11px;height:11px;background:#56b57a;border:1.5px solid #3d9e62;border-radius:2px;margin-right:5px;vertical-align:middle;"></span>Étang</div>`];
+        epandageOverlays.forEach(({ label }, idx) => {
+          const c = epandageColors[idx] || '#f59e0b';
+          rows.push(`<div><span style="display:inline-block;width:11px;height:11px;background:${c};border:1.5px solid ${c};border-radius:2px;margin-right:5px;vertical-align:middle;opacity:.7;"></span>${esc(label)}</div>`);
+        });
+        div.innerHTML = rows.join('');
+        return div;
+      };
+      legend.addTo(adminMap);
+    }
+
     setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 300);
   } catch (err) {
     console.error('Map render error:', err);
