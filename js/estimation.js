@@ -880,7 +880,7 @@ async function checkEpandageZones(type, lat, lng) {
   const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
   const base  = 'https://apicarto.ign.fr/api/nature/';
   const checks = [
-    { url: `${base}zone-humide?geom=${geom}`,  icon: '💧', name: 'Zone humide',   impact: 'Épandage soumis à autorisation préfectorale (Loi sur l'eau).' },
+    { url: `${base}zone-humide?geom=${geom}`,  icon: '💧', name: 'Zone humide',   impact: 'Épandage soumis à autorisation préfectorale (Loi sur l\'eau).' },
     { url: `${base}natura-habitat?geom=${geom}`, icon: '🌿', name: 'Natura 2000 (Habitats)', impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
     { url: `${base}natura-oiseaux?geom=${geom}`, icon: '🦅', name: 'Natura 2000 (Oiseaux)',  impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
     { url: `${base}znieff1?geom=${geom}`,        icon: '🔬', name: 'ZNIEFF type I',          impact: 'Zone naturelle sensible — vérifier la compatibilité du projet.' },
