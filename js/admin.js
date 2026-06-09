@@ -1252,3 +1252,201 @@ function showRouteModal(lat, lng) {
       });
   }, 60));
 }
+
+// ── RÉALISATIONS ─────────────────────────────────────────────────────────────
+
+const REAL_SEED = [
+  { titre:"Curage des douves d'un château", lieu:"Dammartin-sur-Tigeaux (77)", categorie:"curage", badge:"Curage", description:"Plus de 2 000 m³ de vases extraites. L'utilisation de la drague aspiratrice a permis de ne pas endommager les berges ni la végétation patrimoniale bordant les douves.", image:"assets/img/curage-de-douves.jpg", imageAlt:"Curage des douves du château de Dammartin-sur-Tigeaux par drague aspiratrice", specs:["📦 2 000 m³","⚙️ Drague aspiratrice","📅 2021"], ordre:1, visible:true },
+  { titre:"Fauchage de roseaux et touradons", lieu:"Somme (80)", categorie:"faucardage", badge:"Faucardage", description:"Intervention pour le compte du Conservatoire des Espaces Naturels. Machine équipée de chenilles larges permettant d'accéder aux zones les plus inaccessibles des marais.", image:"assets/img/fauchage-de-roseaux-avec-exportation.jpg", imageAlt:"Fauchage de roseaux dans les marais de la Somme", specs:["🌿 Roseaux + Touradons","🏛️ Conservatoire EN","⚙️ Chenilles larges"], ordre:2, visible:true },
+  { titre:"Curage d'une lagune quasi asséchée", lieu:"Frelinghin (Nord, 59)", categorie:"curage", badge:"Curage", description:"L'étang était presque à sec. Après le passage de la drague aspiratrice, l'étang a retrouvé 2 mètres de profondeur et une qualité d'eau nettement améliorée.", image:"assets/img/curage-de-lagunes.jpg", imageAlt:"Curage d'une lagune industrielle à Frelinghin", specs:["💧 +2 m profondeur","⚙️ Drague aspiratrice"], ordre:3, visible:true },
+  { titre:"Curage d'étang à sec", lieu:"Albert (Somme, 80)", categorie:"curage", badge:"Curage", description:"Curage d'un étang mis à sec à l'aide d'engins équipés de chenilles spéciales marais. Technique adaptée aux terrains meubles et gorgés d'eau pour éviter l'enlisement du matériel.", image:"assets/img/curage-d-etang-avec-mise-en-assec.jpg", imageAlt:"Curage d'étang à sec avec engins chenilles marais à Albert", specs:["⚙️ Chenilles marais","🔓 Mise à sec"], ordre:4, visible:true },
+  { titre:"Suppression de nénuphars", lieu:"Wail (Pas-de-Calais, 62)", categorie:"faucardage", badge:"Faucardage", description:"Arrachage et extraction de nénuphars couvrant une large portion du plan d'eau. Intervention mécanique depuis la berge et par bateau faucardeur pour les zones profondes.", image:"assets/img/suppression-de-nenuphars.jpg", imageAlt:"Suppression de nénuphars sur étang à Wail", specs:["🌸 Nénuphars","⚙️ Bateau faucardeur"], ordre:5, visible:true },
+  { titre:"Enrochement – Étang de chasse", lieu:"Pas-de-Calais (62)", categorie:"berges", badge:"Défenses de berges", description:"Protection de berges fortement érodées par pose de blocs calcaires, géotextile et végétalisation adaptée. Résultat immédiat sur la stabilisation des rives.", image:"assets/img/terrassement-defense-des-berges-enrochements.jpg", imageAlt:"Enrochement et terrassement de berges dans le Pas-de-Calais", specs:["🪨 Enrochement","🌱 Végétalisation"], ordre:6, visible:true },
+  { titre:"Location de drague avec chauffeur", lieu:"Hauts-de-France", categorie:"curage", badge:"Curage", description:"Mise à disposition de matériel de dévasement (drague aspiratrice, pelle amphibie) avec chauffeur qualifié pour maîtres d'ouvrage publics et privés.", image:"assets/img/location-materiel-avec-ou-sans-chauffeur-2.jpg", imageAlt:"Location de drague aspiratrice avec chauffeur en Hauts-de-France", specs:["🚜 Matériel spécialisé","👷 Avec chauffeur"], ordre:7, visible:true },
+  { titre:"Entretien plan d'eau – Agence Sud-Ouest", lieu:"Gironde (33)", categorie:"curage", badge:"Curage", description:"Intervention depuis notre agence d'Arbanats (Gironde) sur un plan d'eau privé. Curage et remise en état des berges pour un propriétaire souhaitant relancer l'activité piscicole.", image:"assets/img/travaux-de-curage.jpg", imageAlt:"Travaux de curage d'étang privé en Gironde", specs:["🐟 Remise en pêche","📍 Agence SW"], ordre:8, visible:true },
+];
+
+let allRealisations  = [];
+let realUnsubscribe  = null;
+
+function realCatLabel(c) {
+  return { curage:'Curage', faucardage:'Faucardage', berges:'Berges', broyage:'Broyage' }[c] || c;
+}
+
+// ── Navigation section ────────────────────────────────────────
+document.getElementById('btn-real-section')?.addEventListener('click', () => {
+  showRealisationsSection();
+});
+
+// Status filter buttons → back to demandes
+document.querySelectorAll('.fnav-btn[data-status]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!document.getElementById('realisations-panel').classList.contains('active')) return;
+    hideRealisationsSection();
+  });
+});
+
+function showRealisationsSection() {
+  document.getElementById('realisations-panel').classList.add('active');
+  document.querySelector('.admin-content').style.display = 'none';
+  const tp = document.getElementById('tarifs-panel');
+  if (!tp.hidden) { tp.hidden = true; document.getElementById('btn-tarifs')?.classList.remove('active'); }
+  document.getElementById('btn-real-section').classList.add('active');
+  if (!realUnsubscribe) startRealListener();
+}
+
+function hideRealisationsSection() {
+  document.getElementById('realisations-panel').classList.remove('active');
+  document.querySelector('.admin-content').style.display = '';
+  document.getElementById('btn-real-section').classList.remove('active');
+}
+
+// Also hide realisations when tarifs button clicked
+const _origTarifsClick = document.getElementById('btn-tarifs')?.onclick;
+document.getElementById('btn-tarifs')?.addEventListener('click', () => {
+  hideRealisationsSection();
+});
+
+function startRealListener() {
+  realUnsubscribe = db.collection('realisations')
+    .orderBy('ordre', 'asc')
+    .onSnapshot(async snap => {
+      allRealisations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (allRealisations.length === 0) await seedRealisations();
+      else renderRealList();
+    }, err => console.error('[Real] listener error:', err));
+}
+
+async function seedRealisations() {
+  const check = await db.collection('realisations').limit(1).get();
+  if (!check.empty) return;
+  const batch = db.batch();
+  REAL_SEED.forEach(r => {
+    batch.set(db.collection('realisations').doc(), {
+      ...r,
+      created_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+  await batch.commit();
+}
+
+function renderRealList() {
+  const container = document.getElementById('real-list');
+  if (!container) return;
+  if (!allRealisations.length) {
+    container.innerHTML = '<div class="state-msg">Aucune réalisation. Cliquez sur « Ajouter ».</div>';
+    return;
+  }
+  container.innerHTML = allRealisations.map((r, i) => `
+    <div class="real-row">
+      <img class="real-thumb" src="${esc(r.image || '')}" alt=""
+           onerror="this.style.visibility='hidden'">
+      <div class="real-info">
+        <div class="real-titre">${esc(r.titre)}</div>
+        <div class="real-meta">
+          <span class="real-cat-badge">${realCatLabel(r.categorie)}</span>
+          ${esc(r.lieu)}
+          ${!r.visible ? '<span class="real-hidden-tag">· Masqué</span>' : ''}
+        </div>
+      </div>
+      <div class="real-actions">
+        <button class="real-btn" title="Monter" onclick="moveReal('${r.id}','up')" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="real-btn" title="Descendre" onclick="moveReal('${r.id}','down')" ${i === allRealisations.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="real-btn" title="Modifier" onclick="openRealModal('${r.id}')">✏️</button>
+        <button class="real-btn danger" title="Supprimer" onclick="deleteReal('${r.id}','${esc(r.titre).replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function moveReal(id, dir) {
+  const idx = allRealisations.findIndex(r => r.id === id);
+  if (idx < 0) return;
+  const other = dir === 'up' ? allRealisations[idx - 1] : allRealisations[idx + 1];
+  if (!other) return;
+  const curr = allRealisations[idx];
+  await Promise.all([
+    db.collection('realisations').doc(curr.id).update({ ordre: other.ordre }),
+    db.collection('realisations').doc(other.id).update({ ordre: curr.ordre }),
+  ]);
+}
+
+function openRealModal(id = null) {
+  const r = id ? allRealisations.find(x => x.id === id) : null;
+  document.getElementById('rm-modal-title').textContent = id ? 'Modifier la réalisation' : 'Ajouter une réalisation';
+  document.getElementById('rm-id').value          = id || '';
+  document.getElementById('rm-titre').value       = r?.titre || '';
+  document.getElementById('rm-lieu').value        = r?.lieu || '';
+  document.getElementById('rm-categorie').value   = r?.categorie || 'curage';
+  document.getElementById('rm-badge').value       = r?.badge || '';
+  document.getElementById('rm-image').value       = r?.image || '';
+  document.getElementById('rm-alt').value         = r?.imageAlt || '';
+  document.getElementById('rm-description').value = r?.description || '';
+  document.getElementById('rm-specs').value       = (r?.specs || []).join('\n');
+  document.getElementById('rm-visible').checked   = r?.visible !== false;
+  const img = document.getElementById('rm-preview-img');
+  img.src = r?.image || '';
+  img.style.display = r?.image ? 'block' : 'none';
+  document.getElementById('real-modal').hidden = false;
+}
+
+function closeRealModal() {
+  document.getElementById('real-modal').hidden = true;
+}
+
+function previewRealImg() {
+  const src = document.getElementById('rm-image').value.trim();
+  const img = document.getElementById('rm-preview-img');
+  if (!src) { img.style.display = 'none'; return; }
+  img.src = src;
+  img.style.display = 'block';
+}
+
+async function saveReal(e) {
+  e.preventDefault();
+  const id        = document.getElementById('rm-id').value;
+  const categorie = document.getElementById('rm-categorie').value;
+  const BADGE_MAP = { curage:'Curage', faucardage:'Faucardage', berges:'Défenses de berges', broyage:'Broyage' };
+  const data = {
+    titre:       document.getElementById('rm-titre').value.trim(),
+    lieu:        document.getElementById('rm-lieu').value.trim(),
+    categorie,
+    badge:       document.getElementById('rm-badge').value.trim() || BADGE_MAP[categorie],
+    image:       document.getElementById('rm-image').value.trim(),
+    imageAlt:    document.getElementById('rm-alt').value.trim(),
+    description: document.getElementById('rm-description').value.trim(),
+    specs:       document.getElementById('rm-specs').value.split('\n').map(s => s.trim()).filter(Boolean),
+    visible:     document.getElementById('rm-visible').checked,
+  };
+  const btn = document.getElementById('rm-save-btn');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  try {
+    if (id) {
+      await db.collection('realisations').doc(id).update(data);
+    } else {
+      const maxOrdre = allRealisations.reduce((m, r) => Math.max(m, r.ordre || 0), 0);
+      await db.collection('realisations').doc().set({
+        ...data, ordre: maxOrdre + 1,
+        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    closeRealModal();
+  } catch (err) {
+    alert('Erreur : ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+async function deleteReal(id, titre) {
+  if (!confirm(`Supprimer « ${titre} » ?\nCette action est irréversible.`)) return;
+  try {
+    await db.collection('realisations').doc(id).delete();
+  } catch (err) {
+    alert('Erreur : ' + err.message);
+  }
+}
+
+document.getElementById('real-modal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('real-modal')) closeRealModal();
+});
