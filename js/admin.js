@@ -15,8 +15,8 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-const DEPOT_LAT = 50.4167;
-const DEPOT_LNG = 1.9833;
+const DEPOT_LAT = 50.317867;
+const DEPOT_LNG = 1.915533;
 
 let allDemandes   = [];
 let currentFilter = 'all';
