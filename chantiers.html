@@ -503,14 +503,34 @@ function openChantierLb(ci, startIdx = 0) {
   }
   try {
     const res = await fetch(
-      'https://firestore.googleapis.com/v1/projects/curage-vandaele/databases/(default)/documents/realisations?key=AIzaSyCedrdegva_01oxW1zqhMX-qrRdn_Xczjc&pageSize=100',
-      { signal: AbortSignal.timeout(8000) }
+      'https://firestore.googleapis.com/v1/projects/curage-vandaele/databases/(default)/documents:runQuery?key=AIzaSyCedrdegva_01oxW1zqhMX-qrRdn_Xczjc',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'realisations' }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: 'visible' },
+                op: 'EQUAL',
+                value: { booleanValue: true }
+              }
+            },
+            orderBy: [{ field: { fieldPath: 'ordre' }, direction: 'ASCENDING' }],
+            limit: 100
+          }
+        }),
+        signal: AbortSignal.timeout(8000)
+      }
     );
     if (!res.ok) return;
     const data = await res.json();
-    if (!data.documents?.length) return;
+    if (!Array.isArray(data)) return;
+    const docs = data.filter(r => r.document).map(r => r.document);
+    if (!docs.length) return;
 
-    function fv(f) { return f?.stringValue ?? f?.integerValue ?? f?.booleanValue ?? null; }
+    function fv(f) { return f?.stringValue ?? f?.integerValue ?? f?.doubleValue ?? f?.booleanValue ?? null; }
     function arr(f) { return f?.arrayValue?.values?.map(v => v.stringValue || '') || []; }
     function parseMedia(f) {
       return (f?.arrayValue?.values || []).map(v => {
@@ -519,7 +539,7 @@ function openChantierLb(ci, startIdx = 0) {
       }).filter(m => m.url);
     }
 
-    const cards = data.documents
+    const cards = docs
       .map(doc => {
         const f = doc.fields || {};
         return {
@@ -532,12 +552,8 @@ function openChantierLb(ci, startIdx = 0) {
           imageAlt:    fv(f.imageAlt) || '',
           media:       parseMedia(f.media),
           specs:       arr(f.specs),
-          ordre:       parseInt(fv(f.ordre) || '0'),
-          visible:     fv(f.visible) !== false,
         };
-      })
-      .filter(r => r.visible)
-      .sort((a, b) => a.ordre - b.ordre);
+      });
 
     if (!cards.length) return;
 
@@ -549,7 +565,7 @@ function openChantierLb(ci, startIdx = 0) {
       const first = items[0] || null;
       const mediaHtml = first
         ? first.type === 'video'
-          ? `<video src="${escHtml(first.url)}" muted autoplay loop playsinline></video>`
+          ? `<video src="${escHtml(first.url)}" muted autoplay loop playsinline preload="auto"></video>`
           : `<img src="${escHtml(first.url)}" alt="${escHtml(first.alt || r.titre)}" loading="lazy" />`
         : '';
       const extraItems = items.slice(1, 4);
@@ -557,7 +573,7 @@ function openChantierLb(ci, startIdx = 0) {
       const stripHtml = items.length > 1
         ? `<div class="chantier-strip">${extraItems.map((m, mi) =>
             m.type === 'video'
-              ? `<video class="strip-thumb" src="${escHtml(m.url)}" muted playsinline onclick="event.stopPropagation();openChantierLb(${ci},${mi+1})"></video>`
+              ? `<video class="strip-thumb" src="${escHtml(m.url)}" muted playsinline preload="metadata" onloadedmetadata="this.currentTime=0.5" onclick="event.stopPropagation();openChantierLb(${ci},${mi+1})"></video>`
               : `<img class="strip-thumb" src="${escHtml(m.url)}" alt="" loading="lazy" onclick="event.stopPropagation();openChantierLb(${ci},${mi+1})">`
           ).join('')}${extraCount > 0 ? `<div class="strip-more" onclick="event.stopPropagation();openChantierLb(${ci},4)">+${extraCount}</div>` : ''}</div>`
         : '';

@@ -1346,7 +1346,7 @@ function renderRealList() {
     const thumbsHtml = allMedia.length === 0
       ? `<div class="real-thumb-empty">📷</div>`
       : showThumbs.map((m, mi) => m.type === 'video'
-          ? `<video class="real-thumb" src="${esc(m.url)}" muted playsinline onclick="openLightboxForReal('${r.id}',${mi})"></video>`
+          ? `<video class="real-thumb" src="${esc(m.url)}" muted playsinline preload="metadata" onloadedmetadata="this.currentTime=0.5" onclick="openLightboxForReal('${r.id}',${mi})"></video>`
           : `<img class="real-thumb" src="${esc(m.url)}" alt="" onerror="this.style.visibility='hidden'" onclick="openLightboxForReal('${r.id}',${mi})">`
         ).join('')
         + (extra > 0 ? `<div class="real-thumb-more" onclick="openLightboxForReal('${r.id}',4)">+${extra}</div>` : '');
@@ -1504,7 +1504,7 @@ async function uploadMediaFile(file, onProgress) {
 
 function buildMediaItemHtml(item, idx) {
   const media = item.type === 'video'
-    ? `<video src="${esc(item.url)}" muted playsinline style="width:100%;height:84px;object-fit:cover;display:block;cursor:pointer" onclick="openLightboxFromGallery(${idx})"></video>`
+    ? `<video src="${esc(item.url)}" muted playsinline preload="metadata" onloadedmetadata="this.currentTime=0.5" style="width:100%;height:84px;object-fit:cover;display:block;cursor:pointer" onclick="openLightboxFromGallery(${idx})"></video>`
     : `<img src="${esc(item.url)}" alt="" style="width:100%;height:84px;object-fit:cover;display:block;cursor:pointer" onerror="this.style.opacity='.3'" onclick="openLightboxFromGallery(${idx})">`;
   return `<div class="rm-media-item" data-idx="${idx}" draggable="true">
     ${media}
