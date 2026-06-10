@@ -1088,16 +1088,19 @@ async function checkAdminZones(lat, lng, d) {
   _appendTrackingSection(container, d, zonesForTracking);
 }
 
+let _docCtx = null;
+
 function _appendTrackingSection(container, d, zones) {
   const procs = determineProcedures(d, zones);
   if (!procs.length) return;
+  _docCtx = { d, zones };
   const saved = d.demarches || {};
   const wrap  = document.createElement('div');
   wrap.className = 'adm-tracking';
   wrap.innerHTML = '<div class="adm-tracking-title">Suivi des dossiers &amp; pièces à préparer</div>' +
     renderDemarchesHtml(d, zones, procs, saved);
   container.appendChild(wrap);
-  initDemarchesListeners(d, procs);
+  initDemarchesListeners(d, procs, zones);
 }
 
 function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa) {
@@ -1969,6 +1972,7 @@ function renderDemarchesHtml(d, zones, procs, saved) {
             <span class="demarche-badge ${p.type}">${p.type === 'autorisation' ? 'Autorisation' : p.type === 'declaration' ? 'Déclaration' : p.type === 'ein' ? 'EIN' : 'Information'}</span>
             <span class="demarche-title">${esc(p.label)}</span>
             <select class="demarche-sel proc-statut-sel" data-proc="${p.id}">${opts}</select>
+            <button class="btn-gen-doc" data-proc="${p.id}" title="Générer le document administratif">📄 Générer</button>
           </div>
           <div class="demarche-body">
             <div class="demarche-meta">${esc(p.rubrique)} · <strong>${esc(p.organism)}</strong>${p.delay !== '–' ? ` · Délai indicatif : ${esc(p.delay)}` : ''}</div>
@@ -2061,7 +2065,16 @@ function buildFiche(d, zones, procs) {
   return lines.join('\n');
 }
 
-function initDemarchesListeners(d, procs) {
+function initDemarchesListeners(d, procs, zones) {
+  document.querySelectorAll('.btn-gen-doc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const procId = btn.dataset.proc;
+      const proc   = procs.find(p => p.id === procId);
+      if (!proc) return;
+      openDocModal(d, proc, zones || []);
+    });
+  });
+
   // Statut dropdown
   document.querySelectorAll('.proc-statut-sel').forEach(sel => {
     sel.addEventListener('change', () => {
@@ -2114,3 +2127,330 @@ function initDemarchesListeners(d, procs) {
     }).catch(() => {});
   });
 }
+
+// ── GÉNÉRATION DE DOCUMENTS ADMINISTRATIFS ───────────────────
+
+function _docName(d) { return `${(d.prenom||'').trim()} ${(d.nom||'').trim()}`.trim() || '– nom non précisé –'; }
+function _docDate()  { return new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}); }
+function _docProfil(d) {
+  return {particulier:'Particulier',professionnel:'Professionnel / exploitant',collectivite:'Collectivité territoriale',association:'Association',agriculteur:'Agriculteur / exploitant agricole'}[d.profil] || 'Particulier';
+}
+function _docSurf(d) {
+  if (!d.surface_ha) return '<span class="adm-doc-placeholder">[surface à préciser]</span>';
+  const ha = parseFloat(d.surface_ha);
+  return `${ha} ha (environ ${Math.round(ha*10000).toLocaleString('fr')} m²)`;
+}
+function _ph(label) { return `<span class="adm-doc-placeholder">[${label}]</span>`; }
+function _docTable(rows) {
+  return '<table class="adm-doc-tbl">' + rows.map(([k,v]) =>
+    `<tr><td class="adm-doc-tbl-k">${k}</td><td>${v}</td></tr>`).join('') + '</table>';
+}
+function _letterWrap({ from, to, city, objet, body, pj = [] }) {
+  const pjHtml = pj.length ? `<div class="adm-doc-pj"><strong>Pièces jointes :</strong><ul>${pj.map(p=>`<li>${p}</li>`).join('')}</ul></div>` : '';
+  return `<div class="adm-doc-page">
+  <div class="adm-doc-columns">
+    <div class="adm-doc-from">${from}</div>
+    <div class="adm-doc-to"><div class="adm-doc-to-box">${to}</div></div>
+  </div>
+  <div class="adm-doc-dateline">${esc(city)}, le ${_docDate()}</div>
+  <div class="adm-doc-objet"><strong>Objet :</strong> ${objet}</div>
+  <div class="adm-doc-content">${body}</div>
+  ${pjHtml}
+</div>`;
+}
+
+function _genIOTA(d, type) {
+  const details   = d.details || {};
+  const name      = _docName(d);
+  const isAuth    = type === 'autorisation';
+  const surfHa    = parseFloat(d.surface_ha || 0);
+  const volHydro  = parseInt(details.hydrocurage?.volume_m3 || 0);
+  const profCm    = parseInt(details.curage?.prof_vase_cm || 0);
+  const pctSurf   = parseInt(details.curage?.pct_surface || 100);
+  const volCurage = details.curage ? Math.round(surfHa * 10000 * (pctSurf/100) * (profCm/100)) : 0;
+  const volTotal  = volHydro + volCurage;
+  const destHydro = details.hydrocurage?.destination_vase === 'sur-place'
+    ? `Épandage sur terrain adjacent (à ${details.hydrocurage.distance_depot_m || _ph('distance m')} m du plan d'eau ; surface disponible : ${details.hydrocurage.epandage_surface_m2 ? Math.round(details.hydrocurage.epandage_surface_m2).toLocaleString('fr')+' m²' : _ph('surface m²')})`
+    : 'Évacuation et valorisation agricole par transporteur agréé';
+
+  const body = `<p>Monsieur/Madame le ${isAuth ? 'Préfet' : 'Directeur'},</p>
+<p>Par la présente, j'ai l'honneur de vous adresser ${isAuth ? 'une demande d\'autorisation' : 'une déclaration'} au titre des articles L.214-1 et R.214-1 et suivants du Code de l'environnement, pour des travaux d'entretien et de curage d'un plan d'eau privé.</p>
+<h4>I. Identification du demandeur</h4>
+${_docTable([['Nom / Raison sociale',esc(name)],['Qualité',_docProfil(d)],['Adresse',esc(d.adresse||'–')],['Téléphone',esc(d.telephone||'–')],['Email',esc(d.email||'–')]])}
+<h4>II. Localisation du projet</h4>
+${_docTable([['Commune / lieu-dit',esc(d.adresse||_ph('commune'))],['Département','Pas-de-Calais (62)'],...(d.lat&&d.lng?[['Coordonnées GPS (WGS84)',`${d.lat.toFixed(6)}° N · ${d.lng.toFixed(6)}° E`]]:[])])}
+<p>Références cadastrales : ${_ph('Section __ N° __ – extrait cadastral joint')}</p>
+<h4>III. Description du plan d'eau</h4>
+${_docTable([['Surface',_docSurf(d)],...(d.perimetre_ml?[['Périmètre',`${d.perimetre_ml} ml`]]:[]),['Nature',_ph('étang / mare / bassin – préciser')],['Mode d\'alimentation',_ph('nappe / ruisseau / fossé')],['Ouvrage de vidange',_ph('moine / vanne – préciser')]])}
+<h4>IV. Description des travaux envisagés</h4>
+${details.hydrocurage ? `<p><strong>Hydrocurage par aspiration :</strong></p>${_docTable([['Volume de sédiments',`${volHydro.toLocaleString('fr')} m³`],['Épaisseur de vase',`${details.hydrocurage.epaisseur_cm||_ph('cm')} cm`],['Destination des sédiments',destHydro]])}` : ''}
+${details.curage ? `<p><strong>Curage mécanique :</strong></p>${_docTable([['Volume de sédiments',`${volCurage.toLocaleString('fr')} m³`],['Profondeur de vase',`${details.curage.prof_vase_cm||_ph('cm')} cm`],['Surface concernée',`${details.curage.pct_surface||_ph('%')} % du plan d'eau`]])}` : ''}
+<p><strong>Volume total de sédiments à extraire : ${volTotal.toLocaleString('fr')} m³</strong><br>
+Ce volume ${isAuth ? '≥ 2 000 m³ justifie une demande d\'autorisation' : 'compris entre 400 et 2 000 m³ relève de la procédure de déclaration'} au titre de la rubrique 3.2.3.0 de la nomenclature annexée à l'art. R.214-1 du Code de l'environnement.</p>
+<h4>V. Calendrier prévisionnel</h4>
+<p>Début des travaux : ${_ph('mois et année')} – durée estimée : ${_ph('nombre de jours ouvrés')}.<br>Les interventions seront planifiées hors périodes biologiques sensibles (hors frai printanier mars–juin, hors nidification mars–août).</p>
+<h4>VI. Mesures d'évitement, de réduction et de compensation (ERC)</h4>
+<ul>
+  <li>Intervention programmée hors périodes biologiques sensibles</li>
+  <li>Filtre géotextile ou batardeau anti-turbidité en aval si rejet dans un cours d'eau récepteur</li>
+  <li>Analyse physico-chimique préalable des sédiments si nécessaire (métaux lourds, HAP, PCB – circulaire 04/07/2008)</li>
+  <li>Épandage ou évacuation des sédiments conformément à la réglementation</li>
+  <li>Remise en eau progressive et contrôlée à l'issue des travaux</li>
+  <li>Travaux réalisés par ETS Vandaele Marcel &amp; Fils, spécialiste en travaux aquatiques depuis 1953</li>
+</ul>
+${isAuth ? '<h4>VII. Éléments d\'incidence sur l\'eau et les milieux aquatiques</h4><p>Voir notice d\'incidence jointe (rapport technique distinct).</p>' : ''}
+<p>${isAuth ? 'Je sollicite l\'autorisation préfectorale nécessaire à la réalisation de ces travaux.' : 'Je vous saurais gré de bien vouloir me délivrer le récépissé de déclaration, qui me permettra d\'engager les travaux à l\'expiration du délai réglementaire d\'opposition.'}</p>
+<p>Je reste à votre entière disposition pour tout renseignement complémentaire.</p>
+<p>Je vous prie d'agréer, Monsieur/Madame le ${isAuth ? 'Préfet' : 'Directeur'}, l'expression de ma considération distinguée.</p>
+<div class="adm-doc-sig">
+  <div class="adm-doc-sig-lines">
+    <p>${esc(name)}</p>
+    <p style="color:#666;font-size:.88em">À __________________, le __________________</p>
+    <p style="margin-top:2rem;font-style:italic">Signature :</p>
+    <div style="height:3rem;border-bottom:1px solid #aaa;width:180px;margin-top:.3rem"></div>
+  </div>
+</div>`;
+
+  return _letterWrap({
+    from: `<strong>${esc(name)}</strong><br>${esc(d.adresse||'–')}<br>Tél. : ${esc(d.telephone||'–')}<br>${esc(d.email||'–')}`,
+    to: isAuth
+      ? `<strong>M./Mme le Préfet du Pas-de-Calais</strong><br>Préfecture du Pas-de-Calais<br>2 rue Ferdinand Buisson<br>62020 Arras Cedex<br><small style="color:#666"><em>(à adapter selon le département du site)</em></small>`
+      : `<strong>M./Mme le Directeur Départemental</strong><br>Direction Départementale des Territoires<br>du Pas-de-Calais (DDT 62)<br>Service Police de l'Eau<br>1 rue de Verdun – BP 2018<br>62020 Arras Cedex`,
+    city: 'Tortefontaine',
+    objet: isAuth
+      ? 'Demande d\'autorisation – Loi sur l\'eau – Rubrique 3.2.3.0 – Travaux de curage de plan d\'eau'
+      : 'Déclaration – Loi sur l\'eau – Rubrique 3.2.3.0 – Travaux d\'entretien de plan d\'eau',
+    body,
+    pj: isAuth
+      ? ['Plan de situation au 1/25 000 (IGN)','Plan coté du plan d\'eau','Étude d\'incidences sur l\'eau et les milieux aquatiques','Note de calcul des volumes de sédiments extraits','Analyse physico-chimique des sédiments (si disponible)','Extrait cadastral','Photos du site']
+      : ['Plan de situation au 1/25 000 (IGN)','Plan du plan d\'eau','Description des travaux','Extrait cadastral'],
+  });
+}
+
+function _genZH(d, type, zones) {
+  const details   = d.details || {};
+  const name      = _docName(d);
+  const isAuth    = type === 'autorisation';
+  const surfHa    = parseFloat(d.surface_ha || 0);
+  const epSurf    = (details.hydrocurage?.epandage_surface_m2||0) + (details.curage?.epandage_surface_m2||0);
+  const impactHa  = (epSurf > 0 ? epSurf/10000 : surfHa).toFixed(2);
+  const zhZone    = zones.find(z => z.type === 'zh');
+  const zhName    = zhZone?.siteName ? esc(zhZone.siteName) : _ph('nom de la zone humide – consulter cartographie DDT');
+
+  const body = `<p>Monsieur/Madame le ${isAuth ? 'Préfet' : 'Directeur'},</p>
+<p>Par la présente, j'ai l'honneur de vous adresser ${isAuth ? 'une demande d\'autorisation' : 'une déclaration'} au titre des articles L.214-1 et R.214-1 du Code de l'environnement, relatifs aux travaux impactant une zone humide.</p>
+<h4>I. Identification du demandeur</h4>
+${_docTable([['Nom / Raison sociale',esc(name)],['Qualité',_docProfil(d)],['Adresse',esc(d.adresse||'–')],['Téléphone',esc(d.telephone||'–')]])}
+<h4>II. Localisation et identification de la zone humide</h4>
+${_docTable([['Commune',esc(d.adresse||_ph('commune'))],['Zone humide concernée',zhName],...(d.lat&&d.lng?[['GPS (WGS84)',`${d.lat.toFixed(6)}° N · ${d.lng.toFixed(6)}° E`]]:[])])}
+<p>La délimitation précise de la zone humide a été / sera réalisée par ${_ph('bureau d\'études agréé')} selon l'arrêté du 24 juin 2008 (critères pédologiques et floristiques).</p>
+<h4>III. Description du projet et de son impact</h4>
+${_docTable([['Nature des travaux','Curage / hydrocurage – entretien de plan d\'eau privé'],['Surface du plan d\'eau',_docSurf(d)],['Surface de zone humide impactée estimée',`${impactHa} ha`],['Rubrique IOTA',isAuth ? 'Rubrique 3.3.1.0 – Autorisation (≥ 1 ha)' : 'Rubrique 3.3.1.0 – Déclaration (0,1 à 1 ha)']])}
+<h4>IV. Mesures d'évitement, de réduction et de compensation (ERC)</h4>
+<p><strong>Évitement :</strong> Limitation de l'emprise des travaux au strict nécessaire pour l'entretien du plan d'eau, sans modification définitive du fonctionnement hydrologique de la zone humide.</p>
+<p><strong>Réduction :</strong></p>
+<ul>
+  <li>Travaux hors périodes biologiques sensibles</li>
+  <li>Absence de drainage ou d'assèchement définitif de la zone humide</li>
+  <li>Remise en état immédiate des berges et des abords après les travaux</li>
+  <li>Interdiction de dépôt de matériaux extérieurs non inertes sur la zone humide</li>
+</ul>
+${isAuth ? `<p><strong>Compensation :</strong> En cas de destruction avérée de zone humide, une compensation à hauteur d'au moins 200 % de la surface détruite est proposée conformément à l'art. L.163-1 du Code de l'environnement (surface compensatoire proposée : ${_ph('X ha – à définir avec le service instructeur')}).</p>` : ''}
+<h4>V. Engagement du demandeur</h4>
+<p>Je m'engage à respecter l'ensemble des prescriptions légales applicables et à informer le service instructeur de toute modification du projet avant engagement des travaux.</p>
+<p>${isAuth ? 'Je sollicite l\'autorisation préfectorale nécessaire à la réalisation de ces travaux.' : 'Je vous saurais gré de bien vouloir me délivrer le récépissé de déclaration correspondant.'}</p>
+<p>Je vous prie d'agréer, Monsieur/Madame le ${isAuth ? 'Préfet' : 'Directeur'}, l'expression de ma considération distinguée.</p>
+<div class="adm-doc-sig">
+  <div class="adm-doc-sig-lines">
+    <p>${esc(name)}</p>
+    <p style="color:#666;font-size:.88em">À __________________, le __________________</p>
+    <p style="margin-top:2rem;font-style:italic">Signature :</p>
+    <div style="height:3rem;border-bottom:1px solid #aaa;width:180px;margin-top:.3rem"></div>
+  </div>
+</div>`;
+
+  return _letterWrap({
+    from: `<strong>${esc(name)}</strong><br>${esc(d.adresse||'–')}<br>Tél. : ${esc(d.telephone||'–')}`,
+    to: isAuth
+      ? `<strong>M./Mme le Préfet du Pas-de-Calais</strong><br>Préfecture du Pas-de-Calais<br>2 rue Ferdinand Buisson<br>62020 Arras Cedex`
+      : `<strong>M./Mme le Directeur Départemental</strong><br>Direction Départementale des Territoires<br>du Pas-de-Calais (DDT 62)<br>Service Police de l'Eau<br>1 rue de Verdun<br>62020 Arras Cedex`,
+    city: 'Tortefontaine',
+    objet: isAuth
+      ? 'Demande d\'autorisation – Loi sur l\'eau – Rubrique 3.3.1.0 – Zone humide'
+      : 'Déclaration – Loi sur l\'eau – Rubrique 3.3.1.0 – Zone humide',
+    body,
+    pj: ['Plan de situation au 1/25 000','Rapport de délimitation de la zone humide (critères pédologiques et floristiques)','Plans généraux des travaux','Description des mesures ERC',...(isAuth?['Plan de compensation proposé']:[])]
+  });
+}
+
+function _genZHInfo(d) {
+  const name = _docName(d);
+  return _letterWrap({
+    from: `<strong>${esc(name)}</strong><br>${esc(d.adresse||'–')}<br>Tél. : ${esc(d.telephone||'–')}`,
+    to: `<strong>M./Mme le Directeur Départemental</strong><br>Direction Départementale des Territoires<br>du Pas-de-Calais (DDT 62)<br>Service Police de l'Eau<br>62020 Arras Cedex`,
+    city: 'Tortefontaine',
+    objet: 'Information préalable – Travaux de curage en zone humide (surface impactée < 0,1 ha)',
+    body: `<p>Monsieur/Madame le Directeur,</p>
+<p>Par la présente, je vous informe de travaux d'entretien que je prévois de réaliser sur un plan d'eau privé situé en zone humide, dont la surface d'impact est estimée inférieure au seuil de déclaration de 1 000 m² (0,1 ha) prévu par la rubrique 3.3.1.0 de la nomenclature IOTA.</p>
+${_docTable([['Demandeur',esc(name)],['Localisation',esc(d.adresse||'–')],['Nature des travaux','Curage / hydrocurage – entretien courant de plan d\'eau'],['Surface du plan d\'eau',_docSurf(d)],['Surface de zone humide impactée estimée','< 0,1 ha (en-deçà du seuil de déclaration)']])}
+<p>Ces travaux seront réalisés avec toutes les précautions nécessaires pour préserver la zone humide environnante :</p>
+<ul>
+  <li>Intervention hors périodes biologiques sensibles</li>
+  <li>Absence de modification définitive du fonctionnement hydrologique</li>
+  <li>Remise en état immédiate des berges après travaux</li>
+</ul>
+<p>Je reste à votre entière disposition pour tout renseignement complémentaire.</p>
+<p>Je vous prie d'agréer, Monsieur/Madame le Directeur, l'expression de ma considération distinguée.</p>
+<div class="adm-doc-sig"><div class="adm-doc-sig-lines"><p>${esc(name)}</p><p style="color:#666;font-size:.88em">À __________________, le __________________</p></div></div>`,
+    pj: ['Description sommaire du projet','Localisation du plan d\'eau (extrait IGN)'],
+  });
+}
+
+function _genEIN(d, zones) {
+  const details   = d.details || {};
+  const name      = _docName(d);
+  const natZones  = zones.filter(z => z.name && z.name.includes('Natura'));
+  const sites     = natZones.map(z => z.siteName ? esc(z.siteName) : esc(z.name)).join(', ') || _ph('nom du ou des sites Natura 2000 – consulter natura2000.fr');
+  const volHydro  = parseInt(details.hydrocurage?.volume_m3||0);
+  const surfHa    = parseFloat(d.surface_ha||0);
+
+  return `<div class="adm-doc-page">
+<div style="border-bottom:2px solid #333;padding-bottom:.65rem;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:flex-end">
+  <div>
+    <div style="font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Évaluation des Incidences Natura 2000</div>
+    <div style="font-size:.9rem;color:#444">Formulaire simplifié — Art. L.414-4 du Code de l'environnement</div>
+  </div>
+  <div style="text-align:right;font-size:.9rem;color:#666">Date : ${_docDate()}</div>
+</div>
+<div class="adm-doc-content">
+<h4>1. Identification du demandeur et du maître d'œuvre</h4>
+${_docTable([['Demandeur',esc(name)],['Qualité',_docProfil(d)],['Adresse',esc(d.adresse||'–')],['Téléphone',esc(d.telephone||'–')],['Email',esc(d.email||'–')],['Maître d\'œuvre','ETS Vandaele Marcel & Fils – Tortefontaine (62140) – Tél. 06 32 44 11 17']])}
+<h4>2. Présentation du projet</h4>
+${_docTable([['Nature du projet','Travaux d\'entretien et de curage d\'un plan d\'eau privé'],['Localisation',esc(d.adresse||'–')],...(d.lat&&d.lng?[['Coordonnées GPS',`${d.lat.toFixed(6)}° N, ${d.lng.toFixed(6)}° E`]]:[])])}
+<p>Les travaux consistent en ${details.hydrocurage ? `un hydrocurage par aspiration (volume estimé : ${volHydro.toLocaleString('fr')} m³)` : 'un curage mécanique'} d'un plan d'eau de ${surfHa} ha, dans le but de restaurer la profondeur et la qualité de l'eau.</p>
+<h4>3. Localisation par rapport aux sites Natura 2000 identifiés</h4>
+${_docTable([['Sites Natura 2000 concernés',sites],['Distance au site le plus proche',_ph('X m – mesurer sur geoportail.gouv.fr')],['Connexion hydrologique',_ph('décrire si le plan d\'eau communique avec un cours d\'eau du réseau Natura')]])}
+<h4>4. Caractéristiques des habitats et espèces visés par le FSD</h4>
+<p>Le ou les sites Natura 2000 ont été désignés pour les habitats et espèces suivants (à vérifier sur <a href="https://natura2000.fr" style="color:inherit">natura2000.fr</a>) :</p>
+<p style="background:#f5f5f5;padding:.5rem .75rem;border-radius:4px;font-size:.9em">${_ph('liste des espèces et habitats d\'intérêt communautaire du FSD – à compléter en consultant la fiche du site sur natura2000.fr')}</p>
+<h4>5. Évaluation des incidences</h4>
+<p><strong>Incidences directes :</strong> Les travaux se déroulent exclusivement sur le plan d'eau privé. Les incidences directes sur les habitats naturels ou espèces Natura 2000 sont considérées comme faibles à nulles : aucune intervention sur les habitats terrestres du site, travaux de courte durée, absence de modification définitive du fonctionnement hydrologique.</p>
+<p><strong>Incidences indirectes :</strong> Une mise en suspension temporaire de sédiments est possible lors du curage. Mesures de réduction prévues : filtre anti-turbidité, intervention en période de bas débit, absence de rejet direct dans le milieu naturel.</p>
+<p><strong>Incidences cumulées :</strong> Aucun autre projet connu à proximité susceptible de générer des incidences cumulées.</p>
+<h4>6. Mesures d'atténuation</h4>
+<ul>
+  <li>Travaux programmés hors nidification (mars–août) et hors frai printanier</li>
+  <li>Dispositifs anti-turbidité en aval si connexion hydraulique avec le site Natura 2000</li>
+  <li>Absence de rejet direct de sédiments dans tout cours d'eau</li>
+  <li>Surveillance de la qualité de l'eau en aval pendant les travaux si pertinent</li>
+</ul>
+<h4>7. Conclusion</h4>
+<div class="adm-doc-conclusion-ok">
+  <strong>Le projet de curage du plan d'eau ne porte pas atteinte à l'état de conservation des habitats naturels et des espèces ayant justifié la désignation du ou des sites Natura 2000 identifiés.</strong><br>
+  Les incidences résiduelles, après application des mesures d'atténuation, sont considérées comme non significatives au sens de l'art. L.414-4 du Code de l'environnement.
+</div>
+<div class="adm-doc-sig" style="margin-top:1.8rem">
+  <p>Je soussigné(e) <strong>${esc(name)}</strong> atteste que les informations contenues dans le présent formulaire sont exactes et complètes.</p>
+  <div class="adm-doc-sig-lines">
+    <p style="color:#666;font-size:.88em">À __________________, le __________________</p>
+    <p style="margin-top:2rem;font-style:italic">Signature :</p>
+    <div style="height:3rem;border-bottom:1px solid #aaa;width:180px;margin-top:.3rem"></div>
+  </div>
+</div>
+</div>
+</div>`;
+}
+
+function _genZNIEFF(d, zones) {
+  const name    = _docName(d);
+  const zniZone = zones.find(z => z.name && z.name.includes('ZNIEFF'));
+  const zoneName = zniZone?.siteName ? esc(zniZone.siteName) : _ph('nom de la zone ZNIEFF – consulter inpn.mnhn.fr');
+
+  return _letterWrap({
+    from: `<strong>${esc(name)}</strong><br>${esc(d.adresse||'–')}<br>Tél. : ${esc(d.telephone||'–')}`,
+    to: `<strong>M./Mme le Directeur Régional</strong><br>DREAL Hauts-de-France<br>Service Nature, Sites et Paysages<br>44 rue de Tournai – BP 259<br>59019 Lille Cedex`,
+    city: 'Tortefontaine',
+    objet: `Demande d'avis préalable informel – Travaux en ZNIEFF type I – ${zoneName}`,
+    body: `<p>Monsieur/Madame le Directeur Régional,</p>
+<p>Par la présente, je sollicite votre avis préalable informel concernant des travaux d'entretien et de curage d'un plan d'eau privé situé dans le périmètre ou à proximité d'une ZNIEFF de type I : <strong>${zoneName}</strong>.</p>
+<p>Bien que la ZNIEFF constitue un inventaire scientifique sans obligation légale directe, sa présence témoigne d'une valeur biologique élevée que nous souhaitons pleinement prendre en compte dans notre projet.</p>
+${_docTable([['Demandeur',esc(name)],['Maître d\'œuvre','ETS Vandaele Marcel & Fils – Tortefontaine (62140)'],['Localisation du chantier',esc(d.adresse||'–')],...(d.lat&&d.lng?[['GPS',`${d.lat.toFixed(6)}° N, ${d.lng.toFixed(6)}° E`]]:[]),['ZNIEFF concernée',zoneName],['Nature des travaux','Curage / hydrocurage de plan d\'eau privé – entretien courant'],['Surface du plan d\'eau',_docSurf(d)]])}
+<p>Nous vous prions de bien vouloir :</p>
+<ul>
+  <li>Nous indiquer si les espèces ou habitats visés par l'inventaire ZNIEFF sont susceptibles d'être présents sur la zone de travaux</li>
+  <li>Nous préciser si une étude faune-flore préalable vous semble nécessaire</li>
+  <li>Nous communiquer tout conseil opérationnel pour minimiser l'impact sur la biodiversité de la zone</li>
+</ul>
+<p>Nous nous engageons à respecter toutes les préconisations que vous pourriez formuler et à programmer les travaux en dehors des périodes biologiques sensibles.</p>
+<p>Je vous prie d'agréer, Monsieur/Madame le Directeur Régional, l'expression de ma considération distinguée.</p>
+<div class="adm-doc-sig"><div class="adm-doc-sig-lines"><p>${esc(name)}</p><p style="color:#666;font-size:.88em">À __________________, le __________________</p><p style="margin-top:2rem;font-style:italic">Signature :</p><div style="height:3rem;border-bottom:1px solid #aaa;width:180px;margin-top:.3rem"></div></div></div>`,
+    pj: ['Localisation du plan d\'eau (extrait IGN 1/25 000)','Description sommaire des travaux envisagés'],
+  });
+}
+
+const DOCUMENT_GENERATORS = {
+  curage_declaration:  (d, _p, zones) => _genIOTA(d, 'declaration'),
+  curage_autorisation: (d, _p, zones) => _genIOTA(d, 'autorisation'),
+  zh_info:             (d, _p, zones) => _genZHInfo(d),
+  zh_declaration:      (d, _p, zones) => _genZH(d, 'declaration', zones),
+  zh_autorisation:     (d, _p, zones) => _genZH(d, 'autorisation', zones),
+  natura_ein:          (d, _p, zones) => _genEIN(d, zones),
+  znieff1_info:        (d, _p, zones) => _genZNIEFF(d, zones),
+};
+
+function openDocModal(d, proc, zones) {
+  const gen = DOCUMENT_GENERATORS[proc.id];
+  if (!gen) return;
+  const html = gen(d, proc, zones);
+  const title = document.getElementById('doc-modal-title');
+  if (title) title.textContent = proc.label;
+  document.getElementById('doc-modal-body').innerHTML = html;
+  document.getElementById('doc-modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('doc-modal-close').addEventListener('click', () => {
+  document.getElementById('doc-modal').hidden = true;
+  document.body.style.overflow = '';
+});
+
+document.getElementById('doc-modal').addEventListener('click', e => {
+  if (e.target.classList.contains('doc-modal-overlay')) {
+    document.getElementById('doc-modal').hidden = true;
+    document.body.style.overflow = '';
+  }
+});
+
+document.getElementById('doc-modal-print').addEventListener('click', () => {
+  const body = document.getElementById('doc-modal-body').innerHTML;
+  const win  = window.open('', '_blank', 'width=900,height=1000');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Document administratif</title>
+<style>
+  body{font-family:'Times New Roman',Times,serif;font-size:11pt;color:#111;margin:0;padding:2cm 2.5cm}
+  h4{font-size:11pt;font-weight:700;margin:1rem 0 .35rem;border-bottom:1px solid #bbb;padding-bottom:.18rem;text-transform:uppercase;letter-spacing:.03em}
+  p{margin:.45rem 0;line-height:1.65}
+  ul{margin:.35rem 0;padding-left:1.4rem}
+  li{margin-bottom:.2rem}
+  table{width:100%;border-collapse:collapse;margin:.4rem 0 .8rem;font-size:10.5pt}
+  td{padding:.28rem .55rem;border:1px solid #bbb;vertical-align:top}
+  .adm-doc-tbl-k{background:#f5f5f5;font-weight:600;width:38%}
+  .adm-doc-lh{margin-bottom:1.8rem}
+  .adm-doc-columns{display:flex;justify-content:space-between;gap:1rem;margin-bottom:1.8rem}
+  .adm-doc-from{flex:1;font-size:10.5pt}
+  .adm-doc-to{text-align:right;flex:1;font-size:10.5pt}
+  .adm-doc-to-box{display:inline-block;text-align:left}
+  .adm-doc-dateline{margin-bottom:1.5rem;font-size:10.5pt}
+  .adm-doc-objet{margin-bottom:1.2rem;background:#f5f5f5;padding:.4rem .65rem;font-size:10.5pt}
+  .adm-doc-sig{margin-top:2.5rem;font-size:10.5pt}
+  .adm-doc-pj{margin-top:1.5rem;padding-top:.6rem;border-top:1px solid #ccc;font-size:10pt}
+  .adm-doc-pj ul{margin:.3rem 0 0 1.2rem}
+  .adm-doc-conclusion-ok{background:#f0fdf4;border:1.5px solid #86efac;border-radius:5px;padding:.6rem .9rem;margin:.8rem 0;font-size:10.5pt}
+  .adm-doc-placeholder{background:#fef9c3;border:1px dashed #ca8a04;border-radius:3px;padding:.02rem .28rem;color:#78350f;font-family:monospace;font-size:9.5pt}
+  a{color:inherit}
+  @page{margin:2cm 2.5cm}
+</style></head><body>${body}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
+});

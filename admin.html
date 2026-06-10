@@ -597,7 +597,90 @@
     .btn-copy-fiche { margin-top: .5rem; padding: .35rem .85rem; border: 1.5px solid var(--gray-200); border-radius: 6px; background: var(--white); font-size: .78rem; font-family: inherit; cursor: pointer; color: var(--gray-700); display: inline-flex; align-items: center; gap: .4rem; }
     .btn-copy-fiche:hover { border-color: var(--green-400); color: var(--green-600); }
 
+    /* ── BOUTON GÉNÉRER DOCUMENT ─────────────────────────── */
+    .btn-gen-doc {
+      margin-left: auto; flex-shrink: 0;
+      padding: .22rem .6rem; background: #eff6ff; color: var(--blue);
+      border: 1.5px solid #bfdbfe; border-radius: 6px;
+      font-size: .72rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .btn-gen-doc:hover { background: #dbeafe; border-color: var(--blue); }
+
+    /* ── MODAL DOCUMENT ──────────────────────────────────── */
+    .doc-modal-overlay {
+      position: fixed; inset: 0; z-index: 3000;
+      background: rgba(0,0,0,.55);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 2rem 1rem; overflow-y: auto;
+    }
+    .doc-modal-wrap {
+      background: var(--white); border-radius: 12px;
+      width: 100%; max-width: 780px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      display: flex; flex-direction: column;
+      min-height: 0;
+    }
+    .doc-modal-topbar {
+      display: flex; align-items: center; gap: .65rem;
+      padding: .75rem 1rem; border-bottom: 1px solid var(--gray-200);
+      flex-shrink: 0;
+    }
+    .doc-modal-topbar-title { font-size: .88rem; font-weight: 700; flex: 1; }
+    .btn-doc-print {
+      padding: .38rem .9rem; background: var(--green-500); color: var(--white);
+      border: none; border-radius: 7px; font-size: .82rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; white-space: nowrap;
+      transition: background .15s;
+    }
+    .btn-doc-print:hover { background: var(--green-600); }
+    .btn-doc-close {
+      width: 1.9rem; height: 1.9rem; border-radius: 50%;
+      border: none; background: var(--gray-100); color: var(--gray-600);
+      cursor: pointer; font-size: .88rem; font-family: inherit;
+      transition: background .15s; flex-shrink: 0;
+    }
+    .btn-doc-close:hover { background: var(--gray-200); }
+    #doc-modal-body {
+      padding: 2rem 2.5rem; overflow-y: auto; max-height: 78vh;
+      font-size: .92rem; line-height: 1.7; color: #111;
+    }
+
+    /* ── MISE EN PAGE LETTRE ADMINISTRATIVE ──────────────── */
+    .adm-doc-page { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; color: #111; }
+    .adm-doc-lh { margin-bottom: 1.8rem; }
+    .adm-doc-lh-name { font-weight: 700; font-size: 13pt; text-transform: uppercase; }
+    .adm-doc-lh-sub { font-size: 10pt; color: #444; }
+    .adm-doc-columns { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.8rem; }
+    .adm-doc-from { flex: 1; font-size: 10.5pt; }
+    .adm-doc-to { text-align: right; flex: 1; font-size: 10.5pt; }
+    .adm-doc-to-box { display: inline-block; text-align: left; }
+    .adm-doc-dateline { margin-bottom: 1.5rem; font-size: 10.5pt; }
+    .adm-doc-objet { margin-bottom: 1.2rem; font-size: 10.5pt; }
+    .adm-doc-objet strong { font-weight: 700; }
+    .adm-doc-content p { margin: 0 0 .75rem; }
+    .adm-doc-content h4 { font-size: 11pt; font-weight: 700; margin: 1.1rem 0 .4rem; border-bottom: 1px solid #bbb; padding-bottom: .18rem; }
+    .adm-doc-tbl { width: 100%; border-collapse: collapse; margin: .4rem 0 .9rem; font-size: 10.5pt; }
+    .adm-doc-tbl td { padding: .28rem .55rem; border: 1px solid #bbb; vertical-align: top; }
+    .adm-doc-tbl-k { background: #f5f5f5; font-weight: 600; width: 38%; }
+    .adm-doc-sig { margin-top: 2.2rem; font-size: 10.5pt; }
+    .adm-doc-sig-lines { margin-top: 3rem; }
+    .adm-doc-pj { margin-top: 1.8rem; padding-top: .7rem; border-top: 1px solid #ccc; font-size: 10pt; }
+    .adm-doc-pj ul { margin: .3rem 0 0 1.2rem; }
+    .adm-doc-conclusion-ok { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 7px; padding: .65rem 1rem; margin: .9rem 0; font-size: 10.5pt; }
+    .adm-doc-placeholder { background: #fef9c3; border: 1px dashed #ca8a04; border-radius: 3px; padding: .05rem .3rem; color: #78350f; font-family: monospace; font-size: 10pt; white-space: nowrap; }
+
     [hidden] { display: none !important; }
+
+    @media print {
+      .doc-modal-overlay, .doc-modal-wrap, .doc-modal-topbar { all: unset; }
+      body > *:not(#doc-modal) { display: none !important; }
+      #doc-modal { position: static !important; background: none !important; padding: 0 !important; }
+      .doc-modal-wrap { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
+      .doc-modal-topbar { display: none !important; }
+      #doc-modal-body { max-height: none !important; padding: 0 !important; overflow: visible !important; }
+    }
 
     /* ── RESPONSIVE ────────────────────────────────────── */
     @media (max-width: 1100px) {
@@ -861,6 +944,20 @@
         <button type="submit" class="btn-rm-save" id="rm-save-btn">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Document modal -->
+<div id="doc-modal" hidden>
+  <div class="doc-modal-overlay">
+    <div class="doc-modal-wrap">
+      <div class="doc-modal-topbar">
+        <span class="doc-modal-topbar-title" id="doc-modal-title">Document administratif</span>
+        <button class="btn-doc-print" id="doc-modal-print">🖨️ Imprimer / PDF</button>
+        <button class="btn-doc-close" id="doc-modal-close" title="Fermer">✕</button>
+      </div>
+      <div id="doc-modal-body"></div>
+    </div>
   </div>
 </div>
 
