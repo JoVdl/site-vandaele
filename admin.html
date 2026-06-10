@@ -567,6 +567,35 @@
     .adm-glossaire strong { display: block; color: var(--gray-700); margin-bottom: .3rem; font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }
     .adm-glossaire ul { margin: 0; padding-left: 1.1rem; line-height: 1.7; }
     abbr { text-decoration: underline dotted; cursor: help; }
+    /* ── SUIVI DOSSIERS (tracking) ────────────────────── */
+    .adm-tracking { margin-top: 1rem; border-top: 1px solid var(--gray-200); padding-top: .85rem; }
+    .adm-tracking-title { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gray-500); margin-bottom: .6rem; }
+    .demarche-card { border: 1.5px solid var(--gray-200); border-radius: 8px; overflow: hidden; margin-top: .55rem; }
+    .demarche-card:first-child { margin-top: 0; }
+    .demarche-head { display: flex; align-items: center; gap: .6rem; padding: .55rem .85rem; background: var(--gray-100); flex-wrap: wrap; }
+    .demarche-badge { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: .2rem .55rem; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+    .demarche-badge.autorisation { background: #fef3c7; color: #b45309; }
+    .demarche-badge.declaration  { background: #dbeafe; color: #1d4ed8; }
+    .demarche-badge.ein          { background: #ede9fe; color: #6d28d9; }
+    .demarche-badge.info         { background: var(--gray-200); color: var(--gray-600); }
+    .demarche-title { font-size: .83rem; font-weight: 600; flex: 1; min-width: 0; }
+    .demarche-sel { font-size: .78rem; padding: .28rem .6rem; border: 1.5px solid var(--gray-200); border-radius: 6px; font-family: inherit; background: var(--white); cursor: pointer; outline: none; flex-shrink: 0; }
+    .demarche-sel:focus { border-color: var(--green-500); }
+    .demarche-body { padding: .55rem .85rem; display: flex; flex-direction: column; gap: .45rem; }
+    .demarche-meta { font-size: .75rem; color: var(--gray-500); }
+    .demarche-context { font-size: .78rem; color: var(--gray-700); background: #fffbeb; border-left: 3px solid #f59e0b; padding: .3rem .6rem; border-radius: 0 4px 4px 0; }
+    .demarche-docs { font-size: .78rem; }
+    .demarche-docs-lbl { font-weight: 600; color: var(--gray-700); margin-bottom: .3rem; }
+    .demarche-docs ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .22rem; }
+    .demarche-docs li label { display: flex; align-items: flex-start; gap: .5rem; cursor: pointer; line-height: 1.4; }
+    .demarche-docs li input[type="checkbox"] { margin-top: .1rem; flex-shrink: 0; accent-color: var(--green-500); cursor: pointer; }
+    .demarche-docs li.checked label { color: var(--gray-400); text-decoration: line-through; }
+    .demarche-note-ta { width: 100%; min-height: 48px; padding: .4rem .65rem; border: 1.5px solid var(--gray-200); border-radius: 6px; font-family: inherit; font-size: .8rem; resize: vertical; outline: none; transition: border-color .2s; box-sizing: border-box; }
+    .demarche-note-ta:focus { border-color: var(--green-500); }
+    .demarche-none { font-size: .83rem; color: var(--green-600); padding: .3rem 0; }
+    .fiche-data { background: var(--gray-100); border-radius: 6px; padding: .6rem .85rem; font-size: .78rem; white-space: pre-wrap; font-family: 'SFMono-Regular', Consolas, monospace; line-height: 1.7; color: var(--gray-700); max-height: 220px; overflow-y: auto; }
+    .btn-copy-fiche { margin-top: .5rem; padding: .35rem .85rem; border: 1.5px solid var(--gray-200); border-radius: 6px; background: var(--white); font-size: .78rem; font-family: inherit; cursor: pointer; color: var(--gray-700); display: inline-flex; align-items: center; gap: .4rem; }
+    .btn-copy-fiche:hover { border-color: var(--green-400); color: var(--green-600); }
 
     [hidden] { display: none !important; }
 

@@ -1057,10 +1057,12 @@ async function checkAdminZones(lat, lng, d) {
 
   if (found.length === 0 && errors === checks.length) {
     container.innerHTML = '<p class="adm-zone-indispo">⚠️ Service IGN indisponible – vérification manuelle requise.</p>';
+    _appendTrackingSection(container, d, []);
     return;
   }
   if (found.length === 0) {
     container.innerHTML = '<p class="adm-zone-ok">✅ Aucune zone protégée détectée à cette localisation.</p>';
+    _appendTrackingSection(container, d, []);
     return;
   }
 
@@ -1076,6 +1078,26 @@ async function checkAdminZones(lat, lng, d) {
 
   html += buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa);
   container.innerHTML = html;
+
+  // Map upstream type codes to determineProcedures format (nat/zni → eco)
+  const zonesForTracking = found.map(z => ({
+    type: z.type === 'zh' ? 'zh' : 'eco',
+    name: z.name,
+    siteName: z.siteName || '',
+  }));
+  _appendTrackingSection(container, d, zonesForTracking);
+}
+
+function _appendTrackingSection(container, d, zones) {
+  const procs = determineProcedures(d, zones);
+  if (!procs.length) return;
+  const saved = d.demarches || {};
+  const wrap  = document.createElement('div');
+  wrap.className = 'adm-tracking';
+  wrap.innerHTML = '<div class="adm-tracking-title">Suivi des dossiers &amp; pièces à préparer</div>' +
+    renderDemarchesHtml(d, zones, procs, saved);
+  container.appendChild(wrap);
+  initDemarchesListeners(d, procs);
 }
 
 function buildDemarchesHtml(zhFound, natFound, zniFound, demandeAccomp, surfaceHa) {
@@ -1748,4 +1770,347 @@ function openLightboxForReal(id, startIdx = 0) {
 function openLightboxFromGallery(idx) {
   syncMediaAlts();
   if (currentMedia.length) openLightbox(currentMedia, idx);
+}
+
+// ── DÉMARCHES ADMINISTRATIVES ────────────────────────────────
+const PROC_TEMPLATES = {
+  curage_declaration: {
+    id: 'curage_declaration', type: 'declaration',
+    label: 'Déclaration IOTA – Entretien de plan d\'eau',
+    rubrique: 'Rubrique 3.2.3.0 · Code de l\'env.',
+    organism: 'DDT(M) du département (service police de l\'eau)',
+    delay: '1 à 2 mois',
+    docs: [
+      'Formulaire Cerfa n°13617 (Déclaration IOTA)',
+      'Plan de situation au 1/25 000 (extrait IGN)',
+      'Description des travaux et planning prévisionnel',
+      'Estimation du volume de vase à extraire (m³)',
+      'Destination et modalités d\'évacuation/épandage des sédiments',
+      'Plan de l\'étang (cotes, berges, ouvrage de vidange)',
+    ],
+  },
+  curage_autorisation: {
+    id: 'curage_autorisation', type: 'autorisation',
+    label: 'Autorisation préfectorale – Entretien de plan d\'eau',
+    rubrique: 'Rubrique 3.2.3.0 · Code de l\'env.',
+    organism: 'Préfecture du département (instruction DDT)',
+    delay: '3 à 12 mois',
+    docs: [
+      'Formulaire Cerfa n°13617 (Demande d\'autorisation IOTA)',
+      'Étude d\'incidences sur l\'eau et les milieux aquatiques',
+      'Plan de situation au 1/25 000',
+      'Plans généraux des travaux au 1/2 500',
+      'Note de calcul des volumes de vase',
+      'Analyse physico-chimique des sédiments (métaux lourds, PCB, HAP)',
+      'Plan de gestion et de suivi des sédiments extraits',
+      'Mesures compensatoires et de suivi environnemental',
+    ],
+  },
+  zh_info: {
+    id: 'zh_info', type: 'info',
+    label: 'Zone humide — Déclaration simplifiée recommandée',
+    rubrique: 'Rubrique 3.3.1.0 · Code de l\'env.',
+    organism: 'DDT(M) du département (pour information)',
+    delay: '–',
+    docs: [
+      'Courrier de notification préalable à la DDT(M)',
+      'Description sommaire du projet et des mesures de précaution',
+    ],
+  },
+  zh_declaration: {
+    id: 'zh_declaration', type: 'declaration',
+    label: 'Déclaration IOTA – Zone humide',
+    rubrique: 'Rubrique 3.3.1.0 · Code de l\'env.',
+    organism: 'DDT(M) du département (service police de l\'eau)',
+    delay: '1 à 2 mois',
+    docs: [
+      'Formulaire Cerfa n°13617 (Déclaration IOTA)',
+      'Localisation précise de la zone humide (carte)',
+      'Description des travaux et surface impactée',
+      'Mesures d\'évitement, de réduction et de compensation',
+      'Engagement de remise en état après travaux',
+    ],
+  },
+  zh_autorisation: {
+    id: 'zh_autorisation', type: 'autorisation',
+    label: 'Autorisation préfectorale – Zone humide',
+    rubrique: 'Rubrique 3.3.1.0 · Code de l\'env.',
+    organism: 'Préfecture du département (instruction DDT)',
+    delay: '6 à 18 mois',
+    docs: [
+      'Formulaire Cerfa n°13617 (Demande d\'autorisation IOTA)',
+      'Délimitation précise de la zone humide (critères pédologiques et floristiques)',
+      'Étude d\'incidences sur les zones humides',
+      'Plan de compensation (ratio ≥ 2 pour 1 en surface)',
+      'Mesures de suivi et de gestion post-travaux',
+    ],
+  },
+  natura_ein: {
+    id: 'natura_ein', type: 'ein',
+    label: 'Évaluation des Incidences Natura 2000 (EIN)',
+    rubrique: 'Art. L.414-4 Code env. · Directive Habitats/Oiseaux',
+    organism: 'DDT(M) ou Préfecture du département',
+    delay: '2 à 6 mois',
+    docs: [
+      'Formulaire simplifié d\'évaluation des incidences (Cerfa n°14734)',
+      'Présentation du projet et de sa localisation vis-à-vis des zones N2000',
+      'Description des espèces et habitats susceptibles d\'être affectés',
+      'Analyse des incidences directes et indirectes',
+      'Mesures d\'atténuation (évitement, réduction, compensation)',
+      'Conclusion sur l\'absence d\'incidences significatives',
+    ],
+  },
+  znieff1_info: {
+    id: 'znieff1_info', type: 'info',
+    label: 'ZNIEFF type I — Inventaire écologique préalable recommandé',
+    rubrique: 'Inventaire ZNIEFF (non contraignant)',
+    organism: 'DREAL (pour information) · CSRPN de la région',
+    delay: '–',
+    docs: [
+      'Inventaire floristique et faunistique préliminaire',
+      'Vérification de l\'absence d\'espèces protégées (flore, faune)',
+      'Rapport d\'expertise écologique si espèces sensibles détectées',
+    ],
+  },
+};
+
+function determineProcedures(d, zones) {
+  const travaux  = d.travaux || [];
+  const details  = d.details || {};
+  const surfHa   = parseFloat(d.surface_ha) || 0;
+  const volHydro  = details.hydrocurage?.volume_m3 || 0;
+  const volCurage = details.curage
+    ? Math.round(surfHa * 10000 * (details.curage.pct_surface / 100) * (details.curage.prof_vase_cm / 100))
+    : 0;
+  const volTotal  = volHydro + volCurage;
+
+  const hasZH      = zones.some(z => z.type === 'zh');
+  const hasNatura  = zones.some(z => z.type === 'eco' && z.name.includes('Natura'));
+  const hasZNIEFF1 = zones.some(z => z.type === 'eco' && z.name.includes('ZNIEFF type I'));
+
+  const procs = [];
+
+  // Rubrique 3.2.3.0 — Curage plan d'eau
+  const hasCurage = travaux.includes('curage') || travaux.includes('hydrocurage');
+  if (hasCurage && volTotal > 0) {
+    if (volTotal >= 2000) {
+      procs.push({ ...PROC_TEMPLATES.curage_autorisation,
+        context: `Volume estimé : ${volTotal.toLocaleString('fr')} m³ — seuil d'autorisation ≥ 2 000 m³` });
+    } else if (volTotal >= 400) {
+      procs.push({ ...PROC_TEMPLATES.curage_declaration,
+        context: `Volume estimé : ${volTotal.toLocaleString('fr')} m³ — seuil de déclaration 400–2 000 m³` });
+    }
+  }
+
+  // Rubrique 3.3.1.0 — Zone humide
+  if (hasZH) {
+    const epSurf = (details.hydrocurage?.epandage_surface_m2 || 0) + (details.curage?.epandage_surface_m2 || 0);
+    const impactHa = epSurf > 0 ? epSurf / 10000 : surfHa;
+    if (impactHa >= 1) {
+      procs.push({ ...PROC_TEMPLATES.zh_autorisation,
+        context: `Surface concernée estimée : ${impactHa.toFixed(2)} ha — seuil d'autorisation ≥ 1 ha` });
+    } else if (impactHa >= 0.1) {
+      procs.push({ ...PROC_TEMPLATES.zh_declaration,
+        context: `Surface concernée estimée : ${impactHa.toFixed(2)} ha — seuil de déclaration 0,1–1 ha` });
+    } else {
+      procs.push({ ...PROC_TEMPLATES.zh_info,
+        context: `Surface concernée : ${(impactHa * 10000).toFixed(0)} m² (< 0,1 ha) — déclaration simplifiée recommandée` });
+    }
+  }
+
+  // EIN Natura 2000
+  if (hasNatura) {
+    const zoneNames = zones.filter(z => z.name.includes('Natura'))
+      .map(z => z.name + (z.siteName ? ` — ${z.siteName}` : '')).join(' · ');
+    procs.push({ ...PROC_TEMPLATES.natura_ein, context: zoneNames });
+  }
+
+  // ZNIEFF type I
+  if (hasZNIEFF1) {
+    const z = zones.find(z => z.name.includes('ZNIEFF type I'));
+    procs.push({ ...PROC_TEMPLATES.znieff1_info,
+      context: z?.siteName ? `Zone : ${z.siteName}` : 'Inventaire préliminaire recommandé' });
+  }
+
+  return procs;
+}
+
+function renderDemarchesHtml(d, zones, procs, saved) {
+  const statOpts = [
+    ['a_preparer', '📝 À préparer'],
+    ['en_cours',   '🔄 En cours'],
+    ['depose',     '📬 Déposé'],
+    ['obtenu',     '✅ Obtenu'],
+    ['sans_objet', '➖ Sans objet'],
+  ];
+
+  let html = '';
+
+  if (!zones.length && !procs.length) {
+    html += '<div class="demarche-none">✅ Aucune zone réglementaire détectée — aucune formalité spécifique identifiée à ce stade.<br><small style="font-size:.73rem;color:var(--gray-500)">Ces données sont indicatives. Une vérification définitive est effectuée lors de la visite technique.</small></div>';
+  } else if (!procs.length) {
+    html += '<div class="demarche-none">✅ Zones détectées mais volumes/surfaces en-deçà des seuils réglementaires — aucune formalité obligatoire identifiée.</div>';
+  } else {
+    procs.forEach(p => {
+      const sv = saved[p.id] || {};
+      const sel = sv.statut || 'a_preparer';
+      const docsChecked = sv.docs_checked || [];
+      const opts = statOpts.map(([v, l]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${l}</option>`).join('');
+      const docItems = p.docs.map((doc, i) => {
+        const checked = docsChecked.includes(i);
+        return `<li class="${checked ? 'checked' : ''}"><label>
+          <input type="checkbox" class="proc-doc-cb" data-proc="${p.id}" data-idx="${i}"${checked ? ' checked' : ''}>
+          ${esc(doc)}
+        </label></li>`;
+      }).join('');
+      html += `
+        <div class="demarche-card" data-proc="${p.id}">
+          <div class="demarche-head">
+            <span class="demarche-badge ${p.type}">${p.type === 'autorisation' ? 'Autorisation' : p.type === 'declaration' ? 'Déclaration' : p.type === 'ein' ? 'EIN' : 'Information'}</span>
+            <span class="demarche-title">${esc(p.label)}</span>
+            <select class="demarche-sel proc-statut-sel" data-proc="${p.id}">${opts}</select>
+          </div>
+          <div class="demarche-body">
+            <div class="demarche-meta">${esc(p.rubrique)} · <strong>${esc(p.organism)}</strong>${p.delay !== '–' ? ` · Délai indicatif : ${esc(p.delay)}` : ''}</div>
+            ${p.context ? `<div class="demarche-context">📊 ${esc(p.context)}</div>` : ''}
+            <div class="demarche-docs">
+              <div class="demarche-docs-lbl">Documents à préparer :</div>
+              <ul>${docItems}</ul>
+            </div>
+            <textarea class="demarche-note-ta proc-note" data-proc="${p.id}" placeholder="Notes internes…" rows="2">${esc(sv.note || '')}</textarea>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Zones détectées summary
+  if (zones.length) {
+    html += `<div style="margin-top:.6rem;font-size:.73rem;color:var(--gray-500)">
+      Zones détectées : ${zones.map(z => `${z.type === 'zh' ? '💧' : '🌿'} ${esc(z.name)}${z.siteName ? ` (${esc(z.siteName)})` : ''}`).join(' · ')}
+    </div>`;
+  }
+
+  // Fiche de données
+  html += `<div style="margin-top:1rem;border-top:1px solid var(--gray-200);padding-top:.9rem">
+    <div class="demarche-docs-lbl" style="margin-bottom:.4rem">📋 Fiche de données pour le dossier</div>
+    <div class="fiche-data" id="fiche-data">${buildFiche(d, zones, procs)}</div>
+    <button class="btn-copy-fiche" id="btn-copy-fiche">📋 Copier</button>
+  </div>`;
+
+  return html;
+}
+
+function buildFiche(d, zones, procs) {
+  const now = new Date().toLocaleDateString('fr-FR');
+  const details = d.details || {};
+  const lines = [
+    `FICHE DE DONNÉES CHANTIER — VANDAELE MARCEL & FILS`,
+    `Date : ${now}`,
+    '',
+    `DEMANDEUR`,
+    `Nom : ${d.prenom || ''} ${d.nom || ''}`.trim(),
+    `Profil : ${{ particulier:'Particulier', professionnel:'Professionnel', collectivite:'Collectivité', association:'Association', agriculteur:'Agriculteur' }[d.profil] || d.profil || '–'}`,
+    `Téléphone : ${d.telephone || '–'}`,
+    `Email : ${d.email || '–'}`,
+    '',
+    `LOCALISATION`,
+    `Adresse : ${d.adresse || '–'}`,
+  ];
+  if (d.lat && d.lng) lines.push(`Coordonnées GPS : ${d.lat.toFixed(6)}° N, ${d.lng.toFixed(6)}° E`);
+  lines.push('');
+  lines.push('PLAN D\'EAU');
+  if (d.surface_ha)   lines.push(`Surface : ${d.surface_ha} ha (${Math.round(d.surface_ha * 10000).toLocaleString('fr')} m²)`);
+  if (d.perimetre_ml) lines.push(`Périmètre : ${d.perimetre_ml} ml`);
+  lines.push('');
+  lines.push('TRAVAUX ENVISAGÉS');
+  if (details.hydrocurage) {
+    lines.push(`Type : Hydrocurage par aspiration`);
+    lines.push(`Volume de vase estimé : ${details.hydrocurage.volume_m3 || '–'} m³`);
+    lines.push(`Épaisseur de vase : ${details.hydrocurage.epaisseur_cm || '–'} cm`);
+    if (details.hydrocurage.destination_vase === 'sur-place') {
+      lines.push(`Destination vase : Épandage sur terrain (${details.hydrocurage.nature_terrain || '–'}, à ${details.hydrocurage.distance_depot_m || '–'} m)`);
+      if (details.hydrocurage.epandage_surface_m2) lines.push(`Surface épandage disponible : ${Math.round(details.hydrocurage.epandage_surface_m2).toLocaleString('fr')} m²`);
+    } else {
+      lines.push(`Destination vase : Évacuation par nos soins`);
+    }
+  }
+  if (details.curage) {
+    lines.push(`Type : Curage mécanique (drague / pelle amphibie)`);
+    lines.push(`Profondeur de vase : ${details.curage.prof_vase_cm || '–'} cm`);
+    lines.push(`Surface concernée : ${details.curage.pct_surface || '–'} %`);
+    if (details.curage.epandage_surface_m2) lines.push(`Surface épandage disponible : ${Math.round(details.curage.epandage_surface_m2).toLocaleString('fr')} m²`);
+  }
+  if (details.faucardage) lines.push(`Type : Faucardage (${details.faucardage.pct_couverture || '–'} % de la surface)`);
+  if (details.berges) lines.push(`Type : Défenses de berges — ${details.berges.longueur_ml || '–'} ml`);
+  if (d.acces) lines.push(`Accès chantier : ${{ facile:'Facile', moyen:'Moyen', difficile:'Difficile' }[d.acces] || d.acces}`);
+  if (d.infos_sup) { lines.push(''); lines.push('INFORMATIONS COMPLÉMENTAIRES'); lines.push(d.infos_sup); }
+  if (zones.length) {
+    lines.push('');
+    lines.push('CONTRAINTES RÉGLEMENTAIRES IDENTIFIÉES');
+    lines.push(`Zone humide (Loi sur l'eau) : ${zones.some(z => z.type === 'zh') ? 'Oui' : 'Non'}`);
+    lines.push(`Natura 2000 : ${zones.some(z => z.name.includes('Natura')) ? 'Oui' : 'Non'}`);
+    lines.push(`ZNIEFF : ${zones.some(z => z.name.includes('ZNIEFF')) ? 'Oui' : 'Non'}`);
+    if (procs.length) {
+      lines.push('');
+      lines.push('DÉMARCHES NÉCESSAIRES');
+      procs.forEach(p => lines.push(`- ${p.label}`));
+    }
+  }
+  lines.push('');
+  lines.push(`Estimation indicative : ${d.estimation_text || '–'}`);
+  return lines.join('\n');
+}
+
+function initDemarchesListeners(d, procs) {
+  // Statut dropdown
+  document.querySelectorAll('.proc-statut-sel').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const procId = sel.dataset.proc;
+      db.collection('demandes').doc(d.id).update({
+        [`demarches.${procId}.statut`]: sel.value,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      }).catch(err => console.error('Demarche statut update:', err));
+    });
+  });
+
+  // Document checkboxes
+  document.querySelectorAll('.proc-doc-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const procId  = cb.dataset.proc;
+      const idx     = parseInt(cb.dataset.idx);
+      const li      = cb.closest('li');
+      if (li) li.classList.toggle('checked', cb.checked);
+      // Collect all checked indices for this proc
+      const allCbs  = document.querySelectorAll(`.proc-doc-cb[data-proc="${procId}"]`);
+      const checked = [...allCbs].filter(c => c.checked).map(c => parseInt(c.dataset.idx));
+      db.collection('demandes').doc(d.id).update({
+        [`demarches.${procId}.docs_checked`]: checked,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      }).catch(err => console.error('Demarche docs update:', err));
+    });
+  });
+
+  // Note textareas (debounced)
+  const noteTimers = {};
+  document.querySelectorAll('.proc-note').forEach(ta => {
+    ta.addEventListener('input', () => {
+      const procId = ta.dataset.proc;
+      clearTimeout(noteTimers[procId]);
+      noteTimers[procId] = setTimeout(() => {
+        db.collection('demandes').doc(d.id).update({
+          [`demarches.${procId}.note`]: ta.value,
+          updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+        }).catch(err => console.error('Demarche note update:', err));
+      }, 900);
+    });
+  });
+
+  // Copy fiche
+  document.getElementById('btn-copy-fiche')?.addEventListener('click', () => {
+    const text = document.getElementById('fiche-data')?.textContent || '';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('btn-copy-fiche');
+      if (btn) { btn.textContent = '✅ Copié !'; setTimeout(() => { btn.textContent = '📋 Copier'; }, 2000); }
+    }).catch(() => {});
+  });
 }
