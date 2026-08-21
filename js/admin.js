@@ -81,6 +81,25 @@ document.getElementById('login-form')?.addEventListener('submit', async e => {
   }
 });
 
+document.getElementById('btn-google')?.addEventListener('click', async () => {
+  const btn  = document.getElementById('btn-google');
+  const errEl = document.getElementById('login-error');
+  btn.disabled    = true;
+  btn.textContent = 'Connexion…';
+  errEl.hidden    = true;
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch (err) {
+    errEl.textContent = err.code === 'auth/popup-closed-by-user'
+      ? 'Fenêtre fermée. Réessayez.'
+      : 'Connexion Google impossible. Réessayez.';
+    errEl.hidden = false;
+    btn.disabled    = false;
+    btn.innerHTML   = `<svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M47.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h13.2c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.6-4.3 7.3-10.6 7.3-17.5z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.2 16-5.9l-7.9-6c-2.2 1.5-5 2.3-8.1 2.3-6.2 0-11.5-4.2-13.4-9.9H2.5v6.2C6.5 42.9 14.7 48 24 48z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.5-.8-3.1-.8-4.5s.3-3 .8-4.5v-6.2H2.5C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l8.1-6.2z"/><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.9 2.3 30.4 0 24 0 14.7 0 6.5 5.1 2.5 13.3l8.1 6.2C12.5 13.7 17.8 9.5 24 9.5z"/></svg> Continuer avec Google`;
+  }
+});
+
 document.getElementById('logout-btn')?.addEventListener('click', () => auth.signOut());
 
 // ── LISTENER TEMPS RÉEL ───────────────────────────────────────
