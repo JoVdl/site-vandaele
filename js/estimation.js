@@ -161,9 +161,62 @@ function goToPanel(n) {
   });
 
   currentPanel = n;
-  if (n === 3) syncDetailSections();
+  if (n === 4) syncDetailSections();
+  if (n === 5) updatePanel5Fields();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   computeEstimation();
+}
+
+// ── PROBLÈMES → TRAVAUX ───────────────────────────────────────
+const PROBLEM_MAP = {
+  envase:     ['curage', 'hydrocurage'],
+  vegetation: ['faucardage'],
+  roseaux:    ['broyage-roseaux'],
+  berges:     ['berges'],
+  boisement:  ['broyage-forestier'],
+  inconnu:    ['diagnostic'],
+};
+
+window.applyProblems = function() {
+  const checked = document.querySelectorAll('input[name="problemes"]:checked');
+  const recommended = new Set();
+  checked.forEach(cb => (PROBLEM_MAP[cb.value] || []).forEach(t => recommended.add(t)));
+  if (!recommended.size) recommended.add('diagnostic');
+
+  document.querySelectorAll('input[name="travaux"]').forEach(cb => {
+    const should = recommended.has(cb.value);
+    cb.checked = should;
+    if (should) state.travaux.add(cb.value);
+    else state.travaux.delete(cb.value);
+  });
+
+  const note = document.getElementById('guided-note');
+  if (note) note.style.display = checked.length ? '' : 'none';
+
+  computeEstimation();
+  goToPanel(3);
+};
+
+// ── CHAMPS DYNAMIQUES PANEL 5 ─────────────────────────────────
+function updatePanel5Fields() {
+  const tc = state.typeClient;
+  const orgFields = document.getElementById('org-fields');
+  const orgLabel  = document.getElementById('c-org-label');
+  const orgInput  = document.getElementById('c-org');
+  const title     = document.getElementById('panel5-title');
+
+  if (tc === 'particulier') {
+    if (orgFields) orgFields.classList.remove('visible');
+  } else {
+    if (orgFields) orgFields.classList.add('visible');
+    const labels = { professionnel: 'Nom de la société *', collectivite: 'Nom de la collectivité *', association: "Nom de l'association *" };
+    const placeholders = { professionnel: 'Ex : SARL Martin Pêche, EARL Dupont…', collectivite: 'Ex : Mairie de Beaumont, CC du Ternois…', association: 'Ex : Association des pêcheurs du Ternois…' };
+    if (orgLabel) orgLabel.textContent = labels[tc] || 'Nom de la structure *';
+    if (orgInput) orgInput.placeholder = placeholders[tc] || '';
+  }
+
+  const titles = { particulier: '👤 Vos coordonnées', professionnel: '🏢 Coordonnées professionnelles', collectivite: '🏛️ Coordonnées de la collectivité', association: "🤝 Coordonnées de l'association" };
+  if (title) title.textContent = titles[tc] || '👤 Vos coordonnées';
 }
 
 // ── SYNC DETAIL SECTIONS ──────────────────────────────────────
@@ -1137,7 +1190,11 @@ async function submitEstimation() {
     Nom:         nom,
     Email:       email,
     Téléphone:   tel,
-    Profil:      document.getElementById('c-profil')?.value || '',
+    'Type client': state.typeClient,
+    ...(state.typeClient !== 'particulier' ? {
+      Organisation: document.getElementById('c-org')?.value?.trim() || '',
+      Fonction:     document.getElementById('c-fonction')?.value?.trim() || '',
+    } : {}),
     Délai:       document.getElementById('c-delai')?.value || '',
     'Adresse chantier':       document.getElementById('adresse')?.value || 'Non renseignée',
     'Surface (ha)':           state.surface  || 'Non mesurée',
@@ -1195,7 +1252,9 @@ async function submitEstimation() {
       await db.collection('demandes').add({
         type: 'estimation',
         prenom, nom, email, telephone: tel,
-        profil:          document.getElementById('c-profil')?.value || '',
+        type_client:     state.typeClient,
+        organisation:    document.getElementById('c-org')?.value?.trim() || '',
+        fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
         delai:           document.getElementById('c-delai')?.value  || '',
         adresse:         document.getElementById('adresse')?.value  || '',
         surface_ha:      state.surface   || null,

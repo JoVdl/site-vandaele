@@ -159,38 +159,115 @@
     }
     @media (max-width: 600px) { .travaux-grid { grid-template-columns: 1fr 1fr; } }
 
+    .travail-toggle { position: relative; }
     .travail-toggle input[type="checkbox"] {
       position: absolute; opacity: 0; width: 0; height: 0;
     }
     .travail-toggle label {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: .4rem;
-      padding: 1.1rem .75rem;
+      align-items: stretch;
+      gap: 0; padding: 0;
+      border: 2.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      cursor: pointer; overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      user-select: none; position: relative; background: var(--white);
+    }
+    .travail-toggle label .t-icon-img {
+      width: 100%; height: 110px;
+      object-fit: cover; display: block;
+      transition: filter var(--transition), transform .35s;
+      filter: saturate(.8);
+    }
+    .travail-toggle label .t-label {
+      padding: .6rem .7rem;
+      font-size: .82rem; font-weight: 600;
+      color: var(--gray-700); text-align: center;
+      line-height: 1.35; background: var(--white);
+      transition: background var(--transition), color var(--transition);
+      border-top: 1px solid var(--gray-100);
+    }
+    .travail-toggle label::after {
+      content: '✓';
+      position: absolute; top: 6px; right: 6px;
+      width: 22px; height: 22px;
+      background: var(--blue-500); color: #fff;
+      border-radius: 50%; font-size: .7rem; font-weight: 800;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    }
+    .travail-toggle input:checked + label { border-color: var(--blue-500); box-shadow: 0 0 0 1px var(--blue-200); }
+    .travail-toggle input:checked + label::after { display: flex; }
+    .travail-toggle input:checked + label .t-icon-img { filter: saturate(1.1); }
+    .travail-toggle input:checked + label .t-label { background: var(--blue-50); color: var(--blue-700); }
+    .travail-toggle label:hover { border-color: var(--blue-200); }
+    .travail-toggle label:hover .t-icon-img { filter: saturate(1); transform: scale(1.04); }
+    /* Diagnostic : pleine largeur horizontal */
+    .travaux-grid > .travail-toggle:last-child { grid-column: 1 / -1; }
+    .travaux-grid > .travail-toggle:last-child label { flex-direction: row; }
+    .travaux-grid > .travail-toggle:last-child label .t-icon-img {
+      width: 160px; min-width: 160px; height: auto; max-height: 110px;
+      border-top: none; border-right: 1px solid var(--gray-100);
+    }
+    .travaux-grid > .travail-toggle:last-child label .t-label {
+      text-align: left; border-top: none; padding: .85rem 1.1rem;
+      display: flex; align-items: center; font-size: .88rem;
+    }
+    @media (max-width: 480px) {
+      .travaux-grid > .travail-toggle:last-child label { flex-direction: column; }
+      .travaux-grid > .travail-toggle:last-child label .t-icon-img { width: 100%; max-height: 80px; min-width: unset; }
+    }
+
+    /* ── MODE TOGGLE PANEL 2 ── */
+    .mode-tabs { display: flex; gap: .4rem; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 2px solid var(--gray-100); }
+    .mode-tab {
+      flex: 1; padding: .65rem .75rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-size: .82rem; font-weight: 600;
+      cursor: pointer; background: var(--white);
+      color: var(--gray-600); font-family: inherit;
+      transition: all var(--transition); text-align: center;
+    }
+    .mode-tab:hover { border-color: var(--blue-300); color: var(--blue-700); }
+    .mode-tab.active { border-color: var(--blue-500); background: var(--blue-50); color: var(--blue-700); }
+
+    /* ── PROBLEME CARDS ── */
+    .problemes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .65rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 600px) { .problemes-grid { grid-template-columns: 1fr 1fr; } }
+    .probleme-toggle { position: relative; }
+    .probleme-toggle input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .probleme-toggle label {
+      display: flex; flex-direction: column;
       border: 2px solid var(--gray-200);
       border-radius: var(--radius-md);
-      cursor: pointer;
+      cursor: pointer; overflow: hidden;
       transition: all var(--transition);
-      font-size: .82rem;
-      font-weight: 600;
-      color: var(--gray-700);
-      text-align: center;
-      user-select: none;
+      font-size: .78rem; font-weight: 600;
+      color: var(--gray-700); user-select: none;
+      background: var(--white);
     }
-    .travail-toggle label .t-icon { font-size: 1.8rem; line-height: 1; }
-    .travail-toggle label .t-icon-img {
-      width: 72px;
-      height: 52px;
-      object-fit: cover;
-      border-radius: 6px;
-      display: block;
-      transition: filter var(--transition), opacity var(--transition);
-      filter: saturate(.85);
+    .probleme-toggle label .prob-img {
+      width: 100%; height: 72px; object-fit: cover; display: block;
+      filter: saturate(.8); transition: filter var(--transition);
     }
-    .travail-toggle input:checked + label .t-icon-img {
-      filter: saturate(1.1);
+    .probleme-toggle label .prob-text { padding: .45rem .6rem; line-height: 1.35; }
+    .probleme-toggle input:checked + label {
+      border-color: var(--blue-500); color: var(--blue-700);
     }
+    .probleme-toggle input:checked + label .prob-img { filter: saturate(1.1); }
+    .probleme-toggle label:hover { border-color: var(--blue-200); }
+    .guided-result-btn { width: 100%; margin-top: .5rem; }
+
+    /* ── CHAMPS DYNAMIQUES CLIENT ── */
+    .org-fields { display: none; }
+    .org-fields.visible { display: block; }
     .travail-toggle input:checked + label {
       border-color: var(--blue-500);
       background: var(--blue-50);
@@ -644,15 +721,19 @@
       </div>
       <div class="step-item" data-step="2">
         <div class="step-circle">2</div>
-        <div class="step-label">Type de travaux</div>
+        <div class="step-label">Problèmes</div>
       </div>
       <div class="step-item" data-step="3">
         <div class="step-circle">3</div>
-        <div class="step-label">Détails</div>
+        <div class="step-label">Travaux</div>
       </div>
       <div class="step-item" data-step="4">
         <div class="step-circle">4</div>
-        <div class="step-label">Vos coordonnées</div>
+        <div class="step-label">Détails</div>
+      </div>
+      <div class="step-item" data-step="5">
+        <div class="step-circle">5</div>
+        <div class="step-label">Coordonnées</div>
       </div>
     </div>
 
@@ -764,71 +845,131 @@
           </div>
         </div>
 
-        <!-- ===== PANEL 2 – TYPE DE TRAVAUX ===== -->
+        <!-- ===== PANEL 2 – PROBLÈMES ===== -->
         <div class="est-panel" id="panel-2">
           <div class="contact-form" style="padding:2rem;">
+            <div class="form-section-title">🔎 Problèmes observés sur votre étang</div>
+            <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.5rem;">Cochez tout ce que vous observez. Nous présélectionnerons les travaux adaptés à l'étape suivante — vous pourrez les ajuster.</p>
+
+            <div class="problemes-grid">
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-envase" name="problemes" value="envase" />
+                <label for="p-envase">
+                  <img class="prob-img" src="assets/img/curage-mecanique-1.jpg" alt="Étang envasé" />
+                  <span class="prob-text">Étang envasé / manque de profondeur</span>
+                </label>
+              </div>
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-vegetation" name="problemes" value="vegetation" />
+                <label for="p-vegetation">
+                  <img class="prob-img" src="assets/img/faucardage-et-suppression-de-vegetation.jpg" alt="Plantes envahissantes" />
+                  <span class="prob-text">Plantes aquatiques envahissantes (nénuphars, herbes…)</span>
+                </label>
+              </div>
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-roseaux" name="problemes" value="roseaux" />
+                <label for="p-roseaux">
+                  <img class="prob-img" src="assets/img/fauchage-de-roseaux-avec-exportation.jpg" alt="Roseaux envahissants" />
+                  <span class="prob-text">Roseaux qui colonisent les berges</span>
+                </label>
+              </div>
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-berges" name="problemes" value="berges" />
+                <label for="p-berges">
+                  <img class="prob-img" src="assets/img/defense-de-berges-1.jpg" alt="Berges érodées" />
+                  <span class="prob-text">Berges qui s'effondrent ou s'érodent</span>
+                </label>
+              </div>
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-boisement" name="problemes" value="boisement" />
+                <label for="p-boisement">
+                  <img class="prob-img" src="assets/img/travaux-en-marais.jpg" alt="Végétation ligneuse" />
+                  <span class="prob-text">Arbres / arbustes envahissants sur les berges</span>
+                </label>
+              </div>
+              <div class="probleme-toggle">
+                <input type="checkbox" id="p-inconnu" name="problemes" value="inconnu" />
+                <label for="p-inconnu">
+                  <img class="prob-img" src="assets/img/diagnostic-terrain.jpg" alt="Diagnostic" />
+                  <span class="prob-text">Je ne sais pas — besoin d'un expert sur place</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="panel-nav">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(1)">← Retour</button>
+              <button class="btn btn-primary" type="button" onclick="applyProblems()">
+                Voir les travaux recommandés
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PANEL 3 – TYPE DE TRAVAUX ===== -->
+        <div class="est-panel" id="panel-3">
+          <div class="contact-form" style="padding:2rem;">
             <div class="form-section-title">🔧 Type de travaux souhaités</div>
-            <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.5rem;">Sélectionnez un ou plusieurs types de travaux. Vous pourrez préciser les détails à l'étape suivante.</p>
+            <div id="guided-note" style="display:none; background:var(--blue-50); border:1px solid var(--blue-100); border-radius:var(--radius-sm); padding:.6rem 1rem; font-size:.82rem; color:var(--blue-700); margin-bottom:1.25rem;">
+              ✨ Présélectionnés selon vos problèmes — ajustez librement.
+            </div>
+            <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.25rem;">Sélectionnez un ou plusieurs types de travaux.</p>
 
             <div class="travaux-grid">
               <div class="travail-toggle">
                 <input type="checkbox" id="t-hydrocurage" name="travaux" value="hydrocurage" />
                 <label for="t-hydrocurage">
                   <img class="t-icon-img" src="assets/img/curage-de-lagunes.jpg" alt="Hydrocurage" />
-                  Hydrocurage /<br>Curage par aspiration
+                  <span class="t-label">Hydrocurage / Curage par aspiration</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-curage" name="travaux" value="curage" />
                 <label for="t-curage">
                   <img class="t-icon-img" src="assets/img/curage-mecanique-1.jpg" alt="Curage mécanique" />
-                  Curage mécanique
+                  <span class="t-label">Curage mécanique</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-faucardage" name="travaux" value="faucardage" />
                 <label for="t-faucardage">
                   <img class="t-icon-img" src="assets/img/bateau-faucardeur.jpg" alt="Faucardage" />
-                  Faucardage
+                  <span class="t-label">Faucardage</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-berges" name="travaux" value="berges" />
                 <label for="t-berges">
                   <img class="t-icon-img" src="assets/img/defenses-de-berges.jpg" alt="Défenses de berges" />
-                  Défenses de berges
+                  <span class="t-label">Défenses de berges</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-broyage-forestier" name="travaux" value="broyage-forestier" />
                 <label for="t-broyage-forestier">
                   <img class="t-icon-img" src="assets/img/travaux-en-marais.jpg" alt="Broyage forestier" />
-                  Broyage forestier
+                  <span class="t-label">Broyage forestier</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-broyage-roseaux" name="travaux" value="broyage-roseaux" />
                 <label for="t-broyage-roseaux">
                   <img class="t-icon-img" src="assets/img/fauchage-de-roseaux-avec-exportation.jpg" alt="Broyage de roseaux" />
-                  Broyage de roseaux
+                  <span class="t-label">Broyage de roseaux</span>
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-diagnostic" name="travaux" value="diagnostic" />
                 <label for="t-diagnostic">
                   <img class="t-icon-img" src="assets/img/diagnostic-terrain.jpg" alt="Diagnostic" />
-                  Diagnostic
+                  <span class="t-label">Diagnostic &amp; visite technique gratuite</span>
                 </label>
               </div>
             </div>
 
-            <div class="disclaimer">
-              ℹ️ Vous ne savez pas exactement ce dont vous avez besoin ? Cochez « Diagnostic » et nous ferons une visite technique gratuite pour vous conseiller.
-            </div>
-
             <div class="panel-nav">
-              <button class="btn btn-outline" type="button" onclick="goToPanel(1)">← Retour</button>
-              <button class="btn btn-primary" type="button" onclick="goToPanel(3)">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(2)">← Retour</button>
+              <button class="btn btn-primary" type="button" onclick="goToPanel(4)">
                 Étape suivante
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
@@ -836,8 +977,8 @@
           </div>
         </div>
 
-        <!-- ===== PANEL 3 – DÉTAILS ===== -->
-        <div class="est-panel" id="panel-3">
+        <!-- ===== PANEL 4 – DÉTAILS ===== -->
+        <div class="est-panel" id="panel-4">
           <div class="contact-form" style="padding:2rem;">
             <div class="form-section-title">📋 Détails des travaux</div>
 
@@ -1116,8 +1257,8 @@
             </div>
 
             <div class="panel-nav">
-              <button class="btn btn-outline" type="button" onclick="goToPanel(2)">← Retour</button>
-              <button class="btn btn-primary" type="button" onclick="goToPanel(4)">
+              <button class="btn btn-outline" type="button" onclick="goToPanel(3)">← Retour</button>
+              <button class="btn btn-primary" type="button" onclick="goToPanel(5)">
                 Étape suivante
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
@@ -1125,11 +1266,23 @@
           </div>
         </div>
 
-        <!-- ===== PANEL 4 – COORDONNÉES ===== -->
-        <div class="est-panel" id="panel-4">
+        <!-- ===== PANEL 5 – COORDONNÉES ===== -->
+        <div class="est-panel" id="panel-5">
           <div class="contact-form" style="padding:2rem;">
-            <div class="form-section-title">👤 Vos coordonnées</div>
+            <div class="form-section-title" id="panel5-title">👤 Vos coordonnées</div>
             <p style="color:var(--gray-500); font-size:.9rem; margin-bottom:1.5rem;">Pour recevoir votre estimation détaillée et être contacté par notre équipe.</p>
+
+            <!-- Champs dynamiques selon type client -->
+            <div class="org-fields" id="org-fields">
+              <div class="form-group">
+                <label for="c-org" id="c-org-label">Nom de la structure *</label>
+                <input type="text" id="c-org" placeholder="" />
+              </div>
+              <div class="form-group">
+                <label for="c-fonction">Votre fonction</label>
+                <input type="text" id="c-fonction" placeholder="Ex : Directeur technique, Maire, Président…" />
+              </div>
+            </div>
 
             <div class="form-row">
               <div class="form-group">
@@ -1154,17 +1307,6 @@
             </div>
 
             <div class="form-group">
-              <label for="c-profil">Vous êtes</label>
-              <select id="c-profil">
-                <option value="particulier">Particulier (propriétaire d'étang)</option>
-                <option value="association">Association (pêche, chasse…)</option>
-                <option value="collectivite">Collectivité (commune, communauté de communes)</option>
-                <option value="agriculteur">Agriculteur / Exploitation agricole</option>
-                <option value="autre">Autre</option>
-              </select>
-            </div>
-
-            <div class="form-group">
               <label for="c-delai">Délai envisagé pour les travaux</label>
               <select id="c-delai">
                 <option value="urgent">Urgent – dès que possible</option>
@@ -1183,7 +1325,7 @@
             </div>
 
             <div class="panel-nav">
-              <button class="btn btn-outline" type="button" onclick="goToPanel(3)">← Retour</button>
+              <button class="btn btn-outline" type="button" onclick="goToPanel(4)">← Retour</button>
               <button class="btn btn-primary btn-lg" type="button" id="btn-submit" onclick="submitEstimation()">
                 Envoyer ma demande
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
@@ -1222,7 +1364,7 @@
           </div>
 
           <div class="result-actions">
-            <button class="btn btn-white" type="button" onclick="goToPanel(4)" id="btn-devis-card">
+            <button class="btn btn-white" type="button" onclick="goToPanel(5)" id="btn-devis-card">
               Envoyer ma demande de devis
             </button>
           </div>
