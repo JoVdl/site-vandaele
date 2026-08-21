@@ -188,7 +188,7 @@ async function trackAbandon(panel) {
   const update = { last_panel: panel, updated_at: firebase.firestore.FieldValue.serverTimestamp() };
   if (abandonDocId) {
     db.collection('abandons').doc(abandonDocId).update(update).catch(() => {});
-  } else if (panel > 1) {
+  } else {
     try {
       const ref = await db.collection('abandons').add({
         session_id: sessionId,
@@ -1588,3 +1588,4 @@ function showToast(msg, type) {
 }
 
 computeEstimation();
+trackAbandon(1); // Enregistre la session dès l'ouverture de l'outil
