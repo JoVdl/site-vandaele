@@ -138,6 +138,8 @@ const state = {
   avecRamassage: false,
   // Profil client
   typeClient: 'particulier',
+  // Zone de travaux
+  zoneType: 'etang',
   // Infos libres
   infosSup: '',
   geojson: null,
@@ -161,10 +163,119 @@ function goToPanel(n) {
   });
 
   currentPanel = n;
-  if (n === 4) syncDetailSections();
+  if (n === 2) renderProblems();
+  if (n === 4) {
+    syncDetailSections();
+    setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 50);
+  }
   if (n === 5) updatePanel5Fields();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   computeEstimation();
+}
+
+// ── ZONE CONFIG (problèmes affichés selon type de zone) ───────
+const ZONE_CONFIG = {
+  etang: {
+    title: '🔎 Problèmes rencontrés sur votre étang',
+    subtitle: 'Cochez tout ce que vous observez. Nous présélectionnerons les travaux adaptés — vous pourrez les ajuster.',
+    problems: [
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Manque de profondeur / envasement',       desc: 'Le fond remonte, l\'eau est peu profonde' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Plantes aquatiques envahissantes',          desc: 'Nénuphars, herbiers, algues en surface' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux qui colonisent les berges',        desc: 'Phragmites ou massettes qui s\'étendent' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges qui s\'effondrent ou s\'érodent',    desc: 'Affaissements, éboulements de talus' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Végétation ligneuse envahissante',          desc: 'Arbres/arbustes qui empiètent sur les berges' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Je ne sais pas — besoin d\'un expert',     desc: 'Diagnostic gratuit sur place' },
+    ],
+  },
+  'etangs-multiples': {
+    title: '🔎 Problèmes rencontrés sur vos étangs',
+    subtitle: 'Cochez les problèmes observés — ils peuvent concerner un ou plusieurs étangs.',
+    problems: [
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Manque de profondeur / envasement',       desc: 'Un ou plusieurs bassins ensablés' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Plantes aquatiques envahissantes',          desc: 'Nénuphars, herbiers, algues' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux sur les berges',                   desc: 'Colonisation des bords' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges dégradées',                         desc: 'Effondrements, érosion des talus' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Végétation ligneuse',                       desc: 'Arbres/arbustes à débroussailler' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Besoin d\'un diagnostic global',           desc: 'Visite technique gratuite' },
+    ],
+  },
+  riviere: {
+    title: '🔎 Problèmes rencontrés sur votre cours d\'eau',
+    subtitle: 'Cochez les problèmes observés sur la rivière ou le ruisseau.',
+    problems: [
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Lit encombré / envasé',                    desc: 'Accumulation de vase, manque de débit' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Végétation aquatique dense',                desc: 'Plantes qui freinent l\'écoulement' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux sur les berges',                   desc: 'Colonisation des rives' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges qui s\'érodent',                    desc: 'Affouillement, éboulements de rive' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Embâcles / végétation ligneuse',           desc: 'Arbres tombés, branches obstruant le lit' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Besoin d\'un diagnostic',                  desc: 'Visite technique gratuite' },
+    ],
+  },
+  fosse: {
+    title: '🔎 Problèmes rencontrés sur votre fossé / canal',
+    subtitle: 'Cochez les problèmes observés.',
+    problems: [
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Fossé colmaté / envasé',                   desc: 'Mauvaise évacuation des eaux' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Végétation qui obstrue',                    desc: 'Herbes, lentilles d\'eau, algues' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux envahissants',                     desc: 'Colonisation des berges du fossé' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Talus abîmés',                             desc: 'Berges affaissées ou érodées' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Végétation ligneuse sur les bords',        desc: 'Broussailles, arbres à abattre' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Besoin d\'un diagnostic',                  desc: 'Visite technique gratuite' },
+    ],
+  },
+  marais: {
+    title: '🔎 Problèmes rencontrés sur votre zone humide',
+    subtitle: 'Cochez les situations observées sur la zone marais.',
+    problems: [
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux / roselières trop denses',         desc: 'Extension incontrôlée des phragmites' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Lignification de la zone humide',           desc: 'Arbres/arbustes qui colonisent le marais' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Plantes envahissantes (jussie, etc.)',       desc: 'Espèces invasives à contrôler' },
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Atterrissement / envasement',              desc: 'Perte de surface en eau' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges dégradées',                         desc: 'Effondrements de talus' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Besoin d\'un diagnostic',                  desc: 'Visite technique gratuite' },
+    ],
+  },
+  boisement: {
+    title: '🔎 Travaux souhaités sur votre zone boisée',
+    subtitle: 'Cochez les travaux ou problèmes identifiés sur la zone.',
+    problems: [
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Débroussaillage / broyage forestier',      desc: 'Végétation ligneuse à abattre et broyer' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux ou fougères envahissants',         desc: 'Végétation basse dense' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges boisées à sécuriser',               desc: 'Talus à renforcer ou à stabiliser' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Besoin d\'un diagnostic / devis',          desc: 'Visite technique gratuite' },
+    ],
+  },
+  autre: {
+    title: '🔎 Décrivez votre situation',
+    subtitle: 'Cochez les problèmes les plus proches de votre situation — nous adapterons notre proposition.',
+    problems: [
+      { id: 'envase',    img: 'assets/img/curage-mecanique-1.jpg',                     label: 'Envasement / accumulation de vase',       desc: 'Fond qui remonte, eau peu profonde' },
+      { id: 'vegetation',img: 'assets/img/faucardage-et-suppression-de-vegetation.jpg',label: 'Végétation aquatique envahissante',         desc: 'Plantes qui couvrent la surface' },
+      { id: 'roseaux',   img: 'assets/img/fauchage-de-roseaux-avec-exportation.jpg',   label: 'Roseaux / végétation dense',               desc: 'Colonisation des berges' },
+      { id: 'berges',    img: 'assets/img/defense-de-berges-1.jpg',                    label: 'Berges dégradées',                         desc: 'Effondrements, érosion' },
+      { id: 'boisement', img: 'assets/img/travaux-en-marais.jpg',                      label: 'Végétation ligneuse',                       desc: 'Arbres/arbustes à gérer' },
+      { id: 'inconnu',   img: 'assets/img/diagnostic-terrain.jpg',                     label: 'Autre / besoin d\'un expert',              desc: 'Diagnostic gratuit sur place' },
+    ],
+  },
+};
+
+function renderProblems() {
+  const cfg = ZONE_CONFIG[state.zoneType] || ZONE_CONFIG.etang;
+  const grid = document.getElementById('problemes-grid');
+  const title = document.getElementById('panel2-title');
+  const subtitle = document.getElementById('panel2-subtitle');
+  if (title) title.textContent = cfg.title;
+  if (subtitle) subtitle.textContent = cfg.subtitle;
+  if (!grid) return;
+  grid.innerHTML = cfg.problems.map(p => `
+    <div class="probleme-toggle">
+      <input type="checkbox" id="p-${p.id}" name="problemes" value="${p.id}" />
+      <label for="p-${p.id}">
+        <img class="prob-img" src="${p.img}" alt="${p.label}" loading="lazy" />
+        <span class="prob-text">${p.label}<span class="prob-desc">${p.desc}</span></span>
+      </label>
+    </div>
+  `).join('');
 }
 
 // ── PROBLÈMES → TRAVAUX ───────────────────────────────────────
@@ -288,6 +399,12 @@ const surfInputEl = document.getElementById('surface');
 if (surfInputEl) surfInputEl.addEventListener('input', () => updateSurfaceHint(parseFloat(surfInputEl.value) || 0));
 bindInput('perimetre', 'perimetre', v => parseFloat(v) || 0);
 bindInput('infos-sup', 'infosSup',  v => v);
+
+document.querySelectorAll('input[name="zone-type"]').forEach(r => {
+  r.addEventListener('change', () => {
+    state.zoneType = r.value;
+  });
+});
 
 document.querySelectorAll('input[name="type-client"]').forEach(r => {
   r.addEventListener('change', () => {
@@ -618,10 +735,12 @@ if (adresseInput) {
 }
 
 // ── CARTE LEAFLET ─────────────────────────────────────────────
+let leafletMap = null;
 const mapEl = document.getElementById('leaflet-map');
 if (mapEl && typeof L !== 'undefined') {
 
   const map = L.map('leaflet-map', { zoomControl: true }).setView([46.8, 2.3], 6);
+  leafletMap = map;
 
   const ignOrtho = L.tileLayer(
     'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
@@ -1191,6 +1310,7 @@ async function submitEstimation() {
     Email:       email,
     Téléphone:   tel,
     'Type client': state.typeClient,
+    'Zone de travaux': state.zoneType,
     ...(state.typeClient !== 'particulier' ? {
       Organisation: document.getElementById('c-org')?.value?.trim() || '',
       Fonction:     document.getElementById('c-fonction')?.value?.trim() || '',
@@ -1253,6 +1373,7 @@ async function submitEstimation() {
         type: 'estimation',
         prenom, nom, email, telephone: tel,
         type_client:     state.typeClient,
+        zone_type:       state.zoneType,
         organisation:    document.getElementById('c-org')?.value?.trim() || '',
         fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
         delai:           document.getElementById('c-delai')?.value  || '',
