@@ -272,11 +272,10 @@
     /* ── ZONE TYPE CARDS ── */
     .zone-type-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: .6rem; margin: 0 0 2rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem; margin: 0 0 2rem;
     }
-    @media (max-width: 700px) { .zone-type-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 440px) { .zone-type-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .zone-type-grid { grid-template-columns: repeat(2, 1fr); } }
     .zone-toggle { position: relative; }
     .zone-toggle input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .zone-toggle label {
@@ -286,21 +285,34 @@
       cursor: pointer; overflow: hidden;
       transition: border-color var(--transition), box-shadow var(--transition);
       text-align: center; user-select: none; background: var(--white);
+      height: 100%;
     }
     .zone-toggle .zone-img {
-      width: 100%; height: 75px; object-fit: cover; display: block;
+      width: 100%; height: 115px; object-fit: cover; display: block;
       filter: saturate(.8); transition: filter var(--transition), transform .35s;
     }
     .zone-toggle .zone-label {
-      padding: .5rem .4rem .45rem; font-size: .75rem; font-weight: 600;
-      color: var(--gray-700); line-height: 1.3;
+      padding: .6rem .6rem .55rem; font-size: .82rem; font-weight: 600;
+      color: var(--gray-700); line-height: 1.35;
       border-top: 1px solid var(--gray-100); background: var(--white);
+      flex: 1; display: flex; align-items: center; justify-content: center;
     }
     .zone-toggle input:checked + label { border-color: var(--blue-500); box-shadow: 0 0 0 1px var(--blue-200); }
     .zone-toggle input:checked + label .zone-img { filter: saturate(1.1); }
     .zone-toggle input:checked + label .zone-label { background: var(--blue-50); color: var(--blue-700); }
     .zone-toggle label:hover { border-color: var(--blue-200); }
     .zone-toggle label:hover .zone-img { filter: saturate(1); transform: scale(1.04); }
+    /* "Autre" prend toute la largeur sur la dernière ligne */
+    .zone-type-grid .zone-toggle:last-child { grid-column: 1 / -1; }
+    .zone-type-grid .zone-toggle:last-child label { flex-direction: row; }
+    .zone-type-grid .zone-toggle:last-child .zone-img {
+      width: 160px; min-width: 160px; height: auto; max-height: 90px;
+    }
+    .zone-type-grid .zone-toggle:last-child .zone-label {
+      justify-content: flex-start; text-align: left;
+      border-top: none; border-left: 1px solid var(--gray-100);
+      padding: .85rem 1.1rem; font-size: .88rem;
+    }
 
     /* ── PROBLEM DESCRIPTION ── */
     .prob-desc { display: block; font-size: .72rem; font-weight: 400; color: var(--gray-500); margin-top: .2rem; line-height: 1.4; }
