@@ -108,6 +108,55 @@ let sessionCompleted  = false;
 let abandonReasonSaved = false;
 const sessionId       = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const sessionDevice   = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+
+// ── MÉTADONNÉES SESSION ───────────────────────────────────────
+const sessionMeta = (() => {
+  // Compteur de visites sur l'outil (localStorage)
+  let visits = { count: 1, first: null };
+  try {
+    const stored = JSON.parse(localStorage.getItem('cv_est_visits') || 'null');
+    const now = new Date().toISOString();
+    visits = { count: (stored?.count || 0) + 1, first: stored?.first || now };
+    localStorage.setItem('cv_est_visits', JSON.stringify(visits));
+  } catch (_) { /* localStorage indisponible (navigation privée) */ }
+
+  // Source de trafic
+  const ref = document.referrer || '';
+  let source = 'direct';
+  if (ref) {
+    if (/google\./i.test(ref))    source = 'Google';
+    else if (/bing\./i.test(ref)) source = 'Bing';
+    else if (/facebook\.|fb\./i.test(ref)) source = 'Facebook';
+    else if (/instagram\./i.test(ref))     source = 'Instagram';
+    else if (/linkedin\./i.test(ref))      source = 'LinkedIn';
+    else if (/yahoo\./i.test(ref))         source = 'Yahoo';
+    else { try { source = new URL(ref).hostname.replace('www.', ''); } catch (_) { source = ref; } }
+  }
+
+  return {
+    visit_count:     visits.count,
+    first_visit:     visits.first,
+    referrer:        ref || 'direct',
+    referrer_source: source,
+    language:        navigator.language || null,
+    timezone:        (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (_) { return null; } })(),
+    screen:          `${screen.width}×${screen.height}`,
+    connection:      navigator.connection?.effectiveType || null,
+  };
+})();
+
+// Géolocalisation IP (non bloquante, résultat mis en cache dans la promesse)
+const geoPromise = (async () => {
+  try {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res   = await fetch('https://ipapi.co/json/', { signal: ctrl.signal });
+    clearTimeout(timer);
+    const d = await res.json();
+    return { geo_city: d.city || null, geo_region: d.region || null, geo_country: d.country_name || null };
+  } catch (_) { return {}; }
+})();
+
 let currentPanel = 1;
 const state = {
   surface: 0,
@@ -193,14 +242,20 @@ async function trackAbandon(panel) {
     db.collection('abandons').doc(abandonDocId).update(update).catch(() => {});
   } else {
     try {
-      const ref = await db.collection('abandons').add({
+      const docRef = await db.collection('abandons').add({
         session_id: sessionId,
-        device: sessionDevice,
-        completed: false,
+        device:     sessionDevice,
+        completed:  false,
         created_at: firebase.firestore.FieldValue.serverTimestamp(),
+        ...sessionMeta,
         ...update,
       });
-      abandonDocId = ref.id;
+      abandonDocId = docRef.id;
+      // Mise à jour géo en arrière-plan (non bloquant)
+      geoPromise.then(geo => {
+        if (abandonDocId && Object.keys(geo).length)
+          db.collection('abandons').doc(abandonDocId).update(geo).catch(() => {});
+      });
     } catch (e) { console.error('[Firebase] Abandon tracking:', e); }
   }
 }
@@ -1368,6 +1423,7 @@ async function saveDemandeToFirestore() {
   const email      = document.getElementById('c-email')?.value?.trim();
   const tel        = document.getElementById('c-tel')?.value?.trim();
   const estimation = document.getElementById('result-total-amount')?.textContent || 'Non calculée';
+  const geo = await geoPromise;
   try {
     const docRef = await db.collection('demandes').add({
       type: 'estimation',
@@ -1400,6 +1456,8 @@ async function saveDemandeToFirestore() {
       lng_epandage_curage:     state.epandageCentroidCurage?.lng || null,
       statut:          'nouveau',
       created_at:      firebase.firestore.FieldValue.serverTimestamp(),
+      ...sessionMeta,
+      ...geo,
     });
     currentDocId     = docRef.id;
     sessionCompleted = true;

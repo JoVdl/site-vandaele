@@ -566,6 +566,25 @@ function buildAbandonsHtml(docs) {
   const desktop = docs.filter(d => d.device === 'desktop').length;
   const unknownDev = total - mobile - desktop;
 
+  // Sources de trafic
+  const sourceCounts = {};
+  docs.filter(d => d.referrer_source).forEach(d => {
+    sourceCounts[d.referrer_source] = (sourceCounts[d.referrer_source] || 0) + 1;
+  });
+  const sourceEntries = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]);
+
+  // Pays
+  const countryCounts = {};
+  docs.filter(d => d.geo_country).forEach(d => {
+    countryCounts[d.geo_country] = (countryCounts[d.geo_country] || 0) + 1;
+  });
+  const countryEntries = Object.entries(countryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Nouveaux vs revenants
+  const firstTimers  = docs.filter(d => d.visit_count === 1).length;
+  const returning    = docs.filter(d => d.visit_count > 1).length;
+  const unknownVisit = total - firstTimers - returning;
+
   return `
     <div class="ab-stats-block">
 
@@ -635,6 +654,54 @@ function buildAbandonsHtml(docs) {
             </div>`;
         }).join('')}
       </div>
+
+      ${sourceEntries.length ? `
+      <div class="ab-section-title">Sources de trafic</div>
+      ${sourceEntries.map(([src, count]) => {
+        const pct = Math.round((count / total) * 100);
+        return `
+          <div class="ab-funnel-row">
+            <div class="ab-funnel-lbl">${esc(src)}</div>
+            <div class="ab-funnel-bar-wrap">
+              <div class="ab-funnel-bar ab-bar-source" style="width:${pct}%"></div>
+            </div>
+            <div class="ab-funnel-meta">${pct}% <span class="ab-fn">(${count})</span></div>
+          </div>`;
+      }).join('')}` : ''}
+
+      ${countryEntries.length ? `
+      <div class="ab-section-title">Pays</div>
+      ${countryEntries.map(([country, count]) => {
+        const pct = Math.round((count / total) * 100);
+        return `
+          <div class="ab-funnel-row">
+            <div class="ab-funnel-lbl">${esc(country)}</div>
+            <div class="ab-funnel-bar-wrap">
+              <div class="ab-funnel-bar ab-bar-source" style="width:${pct}%"></div>
+            </div>
+            <div class="ab-funnel-meta">${pct}% <span class="ab-fn">(${count})</span></div>
+          </div>`;
+      }).join('')}` : ''}
+
+      ${(firstTimers + returning) > 0 ? `
+      <div class="ab-section-title">Nouveaux vs revenants</div>
+      <div class="ab-device-row">
+        <div class="ab-device-card">
+          <div class="ab-device-val">${firstTimers}</div>
+          <div class="ab-device-lbl">🆕 1ère visite</div>
+          <div class="ab-device-pct">${total ? Math.round((firstTimers/total)*100) : 0}%</div>
+        </div>
+        <div class="ab-device-card">
+          <div class="ab-device-val">${returning}</div>
+          <div class="ab-device-lbl">🔁 Déjà venu(s)</div>
+          <div class="ab-device-pct">${total ? Math.round((returning/total)*100) : 0}%</div>
+        </div>
+        ${unknownVisit > 0 ? `<div class="ab-device-card">
+          <div class="ab-device-val">${unknownVisit}</div>
+          <div class="ab-device-lbl">❓ Inconnu</div>
+          <div class="ab-device-pct">${total ? Math.round((unknownVisit/total)*100) : 0}%</div>
+        </div>` : ''}
+      </div>` : ''}
 
       <div class="ab-section-title">Sessions récentes</div>
     </div>
@@ -893,6 +960,45 @@ function renderDetailPane(d) {
         <h3>Zones environnementales &amp; démarches</h3>
         ${details.demandeAccompagnement ? '<div class="adm-accomp-badge">✋ Accompagnement administratif demandé par le client</div>' : ''}
         <div id="admin-zones-content"><div class="adm-zones-loading">🔍 Vérification en cours…</div></div>
+      </div>` : ''}
+
+      ${(d.geo_city || d.referrer_source || d.visit_count) ? `
+      <div class="dsec dsec-session">
+        <h3>🔍 Session</h3>
+        <div class="info-grid">
+          ${(d.geo_city || d.geo_region || d.geo_country) ? `<div style="grid-column:1/-1">
+            <div class="info-label">Localisation</div>
+            <div class="info-value">📍 ${[d.geo_city, d.geo_region, d.geo_country].filter(Boolean).join(', ')}</div>
+          </div>` : ''}
+          ${d.referrer_source ? `<div>
+            <div class="info-label">Source</div>
+            <div class="info-value">${esc(d.referrer_source)}</div>
+          </div>` : ''}
+          ${d.visit_count ? `<div>
+            <div class="info-label">Visites outil</div>
+            <div class="info-value">${d.visit_count === 1 ? '1ère visite' : `${d.visit_count}ème visite`}</div>
+          </div>` : ''}
+          ${d.device ? `<div>
+            <div class="info-label">Appareil</div>
+            <div class="info-value">${d.device === 'mobile' ? '📱 Mobile' : '🖥️ PC / Tablette'}</div>
+          </div>` : ''}
+          ${d.screen ? `<div>
+            <div class="info-label">Résolution</div>
+            <div class="info-value">${esc(d.screen)}</div>
+          </div>` : ''}
+          ${d.language ? `<div>
+            <div class="info-label">Langue</div>
+            <div class="info-value">${esc(d.language)}</div>
+          </div>` : ''}
+          ${d.timezone ? `<div>
+            <div class="info-label">Fuseau</div>
+            <div class="info-value">${esc(d.timezone)}</div>
+          </div>` : ''}
+          ${d.connection ? `<div>
+            <div class="info-label">Connexion</div>
+            <div class="info-value">${esc(d.connection)}</div>
+          </div>` : ''}
+        </div>
       </div>` : ''}
 
       <div class="dsec">
