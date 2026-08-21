@@ -35,6 +35,11 @@ service cloud.firestore {
       // Seul l'admin peut lire et supprimer
       allow read, delete: if request.auth != null;
     }
+
+    // Portfolio chantiers géré depuis l'admin
+    match /realisations/{realId} {
+      allow read, write, delete: if request.auth != null;
+    }
   }
 }
 

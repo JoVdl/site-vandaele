@@ -1726,7 +1726,11 @@ function startRealListener() {
       allRealisations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (allRealisations.length === 0) await seedRealisations();
       else renderRealList();
-    }, err => console.error('[Real] listener error:', err));
+    }, err => {
+      console.error('[Real] listener error:', err);
+      const c = document.getElementById('real-list');
+      if (c) c.innerHTML = `<div class="state-msg" style="color:var(--red)">⚠️ Erreur Firestore : ${esc(err.code || err.message)}<br><small>Vérifiez les règles de sécurité (collection <strong>realisations</strong>).</small></div>`;
+    });
 }
 
 async function seedRealisations() {
