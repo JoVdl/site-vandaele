@@ -409,6 +409,8 @@ bindInput('infos-sup', 'infosSup',  v => v);
 document.querySelectorAll('input[name="zone-type"]').forEach(r => {
   r.addEventListener('change', () => {
     state.zoneType = r.value;
+    const wrap = document.getElementById('autre-description-wrap');
+    if (wrap) wrap.style.display = r.value === 'autre' ? '' : 'none';
   });
 });
 
@@ -1335,6 +1337,7 @@ async function submitEstimation(recontact) {
     Téléphone:   tel,
     'Type client': state.typeClient,
     'Zone de travaux': state.zoneType,
+    ...(state.zoneType === 'autre' ? { 'Description situation': document.getElementById('autre-description')?.value?.trim() || '' } : {}),
     'Souhaite être recontacté': recontact ? 'Oui' : 'Non',
     ...(state.typeClient !== 'particulier' ? {
       Organisation: document.getElementById('c-org')?.value?.trim() || '',

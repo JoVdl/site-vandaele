@@ -862,8 +862,8 @@
               <div class="zone-toggle">
                 <input type="radio" id="z-fosse" name="zone-type" value="fosse" />
                 <label for="z-fosse">
-                  <img class="zone-img" src="assets/img/zones/zone-fosse.jpg" alt="Fossé / Canal" loading="lazy" />
-                  <span class="zone-label">Fossé / Canal</span>
+                  <img class="zone-img" src="assets/img/zones/zone-fosse.jpg" alt="Fossé" loading="lazy" />
+                  <span class="zone-label">Fossé</span>
                 </label>
               </div>
 
@@ -880,8 +880,8 @@
               <div class="zone-toggle">
                 <input type="radio" id="z-boisement" name="zone-type" value="boisement" />
                 <label for="z-boisement">
-                  <img class="zone-img" src="assets/img/zones/zone-boisement.jpg" alt="Zone boisée / Ripisylve" loading="lazy" />
-                  <span class="zone-label">Zone boisée / Ripisylve</span>
+                  <img class="zone-img" src="assets/img/zones/zone-boisement.jpg" alt="Zone boisée" loading="lazy" />
+                  <span class="zone-label">Zone boisée</span>
                 </label>
               </div>
 
@@ -894,6 +894,11 @@
                 </label>
               </div>
 
+            </div>
+
+            <div id="autre-description-wrap" style="display:none; margin-bottom:1.25rem;">
+              <label for="autre-description" class="form-label" style="display:block; margin-bottom:.4rem;">Décrivez brièvement votre situation</label>
+              <textarea id="autre-description" name="autre-description" rows="3" placeholder="Ex : talus à stabiliser, mare à créer, zone à défricher, bassin de rétention…" style="width:100%; resize:vertical; font-family:inherit; font-size:.95rem; padding:.6rem .85rem; border:1.5px solid var(--neutral-200); border-radius:var(--radius); background:var(--surface-1); color:var(--neutral-900); line-height:1.5;"></textarea>
             </div>
 
             <div class="panel-nav">
@@ -1652,7 +1657,7 @@
   </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/estimation.js?v=3"></script>
+<script src="js/estimation.js?v=4"></script>
 </body>
 </html>
 
