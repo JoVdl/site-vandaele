@@ -720,9 +720,20 @@ function renderDetailPane(d) {
         <div id="admin-zones-content"><div class="adm-zones-loading">🔍 Vérification en cours…</div></div>
       </div>` : ''}
 
-      <div class="est-total">
-        <div class="est-total-label">Estimation indicative</div>
-        <div class="est-total-val">${esc(d.estimation_text || '–')}</div>
+      <div class="dsec">
+        <h3>📊 Estimation indicative</h3>
+        ${(d.estimation_lines && d.estimation_lines.length) ? `
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:.75rem;">
+          ${d.estimation_lines.map(l => `
+          <tr style="border-bottom:1px solid var(--gray-100);">
+            <td style="padding:.35rem .1rem;color:var(--gray-600);">${esc(l.label)}</td>
+            <td style="padding:.35rem .1rem;text-align:right;font-weight:600;color:var(--gray-800);white-space:nowrap;">${esc(l.val)}</td>
+          </tr>`).join('')}
+        </table>` : ''}
+        <div class="est-total">
+          <div class="est-total-label">Total indicatif</div>
+          <div class="est-total-val">${esc(d.estimation_text || '–')}</div>
+        </div>
       </div>`;
   }
 

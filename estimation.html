@@ -1131,11 +1131,6 @@
               </div>
               <div id="hydro-stock-details">
                 <div class="form-group">
-                  <label for="adresse-stockage-hydro">Adresse ou localisation de la zone de stockage</label>
-                  <input type="text" id="adresse-stockage-hydro" class="form-input" placeholder="Ex : lieu-dit, adresse, parcelle cadastrale…" autocomplete="off" />
-                  <p class="form-hint">Permet à notre équipe de préparer la logistique du chantier.</p>
-                </div>
-                <div class="form-group">
                   <label for="nature-terrain-hydro">Nature du terrain de stockage</label>
                   <select id="nature-terrain-hydro">
                     <option value="pature">Pâture / Prairie</option>
@@ -1182,7 +1177,15 @@
                     </div>
 
                     <div id="epandage-map-wrap-hydro">
-                      <p class="form-hint">Délimitez la parcelle ou le champ disponible pour l'épandage (prairie, champ, friche…).</p>
+                      <div class="form-group" style="margin-bottom:.6rem;">
+                        <label for="adresse-stockage-hydro">📍 Adresse de la zone de stockage</label>
+                        <div style="display:flex;gap:.5rem;">
+                          <input type="text" id="adresse-stockage-hydro" class="form-input" placeholder="Ex : lieu-dit, adresse, commune…" autocomplete="off" style="flex:1;" />
+                          <button type="button" class="btn btn-outline" style="white-space:nowrap;padding:.45rem .75rem;font-size:.82rem;" onclick="geocodeEpandage('hydro')">Localiser</button>
+                        </div>
+                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour centrer la carte sur la zone de stockage.</p>
+                      </div>
+                      <p class="form-hint">Délimitez ensuite la parcelle ou le champ disponible pour l'épandage.</p>
                       <div id="map-epandage-hydro" class="epandage-map"></div>
                       <div class="epandage-map-btns">
                         <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('hydro')">✏️ Dessiner la surface</button>
@@ -1236,11 +1239,6 @@
 
               <!-- ── ÉPANDAGE WIDGET CURAGE ── -->
               <div id="curage-epandage-wrap" hidden>
-                <div class="form-group" style="margin-bottom:.85rem;">
-                  <label for="adresse-stockage-curage">Adresse ou localisation de la zone de stockage</label>
-                  <input type="text" id="adresse-stockage-curage" class="form-input" placeholder="Ex : lieu-dit, adresse, parcelle cadastrale…" autocomplete="off" />
-                  <p class="form-hint">Permet à notre équipe de préparer la logistique du chantier.</p>
-                </div>
                 <div class="epandage-widget">
                   <div class="form-group">
                     <label>📐 Surface d'épandage disponible</label>
@@ -1268,7 +1266,15 @@
                     </div>
 
                     <div id="epandage-map-wrap-curage">
-                      <p class="form-hint">Délimitez la parcelle ou le champ disponible pour l'épandage.</p>
+                      <div class="form-group" style="margin-bottom:.6rem;">
+                        <label for="adresse-stockage-curage">📍 Adresse de la zone de stockage</label>
+                        <div style="display:flex;gap:.5rem;">
+                          <input type="text" id="adresse-stockage-curage" class="form-input" placeholder="Ex : lieu-dit, adresse, commune…" autocomplete="off" style="flex:1;" />
+                          <button type="button" class="btn btn-outline" style="white-space:nowrap;padding:.45rem .75rem;font-size:.82rem;" onclick="geocodeEpandage('curage')">Localiser</button>
+                        </div>
+                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour centrer la carte sur la zone de stockage.</p>
+                      </div>
+                      <p class="form-hint">Délimitez ensuite la parcelle ou le champ disponible pour l'épandage.</p>
                       <div id="map-epandage-curage" class="epandage-map"></div>
                       <div class="epandage-map-btns">
                         <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('curage')">✏️ Dessiner la surface</button>
@@ -1713,7 +1719,7 @@
   </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/estimation.js?v=5"></script>
+<script src="js/estimation.js?v=6"></script>
 </body>
 </html>
 

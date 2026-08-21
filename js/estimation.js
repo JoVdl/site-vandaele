@@ -101,7 +101,7 @@ if (typeof db !== 'undefined' && db) {
 }
 
 // ── ÉTAT ──────────────────────────────────────────────────────
-let lastEstMin = 0, lastEstMax = 0;
+let lastEstMin = 0, lastEstMax = 0, lastEstLines = [];
 let currentPanel = 1;
 const state = {
   surface: 0,
@@ -625,6 +625,7 @@ function computeEstimation() {
 
   lastEstMin = totalMin;
   lastEstMax = totalMax;
+  lastEstLines = lines;
   totalEl.textContent = fmtRange(totalMin, totalMax);
 
   const tvaNote = document.getElementById('result-tva-note');
@@ -1049,6 +1050,23 @@ function initEpandageMap(type) {
   setTimeout(() => m.invalidateSize(), 100);
 }
 
+window.geocodeEpandage = async function(type) {
+  const inputId = type === 'hydro' ? 'adresse-stockage-hydro' : 'adresse-stockage-curage';
+  const query = document.getElementById(inputId)?.value?.trim();
+  if (!query) return;
+  try {
+    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=1`);
+    const json = await res.json();
+    const feat = json.features?.[0];
+    if (!feat) { showToast('Adresse introuvable, essayez une formulation différente.', 'error'); return; }
+    const [lng, lat] = feat.geometry.coordinates;
+    if (!epandageMaps[type]) initEpandageMap(type);
+    epandageMaps[type].map.setView([lat, lng], 15);
+  } catch {
+    showToast('Erreur de géocodage, vérifiez votre connexion.', 'error');
+  }
+};
+
 window.startEpandageDraw = function(type) {
   if (!epandageMaps[type]) { initEpandageMap(type); return; }
   const { map } = epandageMaps[type];
@@ -1422,9 +1440,10 @@ async function submitEstimation(recontact) {
         perimetre_ml:    state.perimetre || null,
         acces:           state.acces,
         travaux:         [...state.travaux],
-        estimation_min:  lastEstMin || null,
-        estimation_max:  lastEstMax || null,
-        estimation_text: estimation,
+        estimation_min:   lastEstMin || null,
+        estimation_max:   lastEstMax || null,
+        estimation_text:  estimation,
+        estimation_lines: lastEstLines.map(l => ({ label: l.label, val: l.val })),
         details:         buildDetails(),
         infos_sup:       state.infosSup || null,
         geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
