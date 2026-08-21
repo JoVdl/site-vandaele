@@ -25,8 +25,9 @@ let currentSearch = '';
 let adminMap      = null;
 let routeMap      = null;
 let currentSort   = 'desc';
-let openId        = null;
-let unsubscribe   = null;
+let openId               = null;
+let unsubscribe          = null;
+let unsubscribeAbandons  = null;
 
 // ── AUTH ─────────────────────────────────────────────────────
 const loginScreen = document.getElementById('login-screen');
@@ -142,6 +143,7 @@ function startListener() {
 
 function stopListener() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  stopAbandonsListener();
 }
 
 // ── GRILLE TARIFAIRE ─────────────────────────────────────────
@@ -471,9 +473,11 @@ function renderList() {
   if (!listEl) return;
 
   if (currentFilter === 'abandons') {
-    renderAbandons(listEl);
+    startAbandonsListener(listEl);
     return;
   }
+
+  stopAbandonsListener();
 
   let items = [...allDemandes];
   if (currentFilter === 'archived') {
@@ -503,144 +507,154 @@ function renderList() {
 
 const PANEL_LABELS = ['', 'Zone de travaux', 'Problèmes rencontrés', 'Choix des travaux', 'Détails du chantier', 'Vos coordonnées', 'Résultat'];
 
-async function renderAbandons(listEl) {
+function stopAbandonsListener() {
+  if (unsubscribeAbandons) { unsubscribeAbandons(); unsubscribeAbandons = null; }
+}
+
+function startAbandonsListener(listEl) {
+  if (unsubscribeAbandons) {
+    // Listener déjà actif — juste re-render si le contenu a changé entre-temps
+    return;
+  }
   listEl.innerHTML = '<div class="state-msg">Chargement des sessions…</div>';
-  try {
-    const snap = await db.collection('abandons')
-      .orderBy('created_at', 'desc')
-      .limit(500)
-      .get();
 
-    if (snap.empty) {
-      listEl.innerHTML = '<div class="state-msg">Aucune session enregistrée.</div>';
-      return;
-    }
-
-    const docs  = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const total = docs.length;
-    const completedDocs = docs.filter(d => d.completed);
-    const abandonedDocs = docs.filter(d => !d.completed);
-    const completionRate = total ? Math.round((completedDocs.length / total) * 100) : 0;
-    const abandonRate    = 100 - completionRate;
-
-    // Entonnoir : sessions ayant atteint AU MOINS chaque étape
-    const funnelCounts = [1, 2, 3, 4, 5].map(p => docs.filter(d => (d.last_panel || 1) >= p).length);
-    funnelCounts.push(completedDocs.length); // étape 6 = finalisées
-
-    // Abandon par étape (dernière étape atteinte, non finalisé)
-    const stopByPanel = {};
-    abandonedDocs.forEach(d => {
-      const p = d.last_panel || 1;
-      stopByPanel[p] = (stopByPanel[p] || 0) + 1;
+  unsubscribeAbandons = db.collection('abandons')
+    .orderBy('created_at', 'desc')
+    .limit(500)
+    .onSnapshot(snap => {
+      if (snap.empty) {
+        listEl.innerHTML = '<div class="state-msg">Aucune session enregistrée.</div>';
+        return;
+      }
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      listEl.innerHTML = buildAbandonsHtml(docs);
+    }, err => {
+      console.error('[Firebase] Abandons listener error:', err);
+      listEl.innerHTML = '<div class="state-msg">Erreur de chargement.</div>';
     });
+}
 
-    // Raisons
-    const reasonCounts = {};
-    abandonedDocs.filter(d => d.reason).forEach(d => {
-      reasonCounts[d.reason] = (reasonCounts[d.reason] || 0) + 1;
-    });
-    const reasonEntries     = Object.entries(reasonCounts).sort((a, b) => b[1] - a[1]);
-    const totalWithReason   = reasonEntries.reduce((s, [, v]) => s + v, 0);
-    const unknownAbandon    = abandonedDocs.length - totalWithReason;
+function buildAbandonsHtml(docs) {
+  const total          = docs.length;
+  const completedDocs  = docs.filter(d => d.completed);
+  const abandonedDocs  = docs.filter(d => !d.completed);
+  const completionRate = total ? Math.round((completedDocs.length / total) * 100) : 0;
+  const abandonRate    = 100 - completionRate;
 
-    // Appareils
-    const mobile  = docs.filter(d => d.device === 'mobile').length;
-    const desktop = docs.filter(d => d.device === 'desktop').length;
-    const unknown = total - mobile - desktop;
+  // Entonnoir : sessions ayant atteint AU MOINS chaque étape
+  const funnelCounts = [1, 2, 3, 4, 5].map(p => docs.filter(d => (d.last_panel || 1) >= p).length);
+  funnelCounts.push(completedDocs.length); // étape 6 = finalisées
 
-    listEl.innerHTML = `
-      <div class="ab-stats-block">
+  // Abandons par étape (où s'arrêtent ceux qui ne finalisent pas)
+  const stopByPanel = {};
+  abandonedDocs.forEach(d => {
+    const p = d.last_panel || 1;
+    stopByPanel[p] = (stopByPanel[p] || 0) + 1;
+  });
 
-        <div class="ab-kpi-row">
-          <div class="ab-kpi">
-            <div class="ab-kpi-val">${total}</div>
-            <div class="ab-kpi-lbl">Sessions</div>
-          </div>
-          <div class="ab-kpi ab-kpi-ok">
-            <div class="ab-kpi-val">${completedDocs.length} <span class="ab-kpi-pct">${completionRate}%</span></div>
-            <div class="ab-kpi-lbl">Finalisées</div>
-          </div>
-          <div class="ab-kpi ab-kpi-warn">
-            <div class="ab-kpi-val">${abandonedDocs.length} <span class="ab-kpi-pct">${abandonRate}%</span></div>
-            <div class="ab-kpi-lbl">Abandons</div>
-          </div>
+  // Raisons
+  const reasonCounts = {};
+  abandonedDocs.filter(d => d.reason).forEach(d => {
+    reasonCounts[d.reason] = (reasonCounts[d.reason] || 0) + 1;
+  });
+  const reasonEntries   = Object.entries(reasonCounts).sort((a, b) => b[1] - a[1]);
+  const totalWithReason = reasonEntries.reduce((s, [, v]) => s + v, 0);
+  const unknownAbandon  = abandonedDocs.length - totalWithReason;
+
+  // Appareils
+  const mobile  = docs.filter(d => d.device === 'mobile').length;
+  const desktop = docs.filter(d => d.device === 'desktop').length;
+  const unknownDev = total - mobile - desktop;
+
+  return `
+    <div class="ab-stats-block">
+
+      <div class="ab-kpi-row">
+        <div class="ab-kpi">
+          <div class="ab-kpi-val">${total}</div>
+          <div class="ab-kpi-lbl">Sessions</div>
         </div>
-
-        <div class="ab-section-title">Entonnoir de conversion</div>
-        ${[1,2,3,4,5,6].map((p, i) => {
-          const count = funnelCounts[i];
-          const pct   = total ? Math.round((count / total) * 100) : 0;
-          const stopHere = p < 6 ? (stopByPanel[p] || 0) : 0;
-          return `
-            <div class="ab-funnel-row">
-              <div class="ab-funnel-lbl">${p === 6 ? '✅' : p + '.'} ${PANEL_LABELS[p]}</div>
-              <div class="ab-funnel-bar-wrap">
-                <div class="ab-funnel-bar${p === 6 ? ' ab-bar-ok' : ''}" style="width:${pct}%"></div>
-              </div>
-              <div class="ab-funnel-meta">
-                ${pct}% <span class="ab-fn">(${count})</span>
-                ${stopHere ? `<span class="ab-stop-here">−${stopHere} ici</span>` : ''}
-              </div>
-            </div>`;
-        }).join('')}
-
-        <div class="ab-section-title">Raisons d'abandon</div>
-        ${reasonEntries.length ? reasonEntries.map(([reason, count]) => {
-          const pct = totalWithReason ? Math.round((count / totalWithReason) * 100) : 0;
-          return `
-            <div class="ab-funnel-row">
-              <div class="ab-funnel-lbl">${esc(reason)}</div>
-              <div class="ab-funnel-bar-wrap">
-                <div class="ab-funnel-bar ab-bar-reason" style="width:${pct}%"></div>
-              </div>
-              <div class="ab-funnel-meta">${pct}% <span class="ab-fn">(${count})</span></div>
-            </div>`;
-        }).join('') + (unknownAbandon > 0 ? `
-          <div class="ab-funnel-row">
-            <div class="ab-funnel-lbl" style="color:var(--gray-400)">Non capturée</div>
-            <div class="ab-funnel-bar-wrap">
-              <div class="ab-funnel-bar ab-bar-reason" style="width:${Math.round((unknownAbandon / abandonedDocs.length) * 100)}%;opacity:.35"></div>
-            </div>
-            <div class="ab-funnel-meta" style="color:var(--gray-400)">${Math.round((unknownAbandon / abandonedDocs.length) * 100)}% <span class="ab-fn">(${unknownAbandon})</span></div>
-          </div>` : '')
-        : `<div class="ab-empty-hint">Aucune raison capturée pour l'instant. Les données arrivent au fur et à mesure des nouvelles sessions.</div>`}
-
-        <div class="ab-section-title">Appareils</div>
-        <div class="ab-device-row">
-          ${[['📱 Mobile', mobile], ['🖥️ PC / Tablette', desktop], ['❓ Inconnu', unknown]].map(([label, count]) => {
-            const pct = total ? Math.round((count / total) * 100) : 0;
-            return `
-              <div class="ab-device-card">
-                <div class="ab-device-val">${count}</div>
-                <div class="ab-device-lbl">${label}</div>
-                <div class="ab-device-pct">${pct}%</div>
-              </div>`;
-          }).join('')}
+        <div class="ab-kpi ab-kpi-ok">
+          <div class="ab-kpi-val">${completedDocs.length} <span class="ab-kpi-pct">${completionRate}%</span></div>
+          <div class="ab-kpi-lbl">Finalisées</div>
         </div>
-
-        <div class="ab-section-title">Sessions récentes</div>
+        <div class="ab-kpi ab-kpi-warn">
+          <div class="ab-kpi-val">${abandonedDocs.length} <span class="ab-kpi-pct">${abandonRate}%</span></div>
+          <div class="ab-kpi-lbl">Abandons</div>
+        </div>
       </div>
 
-      ${docs.slice(0, 50).map(d => {
-        const panel      = d.last_panel || 1;
-        const panelLabel = PANEL_LABELS[panel] || `Étape ${panel}`;
-        const done       = d.completed === true;
-        const dateStr    = d.created_at?.toDate ? fmtRelative(d.created_at) : '–';
-        const deviceIcon = d.device === 'mobile' ? '📱' : d.device === 'desktop' ? '🖥️' : '';
+      <div class="ab-section-title">Entonnoir de conversion</div>
+      ${[1,2,3,4,5,6].map((p, i) => {
+        const count    = funnelCounts[i];
+        const pct      = total ? Math.round((count / total) * 100) : 0;
+        const stopHere = p < 6 ? (stopByPanel[p] || 0) : 0;
         return `
-          <div class="abandon-card ${done ? 'ab-completed' : 'ab-abandoned'}">
-            <div class="ab-main">
-              <div class="ab-step">${deviceIcon} Étape ${panel} — ${esc(panelLabel)}</div>
-              <div class="ab-date">${dateStr}${d.reason ? ` · ${esc(d.reason)}` : ''}</div>
+          <div class="ab-funnel-row">
+            <div class="ab-funnel-lbl">${p === 6 ? '✅' : p + '.'} ${PANEL_LABELS[p]}</div>
+            <div class="ab-funnel-bar-wrap">
+              <div class="ab-funnel-bar${p === 6 ? ' ab-bar-ok' : ''}" style="width:${pct}%"></div>
             </div>
-            <div class="ab-badge">${done ? '✅ Finalisé' : '⚠️ Abandonné'}</div>
+            <div class="ab-funnel-meta">
+              ${pct}% <span class="ab-fn">(${count})</span>
+              ${stopHere ? `<span class="ab-stop-here">−${stopHere} ici</span>` : ''}
+            </div>
           </div>`;
       }).join('')}
-    `;
-  } catch (e) {
-    console.error('[Firebase] Abandons load failed:', e);
-    listEl.innerHTML = '<div class="state-msg">Erreur de chargement.</div>';
-  }
+
+      <div class="ab-section-title">Raisons d'abandon</div>
+      ${reasonEntries.length ? reasonEntries.map(([reason, count]) => {
+        const pct = totalWithReason ? Math.round((count / totalWithReason) * 100) : 0;
+        return `
+          <div class="ab-funnel-row">
+            <div class="ab-funnel-lbl">${esc(reason)}</div>
+            <div class="ab-funnel-bar-wrap">
+              <div class="ab-funnel-bar ab-bar-reason" style="width:${pct}%"></div>
+            </div>
+            <div class="ab-funnel-meta">${pct}% <span class="ab-fn">(${count})</span></div>
+          </div>`;
+      }).join('') + (unknownAbandon > 0 ? `
+        <div class="ab-funnel-row">
+          <div class="ab-funnel-lbl" style="color:var(--gray-400)">Non capturée</div>
+          <div class="ab-funnel-bar-wrap">
+            <div class="ab-funnel-bar ab-bar-reason" style="width:${Math.round((unknownAbandon / abandonedDocs.length) * 100)}%;opacity:.35"></div>
+          </div>
+          <div class="ab-funnel-meta" style="color:var(--gray-400)">${Math.round((unknownAbandon / abandonedDocs.length) * 100)}% <span class="ab-fn">(${unknownAbandon})</span></div>
+        </div>` : '')
+      : `<div class="ab-empty-hint">Aucune raison capturée pour l'instant — les données arrivent au fil des nouvelles sessions.</div>`}
+
+      <div class="ab-section-title">Appareils</div>
+      <div class="ab-device-row">
+        ${[['📱 Mobile', mobile], ['🖥️ PC / Tablette', desktop], ['❓ Inconnu', unknownDev]].map(([label, count]) => {
+          const pct = total ? Math.round((count / total) * 100) : 0;
+          return `
+            <div class="ab-device-card">
+              <div class="ab-device-val">${count}</div>
+              <div class="ab-device-lbl">${label}</div>
+              <div class="ab-device-pct">${pct}%</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="ab-section-title">Sessions récentes</div>
+    </div>
+
+    ${docs.slice(0, 50).map(d => {
+      const panel      = d.last_panel || 1;
+      const panelLabel = PANEL_LABELS[panel] || `Étape ${panel}`;
+      const done       = d.completed === true;
+      const dateStr    = d.created_at?.toDate ? fmtRelative(d.created_at) : '–';
+      const deviceIcon = d.device === 'mobile' ? '📱' : d.device === 'desktop' ? '🖥️' : '';
+      return `
+        <div class="abandon-card ${done ? 'ab-completed' : 'ab-abandoned'}">
+          <div class="ab-main">
+            <div class="ab-step">${deviceIcon} Étape ${panel} — ${esc(panelLabel)}</div>
+            <div class="ab-date">${dateStr}${d.reason ? ` · ${esc(d.reason)}` : ''}</div>
+          </div>
+          <div class="ab-badge">${done ? '✅ Finalisé' : '⚠️ Abandonné'}</div>
+        </div>`;
+    }).join('')}
+  `;
 }
 
 function renderCard(d) {
