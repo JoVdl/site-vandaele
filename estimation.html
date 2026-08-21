@@ -730,6 +730,23 @@
     .epandage-result { background: #dcfce7; border: 1px solid #86efac; border-radius: 7px; padding: .45rem .9rem; font-size: .88rem; color: #15803d; margin-bottom: .5rem; }
     .epandage-no-storage { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: .85rem 1rem; margin-top: 1rem; font-size: .88rem; color: #9a3412; }
     .epandage-no-storage p { margin: .3rem 0 0; color: var(--gray-700); font-size: .85rem; }
+    /* ── PANEL 6 – RÉSULTAT & RECONTACT ── */
+    .p6-result-box {
+      background: linear-gradient(160deg, #0a1f12 0%, #1e5c34 60%, #3d9e62 100%);
+      border-radius: var(--radius-md); padding: 1.35rem 1.5rem; margin-bottom: 1.5rem; color: #fff;
+    }
+    .p6-result-box h3 { font-family: var(--font-display); font-size: 1rem; color: #fff; margin-bottom: .85rem; }
+    .p6-result-box .result-line { display: flex; justify-content: space-between; padding: .35rem 0; border-bottom: 1px solid rgba(255,255,255,.1); font-size: .88rem; }
+    .p6-result-box .result-line-label { color: rgba(255,255,255,.75); }
+    .p6-result-box .result-line-val { font-weight: 700; }
+    .p6-result-box .result-empty { font-size: .85rem; color: rgba(255,255,255,.6); }
+    .p6-total-amount { font-family: var(--font-display); font-size: 1.85rem; font-weight: 700; color: #fff; margin: .45rem 0 .2rem; }
+    .p6-total-note { font-size: .76rem; color: rgba(255,255,255,.6); }
+    .p6-recontact { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius-md); padding: 1.5rem; }
+    .p6-recontact-title { font-weight: 700; font-size: 1rem; margin-bottom: .5rem; color: var(--gray-800); }
+    .p6-recontact-hint { color: var(--gray-500); font-size: .85rem; margin-bottom: 1.25rem; line-height: 1.6; }
+    .p6-recontact-btns { display: flex; flex-direction: column; gap: .65rem; }
+    .p6-disclaimer { font-size: .73rem; color: var(--gray-400); line-height: 1.65; text-align: center; margin-top: 1.25rem; }
   </style>
 </head>
 <body>
@@ -1404,19 +1421,56 @@
 
             <div class="panel-nav">
               <button class="btn btn-outline" type="button" onclick="goToPanel(4)">← Retour</button>
-              <button class="btn btn-primary btn-lg" type="button" id="btn-submit" onclick="submitEstimation()">
-                Envoyer ma demande
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              <button class="btn btn-primary btn-lg" type="button" id="btn-submit" onclick="prepareEstimationResult()">
+                Finaliser mon estimation
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- ===== PANEL 6 – ESTIMATION & RECONTACT ===== -->
+        <div class="est-panel" id="panel-6">
+          <div class="contact-form" style="padding:2rem;">
+            <div style="text-align:center; padding:.25rem 0 1.5rem;">
+              <div style="font-size:2.5rem; margin-bottom:.4rem;">🎉</div>
+              <div class="form-section-title" style="margin-bottom:.35rem;">Votre estimation est prête !</div>
+              <p style="color:var(--gray-500); font-size:.9rem;">Fourchette indicative basée sur les informations renseignées.</p>
+            </div>
+
+            <div class="p6-result-box">
+              <h3>📊 Estimation indicative</h3>
+              <div id="p6-result-lines"></div>
+              <div style="border-top:1px solid rgba(255,255,255,.15); margin-top:.75rem; padding-top:.75rem;">
+                <div style="font-size:.76rem; color:rgba(255,255,255,.65);">Estimation totale (fourchette)</div>
+                <div class="p6-total-amount" id="p6-total-amount">– €</div>
+                <div class="p6-total-note">Indicatif · Devis définitif sur visite technique gratuite</div>
+              </div>
+            </div>
+
+            <div class="p6-recontact">
+              <div class="p6-recontact-title">Souhaitez-vous être recontacté(e) par notre équipe ?</div>
+              <p class="p6-recontact-hint">Nous recevons votre dossier dans tous les cas. Indiquez simplement si vous souhaitez qu'on vous rappelle pour affiner le chiffrage ou convenir d'une visite.</p>
+              <div class="p6-recontact-btns">
+                <button class="btn btn-primary btn-lg" type="button" id="btn-oui-recontact" onclick="submitEstimation(true)">
+                  Oui, je souhaite être recontacté(e)
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01-.01 1.17 2 2 0 012 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 8.92a16 16 0 006.29 6.29l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16z"/></svg>
+                </button>
+                <button class="btn btn-outline" type="button" id="btn-non-recontact" onclick="submitEstimation(false)">
+                  Non, j'ai juste besoin de l'estimation indicative
+                </button>
+              </div>
+            </div>
+
+            <p class="p6-disclaimer">⚠️ Ces fourchettes sont données à titre indicatif. Le prix définitif dépend des conditions réelles du chantier (accès, nature du sol, volumes exacts…). Seule une visite sur site permet d'établir un devis précis.</p>
           </div>
         </div>
 
         <!-- CONFIRMATION -->
         <div class="confirm-panel" id="confirm-panel">
           <div class="confirm-icon">✅</div>
-          <h2>Demande envoyée !</h2>
-          <p>Merci pour votre demande d'estimation. Notre équipe l'a bien reçue et vous recontactera dans les <strong>48h ouvrées</strong> pour affiner le chiffrage et, si vous le souhaitez, convenir d'une visite sur site.</p>
+          <h2 id="confirm-title">Demande envoyée !</h2>
+          <p id="confirm-msg">Merci pour votre demande. Notre équipe l'a bien reçue et vous recontactera dans les <strong>48h ouvrées</strong>.</p>
           <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
             <a href="index.html" class="btn btn-outline">Retour à l'accueil</a>
             <a href="conseils.html" class="btn btn-primary">Lire nos conseils</a>
@@ -1425,8 +1479,8 @@
 
       </div>
 
-      <!-- RESULT CARD -->
-      <aside>
+      <!-- RESULT CARD (hidden – estimation shown in panel 6 after finalisation) -->
+      <aside hidden>
         <div class="result-card" id="result-card">
           <h3>📊 Votre estimation indicative</h3>
 
@@ -1586,7 +1640,7 @@
   </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/estimation.js?v=2"></script>
+<script src="js/estimation.js?v=3"></script>
 </body>
 </html>
 

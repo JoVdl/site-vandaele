@@ -169,6 +169,12 @@ function goToPanel(n) {
     setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 50);
   }
   if (n === 5) updatePanel5Fields();
+  if (n === 6) {
+    document.querySelectorAll('.step-item').forEach(item => {
+      item.classList.remove('active');
+      item.classList.add('done');
+    });
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   computeEstimation();
 }
@@ -1273,10 +1279,8 @@ function buildDetails() {
   return d;
 }
 
-// ── SOUMISSION ────────────────────────────────────────────────
-const WEB3FORMS_KEY = 'd6047275-07ab-4b26-8be7-3b39b661f43b';
-
-async function submitEstimation() {
+// ── VALIDATION & AFFICHAGE RÉSULTAT ──────────────────────────
+function prepareEstimationResult() {
   const prenom = document.getElementById('c-prenom')?.value?.trim();
   const nom    = document.getElementById('c-nom')?.value?.trim();
   const email  = document.getElementById('c-email')?.value?.trim();
@@ -1292,8 +1296,28 @@ async function submitEstimation() {
     return;
   }
 
-  const btn = document.getElementById('btn-submit');
-  if (btn) { btn.disabled = true; btn.textContent = 'Envoi en cours…'; }
+  computeEstimation();
+  const p6Lines = document.getElementById('p6-result-lines');
+  const p6Total = document.getElementById('p6-total-amount');
+  if (p6Lines) p6Lines.innerHTML = document.getElementById('result-lines')?.innerHTML || '';
+  if (p6Total) p6Total.textContent = document.getElementById('result-total-amount')?.textContent || '– €';
+
+  goToPanel(6);
+}
+
+// ── SOUMISSION ────────────────────────────────────────────────
+const WEB3FORMS_KEY = 'd6047275-07ab-4b26-8be7-3b39b661f43b';
+
+async function submitEstimation(recontact) {
+  const prenom = document.getElementById('c-prenom')?.value?.trim();
+  const nom    = document.getElementById('c-nom')?.value?.trim();
+  const email  = document.getElementById('c-email')?.value?.trim();
+  const tel    = document.getElementById('c-tel')?.value?.trim();
+
+  const btnOui = document.getElementById('btn-oui-recontact');
+  const btnNon = document.getElementById('btn-non-recontact');
+  if (btnOui) { btnOui.disabled = true; }
+  if (btnNon) { btnNon.disabled = true; btnNon.textContent = 'Envoi en cours…'; }
 
   const travaux = [...state.travaux].join(', ') || 'Non précisé';
   const estimation = document.getElementById('result-total-amount')?.textContent || 'Non calculée';
@@ -1311,6 +1335,7 @@ async function submitEstimation() {
     Téléphone:   tel,
     'Type client': state.typeClient,
     'Zone de travaux': state.zoneType,
+    'Souhaite être recontacté': recontact ? 'Oui' : 'Non',
     ...(state.typeClient !== 'particulier' ? {
       Organisation: document.getElementById('c-org')?.value?.trim() || '',
       Fonction:     document.getElementById('c-fonction')?.value?.trim() || '',
@@ -1374,6 +1399,7 @@ async function submitEstimation() {
         prenom, nom, email, telephone: tel,
         type_client:     state.typeClient,
         zone_type:       state.zoneType,
+        recontact:       recontact === true,
         organisation:    document.getElementById('c-org')?.value?.trim() || '',
         fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
         delai:           document.getElementById('c-delai')?.value  || '',
@@ -1414,17 +1440,28 @@ async function submitEstimation() {
 
     if (data.success) {
       document.querySelectorAll('.est-panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('confirm-panel').classList.add('active');
-      document.querySelector('.result-card').style.display = 'none';
       document.getElementById('stepper').style.display = 'none';
+      const confirmPanel = document.getElementById('confirm-panel');
+      const confirmTitle = document.getElementById('confirm-title');
+      const confirmMsg   = document.getElementById('confirm-msg');
+      if (recontact) {
+        if (confirmTitle) confirmTitle.textContent = 'Demande envoyée !';
+        if (confirmMsg) confirmMsg.innerHTML = 'Merci ! Notre équipe a bien reçu votre dossier et vous recontactera dans les <strong>48h ouvrées</strong> pour affiner le chiffrage et, si vous le souhaitez, convenir d\'une visite sur site gratuite.';
+      } else {
+        if (confirmTitle) confirmTitle.textContent = 'Estimation transmise !';
+        if (confirmMsg) confirmMsg.innerHTML = 'Votre estimation a bien été enregistrée. Si vous souhaitez aller plus loin ou obtenir un devis précis, n\'hésitez pas à nous contacter au <strong>06 32 44 11 17</strong> ou à revenir sur cet outil.';
+      }
+      if (confirmPanel) confirmPanel.classList.add('active');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       showToast('Erreur lors de l\'envoi. Appelez-nous au 06 32 44 11 17.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande'; }
+      if (btnOui) { btnOui.disabled = false; }
+      if (btnNon) { btnNon.disabled = false; btnNon.textContent = 'Non, j\'ai juste besoin de l\'estimation indicative'; }
     }
   } catch {
     showToast('Erreur réseau. Appelez-nous au 06 32 44 11 17.', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande'; }
+    if (btnOui) { btnOui.disabled = false; }
+    if (btnNon) { btnNon.disabled = false; btnNon.textContent = 'Non, j\'ai juste besoin de l\'estimation indicative'; }
   }
 }
 
