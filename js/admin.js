@@ -470,6 +470,11 @@ function renderList() {
   const listEl = document.getElementById('requests-list');
   if (!listEl) return;
 
+  if (currentFilter === 'abandons') {
+    renderAbandons(listEl);
+    return;
+  }
+
   let items = [...allDemandes];
   if (currentFilter === 'archived') {
     items = items.filter(d => d.archived === true);
@@ -494,6 +499,45 @@ function renderList() {
   listEl.querySelectorAll('.req-card').forEach(card => {
     card.addEventListener('click', () => openDetail(card.dataset.id));
   });
+}
+
+const PANEL_LABELS = ['', 'Zone de travaux', 'Problèmes rencontrés', 'Choix des travaux', 'Détails du chantier', 'Vos coordonnées', 'Résultat'];
+
+async function renderAbandons(listEl) {
+  listEl.innerHTML = '<div class="state-msg">Chargement des sessions…</div>';
+  try {
+    const snap = await db.collection('abandons')
+      .orderBy('created_at', 'desc')
+      .limit(100)
+      .get();
+
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="state-msg">Aucun abandon enregistré.</div>';
+      return;
+    }
+
+    const rows = snap.docs.map(doc => {
+      const d = { id: doc.id, ...doc.data() };
+      const panel      = d.last_panel || 1;
+      const panelLabel = PANEL_LABELS[panel] || `Étape ${panel}`;
+      const completed  = d.completed === true;
+      const dateStr    = d.created_at?.toDate ? fmtRelative(d.created_at) : '–';
+
+      return `
+        <div class="abandon-card ${completed ? 'ab-completed' : 'ab-abandoned'}">
+          <div class="ab-main">
+            <div class="ab-step">Étape ${panel} — ${esc(panelLabel)}</div>
+            <div class="ab-date">${dateStr}</div>
+          </div>
+          <div class="ab-badge">${completed ? '✅ Finalisé' : '⚠️ Abandonné'}</div>
+        </div>`;
+    });
+
+    listEl.innerHTML = rows.join('');
+  } catch (e) {
+    console.error('[Firebase] Abandons load failed:', e);
+    listEl.innerHTML = '<div class="state-msg">Erreur de chargement.</div>';
+  }
 }
 
 function renderCard(d) {
@@ -533,6 +577,9 @@ function renderCard(d) {
         ${distKm !== null ? `<div class="card-dist">📍 ${distKm} km</div>` : ''}
         <div class="card-date">${fmtRelative(d.created_at)}</div>
         ${!isContact && d.estimation_text ? `<div class="card-amount">${esc(d.estimation_text)}</div>` : ''}
+        ${!isContact && d.recontact === true  ? `<div class="card-recontact rc-oui">📞 À rappeler</div>` : ''}
+        ${!isContact && d.recontact === false ? `<div class="card-recontact rc-non">✉️ Pas de rappel</div>` : ''}
+        ${!isContact && d.recontact === null  ? `<div class="card-recontact rc-pending">⏳ En attente</div>` : ''}
       </div>
     </div>`;
 }
@@ -646,6 +693,17 @@ function renderDetailPane(d) {
     }
 
     contentHtml = `
+      ${d.recontact === true ? `
+      <div class="adm-recontact-banner adm-recontact-oui">
+        📞 <strong>Le client souhaite être recontacté</strong> — à rappeler dans les 48h pour affiner le chiffrage.
+      </div>` : d.recontact === false ? `
+      <div class="adm-recontact-banner adm-recontact-non">
+        ✉️ <strong>Pas de demande de rappel</strong> — le client a consulté l'estimation sans suite.
+      </div>` : d.recontact === null ? `
+      <div class="adm-recontact-banner adm-recontact-pending">
+        ⏳ <strong>En attente de réponse</strong> — le client n'a pas encore choisi.
+      </div>` : ''}
+
       ${details.demandeAccompagnement ? `
       <div class="adm-accomp-banner">
         <strong>✋ Accompagnement administratif demandé</strong>

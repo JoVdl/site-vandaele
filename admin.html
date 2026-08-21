@@ -542,6 +542,25 @@
     .adm-accomp-badge { background: #fdf4ff; border: 1.5px solid #e879f9; color: #86198f; padding: .45rem .75rem; border-radius: 7px; font-size: .8rem; font-weight: 600; margin-bottom: .5rem; }
     .adm-accomp-banner { background: #fdf4ff; border: 2px solid #c026d3; color: #701a75; padding: .65rem .9rem; border-radius: 8px; font-size: .84rem; line-height: 1.55; margin-bottom: .9rem; }
     .adm-accomp-banner strong { display: block; margin-bottom: .2rem; font-size: .9rem; }
+    .adm-recontact-banner { padding: .65rem .9rem; border-radius: 8px; font-size: .84rem; line-height: 1.55; margin-bottom: .9rem; }
+    .adm-recontact-oui { background: #f0fdf4; border: 2px solid #22c55e; color: #15803d; }
+    .adm-recontact-non { background: var(--gray-50); border: 2px solid var(--gray-200); color: var(--gray-600); }
+    .adm-recontact-pending { background: #fffbeb; border: 2px solid #fbbf24; color: #92400e; }
+    .card-recontact { font-size: .68rem; font-weight: 600; padding: .15rem .45rem; border-radius: 99px; margin-top: .2rem; }
+    .rc-oui     { background: #dcfce7; color: #15803d; }
+    .rc-non     { background: var(--gray-100); color: var(--gray-500); }
+    .rc-pending { background: #fef3c7; color: #92400e; }
+    .abandon-card { display: flex; align-items: center; justify-content: space-between; padding: .7rem 1rem; border-bottom: 1px solid var(--gray-100); cursor: default; }
+    .abandon-card:last-child { border-bottom: none; }
+    .ab-main { display: flex; flex-direction: column; gap: .15rem; }
+    .ab-step { font-size: .85rem; font-weight: 600; color: var(--gray-800); }
+    .ab-date { font-size: .75rem; color: var(--gray-400); }
+    .ab-badge { font-size: .74rem; font-weight: 600; padding: .2rem .55rem; border-radius: 99px; white-space: nowrap; }
+    .ab-completed { background: var(--gray-50); }
+    .ab-completed .ab-badge { background: #dcfce7; color: #15803d; }
+    .ab-abandoned { background: #fffbeb; }
+    .ab-abandoned .ab-badge { background: #fef3c7; color: #92400e; }
+    .fnav-abandons { margin-top: .35rem; border-top: 1px solid var(--gray-200); padding-top: .45rem; }
     .adm-zone-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .55rem; }
     .adm-ztag { padding: .2rem .6rem; border-radius: 99px; font-size: .73rem; font-weight: 600; }
     .adm-ztag-zh  { background: #dbeafe; color: #1e40af; }
@@ -825,6 +844,7 @@
         <button class="fnav-btn" data-status="chantier_gagne">🟢 Gagné</button>
         <button class="fnav-btn" data-status="sans_suite">⚫ Sans suite</button>
         <button class="fnav-btn fnav-archived" data-status="archived">📦 Archivées</button>
+        <button class="fnav-btn fnav-abandons" data-status="abandons">📊 Abandons</button>
         <button id="btn-real-section">
           <span style="font-size:1rem">🏗️</span>
           Nos réalisations

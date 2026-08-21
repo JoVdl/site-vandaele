@@ -102,6 +102,9 @@ if (typeof db !== 'undefined' && db) {
 
 // ── ÉTAT ──────────────────────────────────────────────────────
 let lastEstMin = 0, lastEstMax = 0, lastEstLines = [];
+let currentDocId  = null;
+let abandonDocId  = null;
+const sessionId   = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 let currentPanel = 1;
 const state = {
   surface: 0,
@@ -163,6 +166,7 @@ function goToPanel(n) {
   });
 
   currentPanel = n;
+  trackAbandon(n);
   if (n === 2) renderProblems();
   if (n === 4) {
     syncDetailSections();
@@ -177,6 +181,24 @@ function goToPanel(n) {
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   computeEstimation();
+}
+
+async function trackAbandon(panel) {
+  if (!db) return;
+  const update = { last_panel: panel, updated_at: firebase.firestore.FieldValue.serverTimestamp() };
+  if (abandonDocId) {
+    db.collection('abandons').doc(abandonDocId).update(update).catch(() => {});
+  } else if (panel > 1) {
+    try {
+      const ref = await db.collection('abandons').add({
+        session_id: sessionId,
+        completed: false,
+        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+        ...update,
+      });
+      abandonDocId = ref.id;
+    } catch (e) { console.error('[Firebase] Abandon tracking:', e); }
+  }
 }
 
 // ── ZONE CONFIG (problèmes affichés selon type de zone) ───────
@@ -1331,7 +1353,57 @@ function prepareEstimationResult() {
   if (p6Lines) p6Lines.innerHTML = document.getElementById('result-lines')?.innerHTML || '';
   if (p6Total) p6Total.textContent = document.getElementById('result-total-amount')?.textContent || '– €';
 
+  saveDemandeToFirestore();
   goToPanel(6);
+}
+
+async function saveDemandeToFirestore() {
+  if (!db) return;
+  const prenom     = document.getElementById('c-prenom')?.value?.trim();
+  const nom        = document.getElementById('c-nom')?.value?.trim();
+  const email      = document.getElementById('c-email')?.value?.trim();
+  const tel        = document.getElementById('c-tel')?.value?.trim();
+  const estimation = document.getElementById('result-total-amount')?.textContent || 'Non calculée';
+  try {
+    const docRef = await db.collection('demandes').add({
+      type: 'estimation',
+      prenom, nom, email, telephone: tel,
+      type_client:     state.typeClient,
+      zone_type:       state.zoneType,
+      recontact:       null,
+      organisation:    document.getElementById('c-org')?.value?.trim() || '',
+      fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
+      delai:           document.getElementById('c-delai')?.value  || '',
+      adresse:         document.getElementById('adresse')?.value  || '',
+      surface_ha:      state.surface   || null,
+      perimetre_ml:    state.perimetre || null,
+      acces:           state.acces,
+      travaux:         [...state.travaux],
+      estimation_min:   lastEstMin || null,
+      estimation_max:   lastEstMax || null,
+      estimation_text:  estimation,
+      estimation_lines: lastEstLines.map(l => ({ label: l.label, val: l.val })),
+      details:         buildDetails(),
+      infos_sup:       state.infosSup || null,
+      geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
+      lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
+      lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
+      geojson_epandage_hydro:  state.epandageGeojsonHydro  ? JSON.stringify(state.epandageGeojsonHydro)  : null,
+      lat_epandage_hydro:      state.epandageCentroidHydro?.lat  || null,
+      lng_epandage_hydro:      state.epandageCentroidHydro?.lng  || null,
+      geojson_epandage_curage: state.epandageGeojsonCurage ? JSON.stringify(state.epandageGeojsonCurage) : null,
+      lat_epandage_curage:     state.epandageCentroidCurage?.lat || null,
+      lng_epandage_curage:     state.epandageCentroidCurage?.lng || null,
+      statut:          'nouveau',
+      created_at:      firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    currentDocId = docRef.id;
+    if (abandonDocId) {
+      db.collection('abandons').doc(abandonDocId).update({ completed: true }).catch(() => {});
+    }
+  } catch (e) {
+    console.error('[Firebase] Sauvegarde demande échouée :', e.code, e.message);
+  }
 }
 
 // ── SOUMISSION ────────────────────────────────────────────────
@@ -1423,43 +1495,51 @@ async function submitEstimation(recontact) {
     ...(state.infosSup ? { 'Informations complémentaires': state.infosSup } : {}),
   };
 
-  // Sauvegarde dans Firebase Firestore (dashboard admin)
+  // Mise à jour du champ recontact dans le doc Firestore existant
   if (db) {
-    try {
-      await db.collection('demandes').add({
-        type: 'estimation',
-        prenom, nom, email, telephone: tel,
-        type_client:     state.typeClient,
-        zone_type:       state.zoneType,
-        recontact:       recontact === true,
-        organisation:    document.getElementById('c-org')?.value?.trim() || '',
-        fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
-        delai:           document.getElementById('c-delai')?.value  || '',
-        adresse:         document.getElementById('adresse')?.value  || '',
-        surface_ha:      state.surface   || null,
-        perimetre_ml:    state.perimetre || null,
-        acces:           state.acces,
-        travaux:         [...state.travaux],
-        estimation_min:   lastEstMin || null,
-        estimation_max:   lastEstMax || null,
-        estimation_text:  estimation,
-        estimation_lines: lastEstLines.map(l => ({ label: l.label, val: l.val })),
-        details:         buildDetails(),
-        infos_sup:       state.infosSup || null,
-        geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
-        lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
-        lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
-        geojson_epandage_hydro:  state.epandageGeojsonHydro  ? JSON.stringify(state.epandageGeojsonHydro)  : null,
-        lat_epandage_hydro:      state.epandageCentroidHydro?.lat  || null,
-        lng_epandage_hydro:      state.epandageCentroidHydro?.lng  || null,
-        geojson_epandage_curage: state.epandageGeojsonCurage ? JSON.stringify(state.epandageGeojsonCurage) : null,
-        lat_epandage_curage:     state.epandageCentroidCurage?.lat || null,
-        lng_epandage_curage:     state.epandageCentroidCurage?.lng || null,
-        statut:          'nouveau',
-        created_at:      firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      console.error('[Firebase] Sauvegarde demande échouée :', e.code, e.message);
+    if (currentDocId) {
+      db.collection('demandes').doc(currentDocId).update({
+        recontact: recontact === true,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      }).catch(e => console.error('[Firebase] Recontact update failed:', e));
+    } else {
+      // Fallback si la sauvegarde initiale n'a pas encore abouti
+      try {
+        await db.collection('demandes').add({
+          type: 'estimation',
+          prenom, nom, email, telephone: tel,
+          type_client:     state.typeClient,
+          zone_type:       state.zoneType,
+          recontact:       recontact === true,
+          organisation:    document.getElementById('c-org')?.value?.trim() || '',
+          fonction:        document.getElementById('c-fonction')?.value?.trim() || '',
+          delai:           document.getElementById('c-delai')?.value  || '',
+          adresse:         document.getElementById('adresse')?.value  || '',
+          surface_ha:      state.surface   || null,
+          perimetre_ml:    state.perimetre || null,
+          acces:           state.acces,
+          travaux:         [...state.travaux],
+          estimation_min:   lastEstMin || null,
+          estimation_max:   lastEstMax || null,
+          estimation_text:  estimation,
+          estimation_lines: lastEstLines.map(l => ({ label: l.label, val: l.val })),
+          details:         buildDetails(),
+          infos_sup:       state.infosSup || null,
+          geojson:         state.geojson ? JSON.stringify(state.geojson) : null,
+          lat:             state.lat  || (selectedCoords ? selectedCoords[1] : null),
+          lng:             state.lng  || (selectedCoords ? selectedCoords[0] : null),
+          geojson_epandage_hydro:  state.epandageGeojsonHydro  ? JSON.stringify(state.epandageGeojsonHydro)  : null,
+          lat_epandage_hydro:      state.epandageCentroidHydro?.lat  || null,
+          lng_epandage_hydro:      state.epandageCentroidHydro?.lng  || null,
+          geojson_epandage_curage: state.epandageGeojsonCurage ? JSON.stringify(state.epandageGeojsonCurage) : null,
+          lat_epandage_curage:     state.epandageCentroidCurage?.lat || null,
+          lng_epandage_curage:     state.epandageCentroidCurage?.lng || null,
+          statut:          'nouveau',
+          created_at:      firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        console.error('[Firebase] Sauvegarde demande échouée (fallback) :', e.code, e.message);
+      }
     }
   }
 
