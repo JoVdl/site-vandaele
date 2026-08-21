@@ -310,6 +310,7 @@ window.applyProblems = function() {
   const note = document.getElementById('guided-note');
   if (note) note.style.display = checked.length ? '' : 'none';
 
+  updateCurageCompare();
   computeEstimation();
   goToPanel(3);
 };
@@ -349,11 +350,19 @@ function syncDetailSections() {
     toggleEpandageSection('curage', state.destinationVase === 'sur-place');
 }
 
+// ── COMPARATIF CURAGE ─────────────────────────────────────────
+function updateCurageCompare() {
+  const el = document.getElementById('curage-compare');
+  if (!el) return;
+  el.style.display = (state.travaux.has('hydrocurage') && state.travaux.has('curage')) ? '' : 'none';
+}
+
 // ── TRAVAUX CHECKBOXES ────────────────────────────────────────
 document.querySelectorAll('input[name="travaux"]').forEach(cb => {
   cb.addEventListener('change', () => {
     if (cb.checked) state.travaux.add(cb.value);
     else state.travaux.delete(cb.value);
+    updateCurageCompare();
     computeEstimation();
   });
 });
