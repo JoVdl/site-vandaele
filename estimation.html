@@ -179,6 +179,18 @@
       user-select: none;
     }
     .travail-toggle label .t-icon { font-size: 1.8rem; line-height: 1; }
+    .travail-toggle label .t-icon-img {
+      width: 72px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+      transition: filter var(--transition), opacity var(--transition);
+      filter: saturate(.85);
+    }
+    .travail-toggle input:checked + label .t-icon-img {
+      filter: saturate(1.1);
+    }
     .travail-toggle input:checked + label {
       border-color: var(--blue-500);
       background: var(--blue-50);
@@ -762,49 +774,49 @@
               <div class="travail-toggle">
                 <input type="checkbox" id="t-hydrocurage" name="travaux" value="hydrocurage" />
                 <label for="t-hydrocurage">
-                  <span class="t-icon">💧</span>
+                  <img class="t-icon-img" src="assets/img/curage-de-lagunes.jpg" alt="Hydrocurage" />
                   Hydrocurage /<br>Curage par aspiration
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-curage" name="travaux" value="curage" />
                 <label for="t-curage">
-                  <span class="t-icon">🚜</span>
+                  <img class="t-icon-img" src="assets/img/curage-mecanique-1.jpg" alt="Curage mécanique" />
                   Curage mécanique
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-faucardage" name="travaux" value="faucardage" />
                 <label for="t-faucardage">
-                  <span class="t-icon">🌿</span>
+                  <img class="t-icon-img" src="assets/img/bateau-faucardeur.jpg" alt="Faucardage" />
                   Faucardage
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-berges" name="travaux" value="berges" />
                 <label for="t-berges">
-                  <span class="t-icon">🪨</span>
+                  <img class="t-icon-img" src="assets/img/defenses-de-berges.jpg" alt="Défenses de berges" />
                   Défenses de berges
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-broyage-forestier" name="travaux" value="broyage-forestier" />
                 <label for="t-broyage-forestier">
-                  <span class="t-icon">🌲</span>
+                  <img class="t-icon-img" src="assets/img/travaux-en-marais.jpg" alt="Broyage forestier" />
                   Broyage forestier
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-broyage-roseaux" name="travaux" value="broyage-roseaux" />
                 <label for="t-broyage-roseaux">
-                  <span class="t-icon">🌾</span>
+                  <img class="t-icon-img" src="assets/img/fauchage-de-roseaux-avec-exportation.jpg" alt="Broyage de roseaux" />
                   Broyage de roseaux
                 </label>
               </div>
               <div class="travail-toggle">
                 <input type="checkbox" id="t-diagnostic" name="travaux" value="diagnostic" />
                 <label for="t-diagnostic">
-                  <span class="t-icon">🔍</span>
+                  <img class="t-icon-img" src="assets/img/diagnostic-terrain.jpg" alt="Diagnostic" />
                   Diagnostic
                 </label>
               </div>
