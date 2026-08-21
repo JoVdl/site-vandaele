@@ -25,6 +25,16 @@ service cloud.firestore {
       // Seul l'admin connecté peut supprimer
       allow delete: if request.auth != null;
     }
+
+    match /abandons/{sessionId} {
+
+      // L'outil public peut créer et mettre à jour sa propre session
+      allow create: if true;
+      allow update: if true;
+
+      // Seul l'admin peut lire et supprimer
+      allow read, delete: if request.auth != null;
+    }
   }
 }
 

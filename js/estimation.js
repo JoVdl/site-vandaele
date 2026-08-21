@@ -102,9 +102,12 @@ if (typeof db !== 'undefined' && db) {
 
 // ── ÉTAT ──────────────────────────────────────────────────────
 let lastEstMin = 0, lastEstMax = 0, lastEstLines = [];
-let currentDocId  = null;
-let abandonDocId  = null;
-const sessionId   = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+let currentDocId      = null;
+let abandonDocId      = null;
+let sessionCompleted  = false;
+let abandonReasonSaved = false;
+const sessionId       = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const sessionDevice   = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 let currentPanel = 1;
 const state = {
   surface: 0,
@@ -192,6 +195,7 @@ async function trackAbandon(panel) {
     try {
       const ref = await db.collection('abandons').add({
         session_id: sessionId,
+        device: sessionDevice,
         completed: false,
         created_at: firebase.firestore.FieldValue.serverTimestamp(),
         ...update,
@@ -1397,7 +1401,8 @@ async function saveDemandeToFirestore() {
       statut:          'nouveau',
       created_at:      firebase.firestore.FieldValue.serverTimestamp(),
     });
-    currentDocId = docRef.id;
+    currentDocId     = docRef.id;
+    sessionCompleted = true;
     if (abandonDocId) {
       db.collection('abandons').doc(abandonDocId).update({ completed: true }).catch(() => {});
     }
@@ -1589,3 +1594,20 @@ function showToast(msg, type) {
 
 computeEstimation();
 trackAbandon(1); // Enregistre la session dès l'ouverture de l'outil
+
+// ── DÉTECTION RAISON D'ABANDON ────────────────────────────────
+function markAbandonReason(reason) {
+  if (sessionCompleted || abandonReasonSaved || !db || !abandonDocId) return;
+  abandonReasonSaved = true;
+  db.collection('abandons').doc(abandonDocId).update({
+    reason,
+    updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+  }).catch(() => {});
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') markAbandonReason('Onglet masqué / fermeture');
+});
+window.addEventListener('pagehide', () => {
+  markAbandonReason('Navigation / changement de page');
+});
