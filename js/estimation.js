@@ -1347,6 +1347,8 @@ async function submitEstimation(recontact) {
     'Type client': state.typeClient,
     'Zone de travaux': state.zoneType,
     ...(state.zoneType === 'autre' ? { 'Description situation': document.getElementById('autre-description')?.value?.trim() || '' } : {}),
+    ...(state.travaux.has('hydrocurage') && state.destinationVaseHydro === 'sur-place' ? { 'Adresse stockage hydrocurage': document.getElementById('adresse-stockage-hydro')?.value?.trim() || '' } : {}),
+    ...(state.travaux.has('curage') && state.destinationVase === 'sur-place' ? { 'Adresse stockage curage': document.getElementById('adresse-stockage-curage')?.value?.trim() || '' } : {}),
     'Souhaite être recontacté': recontact ? 'Oui' : 'Non',
     ...(state.typeClient !== 'particulier' ? {
       Organisation: document.getElementById('c-org')?.value?.trim() || '',
