@@ -310,7 +310,7 @@ async function loadTarifsPanel() {
         )
       )}
       ${card('🚜 Curage mécanique',
-        base('curage.mobilisation', '🚛 Mobilisation drague', '€', t.curage.mobilisation) +
+        base('curage.mobilisation', '🚛 Mobilisation matériel', '€', t.curage.mobilisation) +
         mod('curage.moyen',     'Accès moyen',     t.curage.moyen     ?? 20) +
         mod('curage.difficile', 'Accès difficile', t.curage.difficile ?? 40),
         tabs('curage', (svc, cl) =>
@@ -2358,7 +2358,7 @@ function buildFiche(d, zones, procs) {
     }
   }
   if (details.curage) {
-    lines.push(`Type : Curage mécanique (drague / pelle amphibie)`);
+    lines.push(`Type : Curage mécanique (pelle marais / dumper / bull)`);
     lines.push(`Profondeur de vase : ${details.curage.prof_vase_cm || '–'} cm`);
     lines.push(`Surface concernée : ${details.curage.pct_surface || '–'} %`);
     if (details.curage.epandage_surface_m2) lines.push(`Surface épandage disponible : ${Math.round(details.curage.epandage_surface_m2).toLocaleString('fr')} m²`);

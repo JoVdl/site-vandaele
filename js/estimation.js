@@ -569,11 +569,11 @@ function computeEstimation() {
   let totalMin = 0, totalMax = 0;
   let hasTravaux = false;
 
-  function addMobi(t, label) {
+  function addMobi(t) {
     if (!t?.mobilisation) return;
     totalMin += t.mobilisation.min;
     totalMax += t.mobilisation.max;
-    lines.push({ label: `Mobilisation – ${label}`, val: fmtRange(t.mobilisation.min, t.mobilisation.max) });
+    lines.push({ label: 'Mobilisation du matériel', val: fmtRange(t.mobilisation.min, t.mobilisation.max) });
   }
 
   const tc_ = svc => TARIFS[svc][state.typeClient] ?? TARIFS[svc].particulier;
@@ -583,7 +583,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS.hydrocurage;
     const tc = tc_('hydrocurage');
-    addMobi(t, 'pompe / hydrocureur');
+    addMobi(t);
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
     const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
     const m = accMod(t, acces);
@@ -605,7 +605,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS.curage;
     const tc = tc_('curage');
-    addMobi(t, 'drague / pelle amphibie');
+    addMobi(t);
     const surf = state.surface > 0 ? state.surface : 0.5;
     const surfM2 = surf * 10000 * (state.pctCurage / 100);
     const profM = state.profVase / 100;
@@ -626,7 +626,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS.faucardage;
     const tc = tc_('faucardage');
-    addMobi(t, 'bateau faucardeur');
+    addMobi(t);
     const surf = (state.surface > 0 ? state.surface : 0.5) * (state.pctFauc / 100);
     const m = accMod(t, acces) * (state.faucJussie ? (1 + (t.jussie || 0) / 100) : 1);
     const cMin = surf * tc.base.min * m;
@@ -640,7 +640,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS.berges;
     const tc = tc_('berges');
-    addMobi(t, 'pelle + matériaux');
+    addMobi(t);
     const tp = tc[state.typeBerge] || tc.conseil;
     const lg = state.lgBerges;
     const cMin = lg * tp.min;
@@ -654,7 +654,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS['broyage-forestier'];
     const tc = tc_('broyage-forestier');
-    addMobi(t, 'broyeur forestier');
+    addMobi(t);
     const tp = tc[state.densiteBroyage] || tc.moyenne;
     const surf = state.surfBroyageForestier;
     const cMin = surf * tp.min;
@@ -668,7 +668,7 @@ function computeEstimation() {
     hasTravaux = true;
     const t = TARIFS['broyage-roseaux'];
     const tc = tc_('broyage-roseaux');
-    addMobi(t, 'bateau + broyeur');
+    addMobi(t);
     const surf = state.surfBroyageRoseaux;
     const m = accMod(t, acces) * (state.avecRamassage ? (1 + (t.ramassage || 0) / 100) : 1);
     const cMin = surf * tc.base.min * m;
