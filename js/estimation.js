@@ -835,6 +835,8 @@ if (adresseInput) {
 
 // ── CARTE LEAFLET ─────────────────────────────────────────────
 let leafletMap = null;
+let epandageHydroLayer = null;
+let epandageCurageLayer = null;
 const mapEl = document.getElementById('leaflet-map');
 if (mapEl && typeof L !== 'undefined') {
 
@@ -866,6 +868,9 @@ if (mapEl && typeof L !== 'undefined') {
   ).addTo(map);
 
   const drawnItems = new L.FeatureGroup().addTo(map);
+  epandageHydroLayer  = new L.FeatureGroup().addTo(map);
+  epandageCurageLayer = new L.FeatureGroup().addTo(map);
+  let currentDrawMode = 'surface';
 
   const drawPolygon = new L.Draw.Polygon(map, {
     allowIntersection: false,
@@ -879,6 +884,16 @@ if (mapEl && typeof L !== 'undefined') {
     metric: true, feet: false,
   });
 
+  const drawEpandageHydro = new L.Draw.Polygon(map, {
+    allowIntersection: false, showArea: true, metric: true, feet: false,
+    shapeOptions: { color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.15, weight: 2, dashArray: '6,4' },
+  });
+
+  const drawEpandageCurage = new L.Draw.Polygon(map, {
+    allowIntersection: false, showArea: true, metric: true, feet: false,
+    shapeOptions: { color: '#3B82F6', fillColor: '#3B82F6', fillOpacity: 0.15, weight: 2, dashArray: '6,4' },
+  });
+
   const btnSurface = document.getElementById('btn-draw-surface');
   const btnBerges  = document.getElementById('btn-draw-berges');
   const btnReset   = document.getElementById('btn-draw-reset');
@@ -888,6 +903,9 @@ if (mapEl && typeof L !== 'undefined') {
   function setMode(mode) {
     drawPolygon.disable();
     drawPolyline.disable();
+    drawEpandageHydro.disable();
+    drawEpandageCurage.disable();
+    currentDrawMode = mode;
     btnSurface && btnSurface.classList.remove('active-surface');
     btnBerges  && btnBerges.classList.remove('active-berges');
     if (btnFinish) btnFinish.style.display = 'none';
@@ -902,8 +920,17 @@ if (mapEl && typeof L !== 'undefined') {
       btnBerges && btnBerges.classList.add('active-berges');
       if (btnFinish) btnFinish.style.display = '';
       if (infoBar) infoBar.innerHTML = '📏 Cliquez pour tracer le long des berges. Appuyez sur <strong>Terminer</strong> pour valider.';
+    } else if (mode === 'epandage-hydro') {
+      drawEpandageHydro.enable();
+      if (btnFinish) btnFinish.style.display = '';
+      if (infoBar) infoBar.innerHTML = '🟠 Délimitez la zone d\'épandage hydrocurage (polygone orange). Cliquez sur le 1<sup>er</sup> point ou <strong>Terminer</strong> pour fermer.';
+    } else if (mode === 'epandage-curage') {
+      drawEpandageCurage.enable();
+      if (btnFinish) btnFinish.style.display = '';
+      if (infoBar) infoBar.innerHTML = '🔵 Délimitez la zone d\'épandage curage (polygone bleu). Cliquez sur le 1<sup>er</sup> point ou <strong>Terminer</strong> pour fermer.';
     }
   }
+  window._setMapMode = setMode;
 
   // ── TERMINER LE TRACÉ (bouton "Terminer") ──────────────────────
   function finishCurrentDrawing() {
@@ -921,6 +948,22 @@ if (mapEl && typeof L !== 'undefined') {
         return;
       }
       drawPolyline._finishShape();
+      return;
+    }
+    if (drawEpandageHydro._enabled) {
+      if ((drawEpandageHydro._markers || []).length < 3) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 3 points pour délimiter la zone.';
+        return;
+      }
+      drawEpandageHydro._finishShape();
+      return;
+    }
+    if (drawEpandageCurage._enabled) {
+      if ((drawEpandageCurage._markers || []).length < 3) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Tracez au moins 3 points pour délimiter la zone.';
+        return;
+      }
+      drawEpandageCurage._finishShape();
     }
   }
 
@@ -951,10 +994,28 @@ if (mapEl && typeof L !== 'undefined') {
     map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polyline' });
   };
 
+  drawEpandageHydro._finishShape = function() {
+    const pts = (this._markers || []).map(m => m.getLatLng());
+    if (pts.length < 3) return;
+    this.disable();
+    const layer = L.polygon([pts], { color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.15, weight: 2, dashArray: '6,4' });
+    map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
+  };
+
+  drawEpandageCurage._finishShape = function() {
+    const pts = (this._markers || []).map(m => m.getLatLng());
+    if (pts.length < 3) return;
+    this.disable();
+    const layer = L.polygon([pts], { color: '#3B82F6', fillColor: '#3B82F6', fillOpacity: 0.15, weight: 2, dashArray: '6,4' });
+    map.fire(L.Draw.Event.CREATED, { layer, layerType: 'polygon' });
+  };
+
   if (btnSurface) btnSurface.addEventListener('click', () => setMode('surface'));
   if (btnBerges)  btnBerges.addEventListener('click',  () => setMode('berges'));
   if (btnReset)   btnReset.addEventListener('click', () => {
     drawPolygon.disable(); drawPolyline.disable();
+    drawEpandageHydro.disable(); drawEpandageCurage.disable();
+    currentDrawMode = 'surface';
     drawnItems.clearLayers();
     btnSurface && btnSurface.classList.remove('active-surface');
     btnBerges  && btnBerges.classList.remove('active-berges');
@@ -972,15 +1033,50 @@ if (mapEl && typeof L !== 'undefined') {
   // finishCurrentDrawing() qui désactive l'outil AVANT de créer le polygone,
   // ce qui garantit la suppression des guides avant l'événement draw:created.
   map.on('draw:drawvertex', () => {
-    if (!drawPolygon._enabled || !drawPolygon._markers || drawPolygon._markers.length < 3) return;
-    const firstMarker = drawPolygon._markers[0];
-    firstMarker.off('click').on('click', ev => {
-      L.DomEvent.stop(ev);
-      finishCurrentDrawing();
+    [drawPolygon, drawEpandageHydro, drawEpandageCurage].forEach(tool => {
+      if (!tool._enabled || !tool._markers || tool._markers.length < 3) return;
+      const firstMarker = tool._markers[0];
+      firstMarker.off('click').on('click', ev => { L.DomEvent.stop(ev); finishCurrentDrawing(); });
     });
   });
 
   map.on(L.Draw.Event.CREATED, e => {
+    resetDrawingUI();
+
+    // Route épandage draws to their own layer
+    if (currentDrawMode === 'epandage-hydro' || currentDrawMode === 'epandage-curage') {
+      const type = currentDrawMode === 'epandage-hydro' ? 'hydro' : 'curage';
+      const layerGroup = currentDrawMode === 'epandage-hydro' ? epandageHydroLayer : epandageCurageLayer;
+      layerGroup.clearLayers();
+      layerGroup.addLayer(e.layer);
+      try {
+        const lls = e.layer.getLatLngs()[0];
+        const area = Math.round(L.GeometryUtil.geodesicArea(lls));
+        const center = e.layer.getBounds().getCenter();
+        if (type === 'hydro') {
+          state.epandageSurfaceHydro  = area;
+          state.epandageCentroidHydro = { lat: center.lat, lng: center.lng };
+          state.epandageGeojsonHydro  = e.layer.toGeoJSON();
+        } else {
+          state.epandageSurfaceCurage  = area;
+          state.epandageCentroidCurage = { lat: center.lat, lng: center.lng };
+          state.epandageGeojsonCurage  = e.layer.toGeoJSON();
+        }
+        const valEl = document.getElementById(`epandage-surface-${type}-val`);
+        const resEl = document.getElementById(`epandage-result-${type}`);
+        if (valEl) valEl.textContent = `${area.toLocaleString('fr-FR')} m² (${(area / 10000).toFixed(2)} ha)`;
+        if (resEl) resEl.hidden = false;
+        if (infoBar) infoBar.innerHTML = `✅ Zone d'épandage tracée : <strong>${area.toLocaleString('fr-FR')} m²</strong> &nbsp;·&nbsp; <span style="font-size:.85em;">⬇️ Vérification des zones en cours…</span>`;
+        checkEpandageZones(type, center.lat, center.lng);
+      } catch(err) {
+        if (infoBar) infoBar.innerHTML = '⚠️ Erreur lors du tracé — recommencez.';
+        console.error('[epandage draw:created]', err);
+      }
+      currentDrawMode = 'surface';
+      return;
+    }
+
+    // Pond / berges drawing
     drawnItems.clearLayers();
     drawnItems.addLayer(e.layer);
 
@@ -1039,13 +1135,24 @@ if (mapEl && typeof L !== 'undefined') {
     map.invalidateSize();
   };
 
+  // Legend
+  const mapLegend = L.control({ position: 'bottomleft' });
+  mapLegend.onAdd = function() {
+    const div = L.DomUtil.create('div', 'map-legend');
+    div.innerHTML = `
+      <div class="legend-item"><span class="legend-swatch" style="background:#3d9e62;"></span> Étang</div>
+      <div class="legend-item"><span class="legend-swatch legend-dashed" style="border-color:#F59E0B;background:rgba(245,158,11,.2);"></span> Zone d'épandage</div>
+      <div class="legend-item"><span class="legend-swatch legend-dashed" style="border-color:#3B82F6;background:rgba(59,130,246,.2);"></span> Zone d'épandage (curage)</div>`;
+    return div;
+  };
+  mapLegend.addTo(map);
+
   setMode('surface');
   setTimeout(() => map.invalidateSize(), 100);
   setTimeout(() => map.invalidateSize(), 400);
 }
 
-// ── CARTES ÉPANDAGE ────────────────────────────────────────────
-const epandageMaps = {};
+// ── ÉPANDAGE ───────────────────────────────────────────────────
 
 function calcEpandageVol(type) {
   const surfM2 = (state.surface > 0 ? state.surface : 0) * 10000;
@@ -1071,64 +1178,7 @@ function toggleEpandageSection(type, show) {
     const wrap = document.getElementById('curage-epandage-wrap');
     if (wrap) wrap.hidden = !show;
   }
-  if (show) {
-    updateEpandageInfo(type);
-    // Only init map if user has "j'ai un terrain" selected
-    const radio = document.querySelector(`input[name="epandage-dispo-${type}"]:checked`);
-    if (!radio || radio.value === 'oui') {
-      setTimeout(() => initEpandageMap(type), 80);
-    }
-  }
-}
-
-function initEpandageMap(type) {
-  if (!window.L) return;
-  const mapEl = document.getElementById(`map-epandage-${type}`);
-  if (!mapEl) return;
-  if (epandageMaps[type]) {
-    epandageMaps[type].map.invalidateSize();
-    return;
-  }
-  const lat  = state.lat  || 46.8;
-  const lng  = state.lng  || 2.3;
-  const zoom = state.lat  ? 16 : 6;
-
-  const m = L.map(`map-epandage-${type}`, { zoomControl: true }).setView([lat, lng], zoom);
-  L.tileLayer(
-    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
-    '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
-    '&FORMAT=image%2Fjpeg&STYLE=normal',
-    { attribution: '© IGN', maxZoom: 21, maxNativeZoom: 19 }
-  ).addTo(m);
-
-  const drawnItems = new L.FeatureGroup().addTo(m);
-
-  m.on(L.Draw.Event.CREATED, e => {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(e.layer);
-    const lls  = e.layer.getLatLngs()[0];
-    const area   = Math.round(L.GeometryUtil.geodesicArea(lls));
-    const bounds = e.layer.getBounds();
-    const center = bounds.getCenter();
-    const geojsonEp = e.layer.toGeoJSON();
-    if (type === 'hydro') {
-      state.epandageSurfaceHydro  = area;
-      state.epandageCentroidHydro = { lat: center.lat, lng: center.lng };
-      state.epandageGeojsonHydro  = geojsonEp;
-    } else {
-      state.epandageSurfaceCurage  = area;
-      state.epandageCentroidCurage = { lat: center.lat, lng: center.lng };
-      state.epandageGeojsonCurage  = geojsonEp;
-    }
-    const valEl = document.getElementById(`epandage-surface-${type}-val`);
-    const resEl = document.getElementById(`epandage-result-${type}`);
-    if (valEl) valEl.textContent = `${area.toLocaleString('fr-FR')} m² (${(area / 10000).toFixed(2)} ha)`;
-    if (resEl) resEl.hidden = false;
-    checkEpandageZones(type, center.lat, center.lng);
-  });
-
-  epandageMaps[type] = { map: m, drawnItems };
-  setTimeout(() => m.invalidateSize(), 100);
+  if (show) updateEpandageInfo(type);
 }
 
 window.geocodeEpandage = async function(type) {
@@ -1141,32 +1191,26 @@ window.geocodeEpandage = async function(type) {
     const feat = json.features?.[0];
     if (!feat) { showToast('Adresse introuvable, essayez une formulation différente.', 'error'); return; }
     const [lng, lat] = feat.geometry.coordinates;
-    if (!epandageMaps[type]) initEpandageMap(type);
-    epandageMaps[type].map.setView([lat, lng], 15);
+    if (leafletMap) { leafletMap.setView([lat, lng], 16); leafletMap.invalidateSize(); }
+    document.getElementById('leaflet-map')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch {
     showToast('Erreur de géocodage, vérifiez votre connexion.', 'error');
   }
 };
 
 window.startEpandageDraw = function(type) {
-  if (!epandageMaps[type]) { initEpandageMap(type); return; }
-  const { map } = epandageMaps[type];
-  new L.Draw.Polygon(map, {
-    allowIntersection: false,
-    showArea: true,
-    metric: true,
-    shapeOptions: { color: '#3d9e62', weight: 2, fillOpacity: 0.15 },
-  }).enable();
+  document.getElementById('leaflet-map')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  window._setMapMode?.('epandage-' + type);
 };
 
 window.resetEpandageMap = function(type) {
-  const m = epandageMaps[type];
-  if (m) m.drawnItems.clearLayers();
   if (type === 'hydro') {
+    epandageHydroLayer?.clearLayers();
     state.epandageSurfaceHydro  = null;
     state.epandageCentroidHydro = null;
     state.epandageGeojsonHydro  = null;
   } else {
+    epandageCurageLayer?.clearLayers();
     state.epandageSurfaceCurage  = null;
     state.epandageCentroidCurage = null;
     state.epandageGeojsonCurage  = null;
@@ -1176,6 +1220,23 @@ window.resetEpandageMap = function(type) {
   const zoneEl = document.getElementById(`epandage-zone-${type}`);
   if (zoneEl) { zoneEl.hidden = true; zoneEl.innerHTML = ''; }
 };
+
+function ensureAccompagnementCheckbox() {
+  if (document.getElementById('cb-accompagnement')) return;
+  const zoneEl = document.getElementById('zone-info');
+  if (!zoneEl) return;
+  zoneEl.style.display = 'block';
+  const wrap = document.createElement('label');
+  wrap.className = 'zone-accomp-label';
+  wrap.style.marginTop = '.5rem';
+  wrap.innerHTML = `<input type="checkbox" id="cb-accompagnement" />
+    <span class="zone-accomp-text">
+      <strong>Je souhaite être accompagné(e) dans les démarches administratives</strong>
+      <em>Dossier Loi sur l'eau · évaluation d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
+    </span>`;
+  zoneEl.appendChild(wrap);
+  wrap.querySelector('input').addEventListener('change', e => { state.demandeAccompagnement = e.target.checked; });
+}
 
 async function checkEpandageZones(type, lat, lng) {
   const zoneEl = document.getElementById(`epandage-zone-${type}`);
@@ -1206,8 +1267,8 @@ async function checkEpandageZones(type, lat, lng) {
           <div class="zone-item-name">${z.icon} ${z.name}</div>
           <div class="zone-item-impact">${z.impact}</div>
         </div>`).join('')}
-        <div class="zone-alert-footer">Nous vous accompagnons dans les démarches administratives nécessaires.</div>
       </div>`;
+      ensureAccompagnementCheckbox();
     }
   } catch {
     zoneEl.innerHTML = '';
@@ -1327,15 +1388,6 @@ async function checkEnvironmentalZones(lat, lng) {
         </div>`).join('')}
     </div>` : '';
 
-  const accompHtml = `
-    <label class="zone-accomp-label" style="margin-top:.5rem;">
-      <input type="checkbox" id="cb-accompagnement" />
-      <span class="zone-accomp-text">
-        <strong>Je souhaite être accompagné(e) dans les démarches administratives</strong>
-        <em>Dossier Loi sur l'eau · évaluation d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
-      </span>
-    </label>`;
-
   zoneEl.innerHTML = zhHtml + ecoHtml + `
     <div class="zone-alert-footer-global">
       Ces informations sont basées sur les données IGN et sont indicatives. La vérification définitive est effectuée lors de la visite technique.
@@ -1348,12 +1400,10 @@ async function checkEnvironmentalZones(lat, lng) {
       <abbr title="Site d'Importance Communautaire">SIC</abbr> ·
       <abbr title="Zone de Protection Spéciale">ZPS</abbr> ·
       <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>
-    </div>` + accompHtml;
+    </div>`;
 
+  ensureAccompagnementCheckbox();
   zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  const cb = document.getElementById('cb-accompagnement');
-  if (cb) cb.addEventListener('change', () => { state.demandeAccompagnement = cb.checked; });
 }
 
 // ── BUILD DETAILS (pour Supabase) ─────────────────────────────

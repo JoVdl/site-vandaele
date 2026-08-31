@@ -552,6 +552,11 @@
     }
     /* Override Leaflet draw tooltips */
     .leaflet-draw-tooltip { font-size: .8rem !important; }
+    /* Map legend */
+    .map-legend { background: rgba(255,255,255,.92); backdrop-filter: blur(4px); padding: .4rem .6rem; border-radius: 6px; font-size: .75rem; color: var(--gray-700); box-shadow: 0 1px 5px rgba(0,0,0,.2); line-height: 1; }
+    .legend-item { display: flex; align-items: center; gap: .35rem; padding: .18rem 0; }
+    .legend-swatch { display: inline-block; width: 13px; height: 13px; border-radius: 3px; border: 2px solid transparent; flex-shrink: 0; }
+    .legend-dashed { border-style: dashed; }
 
     /* ── TYPE CLIENT SELECTOR ── */
     .client-type-group { display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -1183,12 +1188,10 @@
                           <input type="text" id="adresse-stockage-hydro" class="form-input" placeholder="Ex : lieu-dit, adresse, commune…" autocomplete="off" style="flex:1;" />
                           <button type="button" class="btn btn-outline" style="white-space:nowrap;padding:.45rem .75rem;font-size:.82rem;" onclick="geocodeEpandage('hydro')">Localiser</button>
                         </div>
-                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour centrer la carte sur la zone de stockage.</p>
+                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour recentrer la carte sur la zone de stockage.</p>
                       </div>
-                      <p class="form-hint">Délimitez ensuite la parcelle ou le champ disponible pour l'épandage.</p>
-                      <div id="map-epandage-hydro" class="epandage-map"></div>
                       <div class="epandage-map-btns">
-                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('hydro')">✏️ Dessiner la surface</button>
+                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('hydro')">🟠 Délimiter sur la carte</button>
                         <button type="button" class="btn-epandage-reset" onclick="resetEpandageMap('hydro')">🗑️ Effacer</button>
                       </div>
                       <div class="epandage-result" id="epandage-result-hydro" hidden>
@@ -1272,12 +1275,10 @@
                           <input type="text" id="adresse-stockage-curage" class="form-input" placeholder="Ex : lieu-dit, adresse, commune…" autocomplete="off" style="flex:1;" />
                           <button type="button" class="btn btn-outline" style="white-space:nowrap;padding:.45rem .75rem;font-size:.82rem;" onclick="geocodeEpandage('curage')">Localiser</button>
                         </div>
-                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour centrer la carte sur la zone de stockage.</p>
+                        <p class="form-hint">Entrez l'adresse puis cliquez "Localiser" pour recentrer la carte sur la zone de stockage.</p>
                       </div>
-                      <p class="form-hint">Délimitez ensuite la parcelle ou le champ disponible pour l'épandage.</p>
-                      <div id="map-epandage-curage" class="epandage-map"></div>
                       <div class="epandage-map-btns">
-                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('curage')">✏️ Dessiner la surface</button>
+                        <button type="button" class="btn-epandage-draw" onclick="startEpandageDraw('curage')">🔵 Délimiter sur la carte</button>
                         <button type="button" class="btn-epandage-reset" onclick="resetEpandageMap('curage')">🗑️ Effacer</button>
                       </div>
                       <div class="epandage-result" id="epandage-result-curage" hidden>
@@ -1703,7 +1704,7 @@
   </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/estimation.js?v=10"></script>
+<script src="js/estimation.js?v=11"></script>
 </body>
 </html>
 
