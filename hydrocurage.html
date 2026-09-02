@@ -288,6 +288,14 @@
       width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block;
     }
     .step-media-trio img:first-child { grid-column: span 2; }
+    @media (max-width: 600px) {
+      .steps { height: clamp(500px, 80dvh, 700px); }
+      .step { padding: 1.1rem 1.2rem; }
+      .step-body > p { font-size: .8rem; line-height: 1.55; margin-bottom: .5rem; }
+      .step-label { font-size: .95rem; }
+      .step-alt { padding: .5rem .75rem; font-size: .74rem; }
+      .step-alt-imgs img { height: 56px; }
+    }
 
     /* CTA */
     .cta-section {
