@@ -161,19 +161,45 @@
     .split-videos video { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow-lg); display: block; }
 
     /* STEPS */
-    .step-tabs {
-      display: flex; gap: .35rem; margin-bottom: 1.25rem;
-      background: var(--gray-100); border-radius: 14px; padding: .3rem;
+    .step-indicator { margin-bottom: 1.5rem; }
+    .step-track {
+      display: flex; align-items: center; margin-bottom: .75rem;
     }
-    .step-tab {
-      flex: 1; padding: .55rem .25rem; border: none; border-radius: 10px;
-      font-family: var(--font-display); font-weight: 800; font-size: .82rem;
-      color: var(--gray-500); cursor: pointer; background: none;
-      transition: all .25s; letter-spacing: .02em;
+    .step-pip {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid var(--gray-200); background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: .72rem; font-weight: 800;
+      color: var(--gray-400); cursor: pointer;
+      transition: all .3s; position: relative; z-index: 1;
     }
-    .step-tab.active {
-      background: var(--green-900); color: var(--white);
-      box-shadow: 0 2px 10px rgba(10,31,18,.3);
+    .step-pip.done {
+      background: var(--green-800); border-color: var(--green-800); color: var(--white);
+    }
+    .step-pip.done::after {
+      content: '';
+      position: absolute; inset: -1px; border-radius: 50%;
+    }
+    .step-pip.active {
+      background: var(--green-500); border-color: var(--green-500);
+      color: var(--white); transform: scale(1.18);
+      box-shadow: 0 0 0 5px rgba(86,181,122,.2);
+    }
+    .step-line {
+      flex: 1; height: 2px; background: var(--gray-200);
+      position: relative; overflow: hidden;
+    }
+    .step-line-fill {
+      position: absolute; inset: 0;
+      background: linear-gradient(to right, var(--green-800), var(--green-500));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .step-line-fill.filled { transform: scaleX(1); }
+    .step-active-label {
+      font-size: .8rem; font-weight: 600; color: var(--green-600);
+      min-height: 1.1em; text-align: center;
+      transition: opacity .2s;
     }
     .steps {
       display: flex; flex-direction: row;
@@ -330,12 +356,19 @@
 
 <section class="section">
   <div class="container">
-    <div class="step-tabs" id="step-tabs">
-      <button class="step-tab active" data-idx="0">01</button>
-      <button class="step-tab" data-idx="1">02</button>
-      <button class="step-tab" data-idx="2">03</button>
-      <button class="step-tab" data-idx="3">04</button>
-      <button class="step-tab" data-idx="4">05</button>
+    <div class="step-indicator">
+      <div class="step-track" id="step-track">
+        <button class="step-pip active" data-idx="0">01</button>
+        <div class="step-line"><div class="step-line-fill"></div></div>
+        <button class="step-pip" data-idx="1">02</button>
+        <div class="step-line"><div class="step-line-fill"></div></div>
+        <button class="step-pip" data-idx="2">03</button>
+        <div class="step-line"><div class="step-line-fill"></div></div>
+        <button class="step-pip" data-idx="3">04</button>
+        <div class="step-line"><div class="step-line-fill"></div></div>
+        <button class="step-pip" data-idx="4">05</button>
+      </div>
+      <div class="step-active-label" id="step-active-label">Création du bassin d'accueil des sédiments</div>
     </div>
     <div class="steps" id="steps-carousel">
       <div class="step">
@@ -462,11 +495,20 @@
 <script>
 (function() {
   const rail = document.getElementById('steps-carousel');
-  const tabs = document.querySelectorAll('#step-tabs .step-tab');
-  const steps = rail.querySelectorAll('.step');
-  const total = steps.length;
+  const pips = document.querySelectorAll('#step-track .step-pip');
+  const lines = document.querySelectorAll('#step-track .step-line-fill');
+  const labelEl = document.getElementById('step-active-label');
+  const cards = rail.querySelectorAll('.step');
+  const total = cards.length;
+  const names = [
+    'Création du bassin d\'accueil des sédiments',
+    'Aspiration de la vase',
+    'Acheminement par tuyaux',
+    'Retour de l\'eau clarifiée',
+    'Séchage, nivellement et revalorisation'
+  ];
 
-  function cardW() { return rail.offsetWidth + 16; }
+  function cardW() { return rail.offsetWidth; }
 
   function getIdx() {
     return Math.min(total - 1, Math.round(rail.scrollLeft / cardW()));
@@ -479,18 +521,22 @@
 
   function update() {
     const idx = getIdx();
-    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+    pips.forEach((p, i) => {
+      p.classList.toggle('active', i === idx);
+      p.classList.toggle('done', i < idx);
+    });
+    lines.forEach((l, i) => l.classList.toggle('filled', i < idx));
+    labelEl.textContent = names[idx];
   }
 
   rail.addEventListener('scroll', update, { passive: true });
-  tabs.forEach(t => t.addEventListener('click', () => goTo(+t.dataset.idx)));
+  pips.forEach(p => p.addEventListener('click', () => goTo(+p.dataset.idx)));
 
-  // drag to scroll (desktop)
-  let isDown = false, startX, scrollLeft;
-  rail.addEventListener('mousedown', e => { isDown = true; rail.classList.add('grabbing'); startX = e.pageX - rail.offsetLeft; scrollLeft = rail.scrollLeft; });
+  let isDown = false, startX, scrollStart;
+  rail.addEventListener('mousedown', e => { isDown = true; rail.classList.add('grabbing'); startX = e.pageX; scrollStart = rail.scrollLeft; });
   rail.addEventListener('mouseleave', () => { isDown = false; rail.classList.remove('grabbing'); });
   rail.addEventListener('mouseup', () => { isDown = false; rail.classList.remove('grabbing'); });
-  rail.addEventListener('mousemove', e => { if (!isDown) return; e.preventDefault(); const x = e.pageX - rail.offsetLeft; rail.scrollLeft = scrollLeft - (x - startX); });
+  rail.addEventListener('mousemove', e => { if (!isDown) return; e.preventDefault(); rail.scrollLeft = scrollStart - (e.pageX - startX); });
 
   update();
 })();
