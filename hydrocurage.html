@@ -13,658 +13,303 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --green-900: #0a1f12;
-      --green-800: #133d22;
-      --green-700: #1e5c34;
-      --green-600: #2d7a4a;
-      --green-500: #3d9e62;
-      --green-400: #56B57A;
-      --green-100: #d4eedc;
-      --green-50:  #f0f8f2;
-      --gray-900: #111827;
-      --gray-700: #374151;
-      --gray-600: #4b5563;
-      --gray-500: #6b7280;
-      --gray-200: #e5e7eb;
-      --gray-100: #f3f4f6;
-      --gray-50:  #f9fafb;
-      --white: #ffffff;
+      --green-900: #0a1f12; --green-800: #133d22; --green-600: #2d7a4a;
+      --green-500: #3d9e62; --green-400: #56B57A; --green-50: #f0f8f2;
+      --gray-900: #111827; --gray-600: #4b5563; --gray-500: #6b7280;
+      --gray-100: #f3f4f6; --gray-50: #f9fafb; --white: #ffffff;
       --font-sans: 'Inter', system-ui, sans-serif;
       --font-display: 'Sora', 'Inter', sans-serif;
-      --radius: 14px;
-      --radius-sm: 8px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
-      --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-      --shadow-lg: 0 10px 40px rgba(0,0,0,.15);
-      --transition: 0.25s cubic-bezier(.4,0,.2,1);
+      --radius: 14px; --shadow-lg: 0 10px 40px rgba(0,0,0,.2);
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
     }
-
     html { scroll-behavior: smooth; }
     body { font-family: var(--font-sans); color: var(--gray-900); background: var(--white); line-height: 1.6; -webkit-font-smoothing: antialiased; }
-    img { max-width: 100%; display: block; }
     a { text-decoration: none; color: inherit; }
 
-    /* ── HEADER ── */
+    /* HEADER */
     .site-header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      height: 68px;
-      background: rgba(10,31,18,.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 64px;
+      background: rgba(10,31,18,.96); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
       display: flex; align-items: center;
     }
     .header-inner {
-      width: 100%; max-width: 1100px; margin: 0 auto;
-      padding: 0 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .logo { display: flex; align-items: center; }
-    .logo img { height: 36px; }
+    .logo img { height: 34px; display: block; }
     .header-cta {
-      display: flex; align-items: center; gap: .6rem;
-      font-size: .85rem; font-weight: 600;
-      color: var(--white);
-      background: var(--green-500); border-radius: 10px;
-      padding: .45rem .9rem;
-      white-space: nowrap;
-      transition: background var(--transition);
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--green-500); color: var(--white);
+      font-size: .85rem; font-weight: 600; padding: .45rem .95rem;
+      border-radius: 10px; transition: background var(--transition); white-space: nowrap;
     }
     .header-cta:hover { background: var(--green-600); }
-    .header-cta svg { flex-shrink: 0; }
 
-    /* ── HERO ── */
+    /* HERO */
     .hero {
-      position: relative;
-      min-height: 100dvh;
-      display: flex; align-items: center;
-      padding: 68px 1.5rem 3rem;
+      position: relative; height: 72dvh; min-height: 500px;
+      display: flex; align-items: center; overflow: hidden;
       background: var(--green-900);
-      overflow: hidden;
     }
-    .hero-bg {
-      position: absolute; inset: 0;
-      background-image: url('assets/img/curage-de-lagunes.jpg');
-      background-size: cover; background-position: center 60%;
+    .hero-video {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: .7;
     }
-    .hero-bg::after {
-      content: '';
+    .hero-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(10,31,18,.82) 0%, rgba(10,31,18,.55) 60%, rgba(10,31,18,.72) 100%);
+      background: linear-gradient(135deg, rgba(10,31,18,.78) 0%, rgba(10,31,18,.45) 100%);
     }
     .hero-content {
-      position: relative; z-index: 1;
-      max-width: 680px; margin: 0 auto;
+      position: relative; z-index: 1; max-width: 640px;
+      margin: 0 auto; padding: 64px 1.5rem 2rem; width: 100%;
     }
     .hero-badge {
-      display: inline-flex; align-items: center; gap: .5rem;
+      display: inline-flex; align-items: center; gap: .45rem;
       background: rgba(86,181,122,.18); border: 1px solid rgba(86,181,122,.35);
-      color: var(--green-400); font-size: .78rem; font-weight: 700;
-      letter-spacing: .06em; text-transform: uppercase;
-      padding: .32rem .85rem; border-radius: 100px;
-      margin-bottom: 1.5rem;
+      color: var(--green-400); font-size: .75rem; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      padding: .3rem .8rem; border-radius: 100px; margin-bottom: 1.25rem;
     }
-    .hero-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green-400); }
+    .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green-400); }
     .hero-title {
-      font-family: var(--font-display);
-      font-size: clamp(2.4rem, 5.5vw, 4rem);
-      font-weight: 800; line-height: 1.1;
-      color: var(--white); margin-bottom: 1.25rem;
-      letter-spacing: -.02em;
+      font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; color: var(--white); line-height: 1.1;
+      letter-spacing: -.02em; margin-bottom: 1.1rem;
     }
     .hero-title .accent { color: var(--green-400); }
-    .hero-subtitle {
-      font-size: clamp(1rem, 2vw, 1.2rem);
-      color: rgba(255,255,255,.78); margin-bottom: 2rem;
-      max-width: 520px; line-height: 1.65;
-    }
-    .hero-pills { display: flex; flex-wrap: wrap; gap: .55rem; margin-bottom: 2.5rem; }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
     .hero-pill {
-      display: flex; align-items: center; gap: .4rem;
-      background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15);
-      color: rgba(255,255,255,.88); font-size: .8rem; font-weight: 600;
-      padding: .4rem .85rem; border-radius: 100px;
+      display: flex; align-items: center; gap: .35rem;
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.9); font-size: .78rem; font-weight: 600;
+      padding: .35rem .8rem; border-radius: 100px;
     }
-    .hero-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-400); flex-shrink: 0; }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
-    .btn {
-      display: inline-flex; align-items: center; gap: .5rem;
-      padding: .75rem 1.4rem; border-radius: 12px;
-      font-family: var(--font-sans); font-weight: 600; font-size: .95rem;
-      border: 2px solid transparent; cursor: pointer;
-      transition: all var(--transition); white-space: nowrap;
+    .hero-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green-400); flex-shrink: 0; }
+    .btn-hero {
+      display: inline-flex; align-items: center; gap: .55rem;
+      background: var(--green-500); color: var(--white);
+      font-weight: 700; font-size: 1rem; padding: .8rem 1.6rem;
+      border-radius: 12px; transition: all var(--transition);
     }
-    .btn-primary { background: var(--green-500); color: var(--white); border-color: var(--green-500); }
-    .btn-primary:hover { background: var(--green-600); border-color: var(--green-600); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(61,158,98,.35); }
-    .btn-ghost { background: transparent; color: var(--white); border-color: rgba(255,255,255,.35); }
-    .btn-ghost:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.6); }
-    .hero-scroll {
-      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-      display: flex; flex-direction: column; align-items: center; gap: .4rem;
-      color: rgba(255,255,255,.45); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
-      animation: bounce 2s ease-in-out infinite;
-    }
-    @keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+    .btn-hero:hover { background: var(--green-400); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(61,158,98,.4); }
 
-    /* ── SECTION BASE ── */
-    .section { padding: 4.5rem 1.5rem; }
+    /* SECTIONS */
+    .section { padding: 4rem 1.5rem; }
     .section--gray { background: var(--gray-50); }
-    .section--dark { background: var(--green-800); }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .section-header { text-align: center; margin-bottom: 3rem; }
-    .section-tag {
-      display: inline-block;
-      background: var(--green-50); color: var(--green-600);
-      font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-      padding: .3rem .85rem; border-radius: 100px; margin-bottom: .9rem;
+    .container { max-width: 1060px; margin: 0 auto; }
+    .tag {
+      display: inline-block; background: var(--green-50); color: var(--green-600);
+      font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: .28rem .8rem; border-radius: 100px; margin-bottom: .8rem;
     }
-    .section-tag--dark { background: rgba(86,181,122,.2); color: var(--green-400); }
-    .section-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-      font-weight: 700; line-height: 1.2;
-      color: var(--gray-900); margin-bottom: .75rem;
-    }
-    .section-title--white { color: var(--white); }
-    .section-desc { color: var(--gray-500); max-width: 600px; margin: 0 auto; font-size: 1.02rem; line-height: 1.7; }
-    .section-desc--white { color: rgba(255,255,255,.72); }
 
-    /* ── KEY FACTS ── */
-    .facts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.25rem; margin-top: 3rem;
+    /* SPLIT */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: center; }
+    @media (max-width: 720px) { .split { grid-template-columns: 1fr; gap: 2rem; } .split-video { order: -1; } }
+    .split-text h2 {
+      font-family: var(--font-display); font-size: clamp(1.45rem, 2.5vw, 2rem);
+      font-weight: 700; color: var(--gray-900); line-height: 1.2; margin-bottom: .9rem;
     }
-    .fact-card {
-      background: var(--white); border-radius: var(--radius);
-      padding: 1.5rem 1.25rem; text-align: center;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
-      transition: box-shadow var(--transition), transform var(--transition);
+    .split-text p { color: var(--gray-600); line-height: 1.75; font-size: .95rem; margin-bottom: .75rem; }
+    .check-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: .45rem; }
+    .check-list li {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .875rem; color: var(--gray-600);
     }
-    .fact-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-    .fact-icon { font-size: 2rem; margin-bottom: .65rem; }
-    .fact-label { font-size: .82rem; font-weight: 700; color: var(--green-600); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
-    .fact-desc { font-size: .88rem; color: var(--gray-600); line-height: 1.5; }
-
-    /* ── INTRO SPLIT ── */
-    .intro-split {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 3.5rem; align-items: center;
-    }
-    @media (max-width: 760px) { .intro-split { grid-template-columns: 1fr; gap: 2rem; } }
-    .intro-text h2 {
-      font-family: var(--font-display); font-size: clamp(1.5rem, 2.5vw, 2.1rem);
-      font-weight: 700; color: var(--gray-900); margin-bottom: 1rem; line-height: 1.25;
-    }
-    .intro-text p { color: var(--gray-600); line-height: 1.75; margin-bottom: 1rem; font-size: .97rem; }
-    .intro-checklist { list-style: none; display: flex; flex-direction: column; gap: .5rem; margin-top: 1.25rem; }
-    .intro-checklist li {
-      display: flex; align-items: flex-start; gap: .65rem;
-      font-size: .9rem; color: var(--gray-700); line-height: 1.5;
-    }
-    .intro-checklist li::before {
+    .check-list li::before {
       content: '✓'; flex-shrink: 0;
-      width: 20px; height: 20px; border-radius: 50%;
+      width: 18px; height: 18px; border-radius: 50%;
       background: var(--green-50); color: var(--green-600);
-      font-size: .72rem; font-weight: 800;
+      font-size: .65rem; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
-      margin-top: 1px;
     }
-    .intro-visual { position: relative; }
-    .intro-visual img {
-      width: 100%; height: 380px; object-fit: cover;
-      border-radius: var(--radius); box-shadow: var(--shadow-lg);
+    .split-video video {
+      width: 100%; border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); display: block;
+      aspect-ratio: 16/10; object-fit: cover;
     }
-    .intro-badge {
-      position: absolute; bottom: -1rem; left: -1rem;
-      background: var(--white); border-radius: 14px;
-      padding: .85rem 1.1rem; box-shadow: var(--shadow-md);
-      display: flex; align-items: center; gap: .7rem;
-    }
-    .intro-badge .ico { font-size: 1.5rem; }
-    .intro-badge .txt strong { display: block; font-size: .9rem; font-weight: 700; color: var(--gray-900); }
-    .intro-badge .txt span { font-size: .75rem; color: var(--gray-500); }
 
-    /* ── PROCESS ── */
-    .steps-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
+    /* STEPS */
+    .steps-heading {
+      font-family: var(--font-display); font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+      font-weight: 700; color: var(--gray-900); margin-bottom: 2.25rem;
     }
-    @media (max-width: 860px) { .steps-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 540px) { .steps-grid { grid-template-columns: 1fr; } }
-    .step-card {
-      background: var(--white); border-radius: var(--radius);
-      padding: 1.5rem 1.25rem;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
-      transition: box-shadow var(--transition), transform var(--transition);
+    .steps { display: flex; flex-direction: column; gap: 0; max-width: 720px; }
+    .step {
+      display: flex; gap: 1.25rem; align-items: flex-start;
+      padding: 1.4rem 0;
+      border-bottom: 1px solid rgba(0,0,0,.06);
     }
-    .step-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-    .step-num {
-      width: 38px; height: 38px; border-radius: 10px;
-      background: var(--green-50); color: var(--green-600);
-      font-family: var(--font-display); font-size: .95rem; font-weight: 800;
+    .step:last-child { border-bottom: none; }
+    .step-n {
+      flex-shrink: 0; width: 2.25rem; height: 2.25rem;
+      background: var(--green-500); color: var(--white);
+      border-radius: 50%; font-family: var(--font-display);
+      font-size: .8rem; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: .9rem;
+      margin-top: .1rem;
     }
-    .step-icon { font-size: 1.5rem; margin-bottom: .5rem; }
-    .step-title { font-family: var(--font-display); font-size: .97rem; font-weight: 700; color: var(--gray-900); margin-bottom: .4rem; }
-    .step-desc { font-size: .84rem; color: var(--gray-500); line-height: 1.6; }
+    .step-label { font-weight: 700; font-size: .97rem; color: var(--gray-900); margin-bottom: .25rem; }
+    .step p { font-size: .875rem; color: var(--gray-500); line-height: 1.65; margin: 0; }
 
-    /* ── GALLERY ── */
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: auto auto;
-      gap: 1rem;
-    }
-    @media (max-width: 700px) { .gallery-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 480px) { .gallery-grid { grid-template-columns: 1fr; } }
-    .gallery-img {
-      border-radius: var(--radius-sm); overflow: hidden;
-      position: relative;
-    }
-    .gallery-img img {
-      width: 100%; height: 220px; object-fit: cover;
-      transition: transform .4s ease;
-    }
-    .gallery-img:hover img { transform: scale(1.04); }
-    .gallery-img--wide { grid-column: span 2; }
-    .gallery-img--wide img { height: 280px; }
-    @media (max-width: 700px) { .gallery-img--wide { grid-column: span 2; } }
-    @media (max-width: 480px) { .gallery-img--wide { grid-column: span 1; } .gallery-img--wide img { height: 220px; } }
-    .gallery-caption {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(to top, rgba(10,31,18,.7) 0%, transparent 100%);
-      color: rgba(255,255,255,.9); font-size: .75rem; font-weight: 500;
-      padding: 1.25rem .75rem .6rem; line-height: 1.3;
-    }
-
-    /* ── FOR WHOM ── */
-    .usecases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
-    @media (max-width: 760px) { .usecases { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 480px) { .usecases { grid-template-columns: 1fr; } }
-    .usecase {
-      border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow var(--transition), transform var(--transition);
-    }
-    .usecase:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-    .usecase-img { position: relative; }
-    .usecase-img img { width: 100%; height: 180px; object-fit: cover; }
-    .usecase-img::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(10,31,18,.65) 0%, transparent 60%);
-    }
-    .usecase-body { background: var(--white); padding: 1rem 1.1rem 1.2rem; border-top: 3px solid var(--green-400); }
-    .usecase-title { font-family: var(--font-display); font-size: .97rem; font-weight: 700; color: var(--gray-900); margin-bottom: .3rem; }
-    .usecase-desc { font-size: .82rem; color: var(--gray-500); line-height: 1.55; }
-
-    /* ── CALLOUT ── */
-    .callout {
-      background: var(--green-50); border: 1px solid var(--green-100);
-      border-left: 4px solid var(--green-500);
-      border-radius: var(--radius-sm); padding: 1.1rem 1.25rem;
-      margin-top: 2rem; display: flex; gap: .75rem; align-items: flex-start;
-    }
-    .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: .05rem; }
-    .callout-text { font-size: .87rem; color: var(--green-700); line-height: 1.6; }
-    .callout-text strong { display: block; font-weight: 700; margin-bottom: .2rem; }
-
-    /* ── CTA SECTION ── */
+    /* CTA */
     .cta-section {
-      padding: 4.5rem 1.5rem;
+      padding: 4rem 1.5rem;
       background: linear-gradient(135deg, var(--green-800) 0%, var(--green-900) 100%);
-      position: relative; overflow: hidden;
+      text-align: center;
     }
-    .cta-section::before {
-      content: '';
-      position: absolute; top: -80px; right: -80px;
-      width: 320px; height: 320px; border-radius: 50%;
-      background: rgba(86,181,122,.08);
+    .cta-section h2 {
+      font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800; color: var(--white); margin-bottom: .6rem;
     }
-    .cta-inner { max-width: 680px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
-    .cta-inner h2 {
-      font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.2rem);
-      font-weight: 800; color: var(--white); margin-bottom: .75rem;
-    }
-    .cta-inner p { color: rgba(255,255,255,.72); margin-bottom: 2rem; font-size: 1rem; }
-    .cta-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .85rem; }
+    .cta-section > p { color: rgba(255,255,255,.65); margin-bottom: 1.75rem; font-size: .95rem; }
+    .cta-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
     .btn-cta-phone {
-      display: inline-flex; align-items: center; gap: .6rem;
-      background: var(--green-500); color: var(--white); border: 2px solid var(--green-500);
-      padding: .85rem 1.75rem; border-radius: 14px;
-      font-weight: 700; font-size: 1.05rem; letter-spacing: -.01em;
+      display: inline-flex; align-items: center; gap: .55rem;
+      background: var(--green-500); color: var(--white);
+      font-weight: 700; font-size: 1.05rem; padding: .85rem 1.75rem;
+      border-radius: 14px; border: 2px solid var(--green-500);
       transition: all var(--transition);
     }
-    .btn-cta-phone:hover { background: var(--green-400); border-color: var(--green-400); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(61,158,98,.4); }
-    .btn-cta-estimate {
-      display: inline-flex; align-items: center; gap: .6rem;
-      background: transparent; color: var(--white); border: 2px solid rgba(255,255,255,.4);
-      padding: .85rem 1.75rem; border-radius: 14px;
-      font-weight: 600; font-size: 1rem;
+    .btn-cta-phone:hover { background: var(--green-400); border-color: var(--green-400); transform: translateY(-1px); }
+    .btn-cta-mail {
+      display: inline-flex; align-items: center; gap: .55rem;
+      background: transparent; color: var(--white);
+      font-weight: 600; font-size: .95rem; padding: .85rem 1.5rem;
+      border-radius: 14px; border: 2px solid rgba(255,255,255,.3);
       transition: all var(--transition);
     }
-    .btn-cta-estimate:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.7); }
-    .cta-note { font-size: .78rem; color: rgba(255,255,255,.45); margin-top: 1.25rem; }
+    .btn-cta-mail:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.6); }
 
-    /* ── FOOTER ── */
+    /* FOOTER */
     .site-footer {
-      background: var(--green-900);
-      border-top: 1px solid rgba(255,255,255,.07);
-      padding: 2.5rem 1.5rem;
+      background: var(--green-900); padding: 2rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,.06);
     }
     .footer-inner {
       max-width: 1100px; margin: 0 auto;
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-      gap: 1.5rem;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
     }
-    .footer-logo { display: flex; align-items: center; }
-    .footer-logo img { height: 32px; }
-    .footer-info { text-align: right; }
-    .footer-info a { color: rgba(255,255,255,.65); font-size: .85rem; display: block; line-height: 1.8; transition: color var(--transition); }
+    .footer-logo img { height: 30px; display: block; }
+    .footer-info a { color: rgba(255,255,255,.6); font-size: .82rem; display: block; line-height: 1.9; transition: color var(--transition); }
     .footer-info a:hover { color: var(--green-400); }
-    .footer-copy { width: 100%; text-align: center; font-size: .72rem; color: rgba(255,255,255,.25); padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,.06); }
+    .footer-copy { text-align: center; font-size: .7rem; color: rgba(255,255,255,.22); padding-top: 1.25rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,.06); }
   </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
 <header class="site-header">
   <div class="header-inner">
-    <span class="logo">
-      <img src="assets/logo.svg" alt="ETS Vandaele Marcel & Fils" />
-    </span>
+    <span class="logo"><img src="assets/logo.svg" alt="ETS Vandaele Marcel & Fils" /></span>
     <a href="tel:0632441117" class="header-cta">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
       06 32 44 11 17
     </a>
   </div>
 </header>
 
-<!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-bg"></div>
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="assets/video/hydrocurage.mp4" type="video/mp4" />
+  </video>
+  <div class="hero-overlay"></div>
   <div class="hero-content">
     <div class="hero-badge">Spécialiste depuis 1953</div>
-    <h1 class="hero-title">
-      Curage par<br><span class="accent">aspiration</span><br>de votre étang
-    </h1>
-    <p class="hero-subtitle">
-      Votre plan d'eau s'envase ? Nous extrayons la vase par pompage sans vider l'étang, sans engins lourds sur les berges, sans interrompre la vie aquatique.
-    </p>
+    <h1 class="hero-title">Curage par<br><span class="accent">aspiration</span><br>de votre étang</h1>
     <div class="hero-pills">
-      <span class="hero-pill"><span class="dot"></span>Sans mise à sec</span>
-      <span class="hero-pill"><span class="dot"></span>Résultat immédiat</span>
-      <span class="hero-pill"><span class="dot"></span>Faune préservée</span>
-      <span class="hero-pill"><span class="dot"></span>Boues valorisées en agriculture</span>
+      <span class="hero-pill">Sans mise à sec</span>
+      <span class="hero-pill">Faune préservée</span>
+      <span class="hero-pill">Boues valorisées</span>
     </div>
-    <div class="hero-actions">
-      <a href="tel:0632441117" class="btn btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Nous appeler
-      </a>
-    </div>
-  </div>
-  <div class="hero-scroll">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    Découvrir
+    <a href="tel:0632441117" class="btn-hero">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Nous appeler
+    </a>
   </div>
 </section>
 
-<!-- ── KEY FACTS ── -->
-<section class="section" id="quoi">
+<section class="section">
   <div class="container">
-    <div class="section-header">
-      <div class="section-tag">En un coup d'œil</div>
-      <h2 class="section-title">Qu'est-ce que le curage par aspiration ?</h2>
-      <p class="section-desc">
-        L'hydrocurage — ou curage par aspiration — consiste à pomper la vase accumulée au fond de votre plan d'eau grâce à une drague aspiratrice. La technique la plus douce pour votre étang.
-      </p>
-    </div>
-
-    <div class="facts-grid">
-      <div class="fact-card">
-        <div class="fact-icon">💧</div>
-        <div class="fact-label">Eau maintenue</div>
-        <div class="fact-desc">L'étang reste en eau pendant toute l'intervention. Pas de vidange, pas de mise à sec.</div>
-      </div>
-      <div class="fact-card">
-        <div class="fact-icon">🐟</div>
-        <div class="fact-label">Faune protégée</div>
-        <div class="fact-desc">Poissons et batraciens restent dans leur milieu. Zéro stress pour la faune aquatique.</div>
-      </div>
-      <div class="fact-card">
-        <div class="fact-icon">🚛</div>
-        <div class="fact-label">Accès difficile</div>
-        <div class="fact-desc">Adapté aux sites sans chemin carrossable. La pompe travaille depuis la berge ou un bateau.</div>
-      </div>
-      <div class="fact-card">
-        <div class="fact-icon">🌱</div>
-        <div class="fact-label">Boues valorisées</div>
-        <div class="fact-desc">La vase extraite, riche en minéraux, sèche dans des géotubes puis est épandue sur les terres agricoles voisines.</div>
-      </div>
-      <div class="fact-card">
-        <div class="fact-icon">⏱️</div>
-        <div class="fact-label">Chantier rapide</div>
-        <div class="fact-desc">Résultat visible dès les premiers jours. La profondeur retrouvée se ressent immédiatement.</div>
-      </div>
-      <div class="fact-card">
-        <div class="fact-icon">📋</div>
-        <div class="fact-label">Accompagnement</div>
-        <div class="fact-desc">Nous gérons les démarches administratives (Loi sur l'eau, préfecture) si votre site est classé.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── INTRO SPLIT ── -->
-<section class="section section--gray" id="comment">
-  <div class="container">
-    <div class="intro-split">
-      <div class="intro-text">
-        <h2>Comment ça fonctionne concrètement ?</h2>
-        <p>
-          Une pompe à vase submersible est placée dans l'étang. De l'eau est injectée sous pression pour fluidifier les sédiments. La mixture eau/vase est pompée en continu vers des géotubes installés en périphérie du chantier.
-        </p>
-        <p>
-          Ces géotubes — des tubes en géotextile — filtrent l'eau qui retourne propre dans l'étang, tandis que la vase s'accumule et sèche à l'intérieur. Ce cycle fermé évite toute perte d'eau et maintient le niveau du plan d'eau pendant toute l'opération.
-        </p>
-        <ul class="intro-checklist">
-          <li>Curage sans vidange — l'étang reste en eau</li>
-          <li>Adapté aux étangs, douves, lagunes et mares</li>
-          <li>Retour de l'eau filtrée en continu dans le plan d'eau</li>
-          <li>Impact minimal sur les berges et la végétation</li>
-          <li>Vase séchée valorisable comme amendement agricole</li>
-          <li>Aucune interruption de la vie du plan d'eau</li>
+    <div class="split">
+      <div class="split-text">
+        <div class="tag">Le principe</div>
+        <h2>La vase pompée sans vider le plan d'eau</h2>
+        <p>Une pompe submersible fluidifie les sédiments à l'eau sous pression et les aspire vers des géotubes installés en périphérie. L'eau filtrée revient dans l'étang en continu — le niveau ne baisse pas.</p>
+        <ul class="check-list">
+          <li>Poissons et faune aquatique restent en place</li>
+          <li>Aucun engin lourd sur les berges</li>
+          <li>Adapté aux accès difficiles</li>
+          <li>Applicable toute l'année, sans contrainte météo</li>
         </ul>
-
-        <div class="callout">
-          <div class="callout-icon">💡</div>
-          <div class="callout-text">
-            <strong>Bon à savoir</strong>
-            Contrairement au curage mécanique (pelle marais), l'hydrocurage n'exige aucun assèchement préalable. Le chantier peut démarrer à la saison la plus opportune, sans contrainte liée à la météo ou aux niveaux d'eau.
-          </div>
-        </div>
       </div>
-
-      <div class="intro-visual">
-        <img src="assets/img/essorage-des-boues.jpg" alt="Géotubes de décantation des boues — ETS Vandaele" loading="lazy" />
-        <div class="intro-badge">
-          <div class="ico">🏆</div>
-          <div class="txt">
-            <strong>70 ans d'expérience</strong>
-            <span>Entreprise familiale depuis 1953</span>
-          </div>
-        </div>
+      <div class="split-video">
+        <video autoplay muted loop playsinline>
+          <source src="assets/video/hydrocurage_douves.mp4" type="video/mp4" />
+        </video>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── PROCESS ── -->
-<section class="section" id="etapes">
+<section class="section section--gray">
   <div class="container">
-    <div class="section-header">
-      <div class="section-tag">Déroulement du chantier</div>
-      <h2 class="section-title">Les 6 étapes de l'hydrocurage</h2>
-      <p class="section-desc">
-        De la mise en place des géotubes jusqu'à l'épandage agricole de la vase séchée — voici comment se déroule un chantier d'hydrocurage de A à Z.
-      </p>
-    </div>
-
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-num">01</div>
-        <div class="step-icon">🪣</div>
-        <div class="step-title">Création du bassin de décantation</div>
-        <div class="step-desc">Des géotubes en géotextile sont installés en périphérie du chantier. Leur membrane filtrante retient les sédiments tout en laissant passer l'eau.</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">02</div>
-        <div class="step-icon">💨</div>
-        <div class="step-title">Pompage de la vase</div>
-        <div class="step-desc">Une pompe à vase submersible est placée dans l'étang. L'eau injectée sous pression fluidifie les sédiments qui sont aspirés en continu vers les géotubes.</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">03</div>
-        <div class="step-icon">🔄</div>
-        <div class="step-title">Décantation dans les géotubes</div>
-        <div class="step-desc">À l'intérieur des géotubes, les sédiments se déposent et s'accumulent. La membrane filtre l'eau qui ressort clarifiée.</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">04</div>
-        <div class="step-icon">🌊</div>
-        <div class="step-title">Retour d'eau propre dans l'étang</div>
-        <div class="step-desc">L'eau filtrée est réinjectée en permanence dans le plan d'eau. Ce cycle fermé maintient le niveau constant pendant toute l'opération.</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">05</div>
-        <div class="step-icon">☀️</div>
-        <div class="step-title">Séchage de la vase</div>
-        <div class="step-desc">Pompage terminé, la vase reste dans les géotubes. Le séchage naturel (plusieurs semaines) réduit le volume jusqu'à 70 % — la boue se compacte de façon contrôlée.</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">06</div>
-        <div class="step-icon">🌾</div>
-        <div class="step-title">Valorisation agricole</div>
-        <div class="step-desc">La vase séchée, riche en matières organiques et nutriments, est épandue sur des parcelles à proximité comme amendement naturel (avec les autorisations préfectorales si requises).</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── GALLERY ── -->
-<section class="section section--gray" id="galerie">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-tag">Nos chantiers</div>
-      <h2 class="section-title">L'hydrocurage en images</h2>
-      <p class="section-desc">Quelques exemples de plans d'eau traités par l'ETS Vandaele dans les Hauts-de-France et les régions voisines.</p>
-    </div>
-
-    <div class="gallery-grid">
-      <div class="gallery-img gallery-img--wide">
-        <img src="assets/img/curage-d-etang-avec-mise-en-assec.jpg" alt="Hydrocurage d'étang en Hauts-de-France — ETS Vandaele" loading="lazy" />
-        <div class="gallery-caption">Curage d'étang par aspiration — Hauts-de-France</div>
-      </div>
-      <div class="gallery-img">
-        <img src="assets/img/curage-de-lagunes.jpg" alt="Curage de lagune par aspiration — ETS Vandaele" loading="lazy" />
-        <div class="gallery-caption">Lagune de décantation</div>
-      </div>
-      <div class="gallery-img">
-        <img src="assets/img/curage-d-etang-avec-mise-en-assec-2.jpg" alt="Drague aspiratrice en action" loading="lazy" />
-        <div class="gallery-caption">Drague aspiratrice en action</div>
-      </div>
-      <div class="gallery-img">
-        <img src="assets/img/curage-de-douves.jpg" alt="Curage de douves par aspiration" loading="lazy" />
-        <div class="gallery-caption">Curage de douves</div>
-      </div>
-      <div class="gallery-img">
-        <img src="assets/img/travaux-de-curage.jpg" alt="Travaux de curage d'étang" loading="lazy" />
-        <div class="gallery-caption">Travaux de curage</div>
-      </div>
-      <div class="gallery-img">
-        <img src="assets/img/curage-d-etang-avec-mise-en-assec-3.jpg" alt="Résultat après hydrocurage" loading="lazy" />
-        <div class="gallery-caption">Résultat après intervention</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── FOR WHOM ── -->
-<section class="section" id="pour-qui">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-tag">Pour qui ?</div>
-      <h2 class="section-title">Tous types de plans d'eau</h2>
-      <p class="section-desc">L'hydrocurage s'adapte à une grande variété de sites, des étangs privés aux ouvrages hydrauliques.</p>
-    </div>
-
-    <div class="usecases">
-      <div class="usecase">
-        <div class="usecase-img">
-          <img src="assets/img/problemes/etang-envasé.jpg" alt="Étang privé envasé" loading="lazy" />
-        </div>
-        <div class="usecase-body">
-          <div class="usecase-title">Étangs privés et de pêche</div>
-          <div class="usecase-desc">Votre étang de loisir ou de pêche perd de la profondeur ? L'hydrocurage restaure le fond sans perturber les berges ni vider le plan d'eau.</div>
+    <div class="steps-heading">Les étapes du chantier</div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-n">01</span>
+        <div>
+          <div class="step-label">Installation des géotubes</div>
+          <p>Des tubes en géotextile sont posés à proximité de l'étang. Leur membrane filtre les sédiments et laisse l'eau ressortir propre.</p>
         </div>
       </div>
-      <div class="usecase">
-        <div class="usecase-img">
-          <img src="assets/img/curage-de-lagunes.jpg" alt="Lagune d'épuration envasée" loading="lazy" />
-        </div>
-        <div class="usecase-body">
-          <div class="usecase-title">Lagunes d'épuration</div>
-          <div class="usecase-desc">Les lagunes accumulent des boues organiques qui réduisent leur capacité de traitement. L'hydrocurage rétablit le volume utile sans arrêt d'exploitation.</div>
+      <div class="step">
+        <span class="step-n">02</span>
+        <div>
+          <div class="step-label">Aspiration de la vase</div>
+          <p>La pompe submersible injecte de l'eau sous pression pour fluidifier les boues, puis les aspire en continu vers les géotubes.</p>
         </div>
       </div>
-      <div class="usecase">
-        <div class="usecase-img">
-          <img src="assets/img/curage-de-douves.jpg" alt="Douves et fossés à curer" loading="lazy" />
+      <div class="step">
+        <span class="step-n">03</span>
+        <div>
+          <div class="step-label">Retour de l'eau filtrée</div>
+          <p>L'eau traverse la membrane et revient directement dans l'étang — le niveau reste constant pendant toute la durée du chantier.</p>
         </div>
-        <div class="usecase-body">
-          <div class="usecase-title">Douves, fossés et mares</div>
-          <div class="usecase-desc">Accès étroit, végétation en berge, eau peu profonde — l'aspiration intervient là où les engins classiques ne peuvent pas entrer.</div>
+      </div>
+      <div class="step">
+        <span class="step-n">04</span>
+        <div>
+          <div class="step-label">Séchage et valorisation agricole</div>
+          <p>La vase s'accumule dans les géotubes et sèche naturellement. Elle est ensuite épandue sur des terres agricoles voisines comme amendement naturel.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── CTA ── -->
-<section class="cta-section" id="contact">
-  <div class="cta-inner">
-    <h2>Votre étang mérite une seconde vie</h2>
-    <p>
-      Contactez-nous pour un diagnostic téléphonique gratuit. Nous évaluons avec vous la faisabilité, le volume à extraire et le budget estimatif — sans engagement.
-    </p>
-    <div class="cta-actions">
-      <a href="tel:0632441117" class="btn-cta-phone">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        06 32 44 11 17
-      </a>
-    </div>
-    <p class="cta-note">Disponible du lundi au vendredi · Hauts-de-France et régions limitrophes</p>
+<section class="cta-section">
+  <h2>Votre étang mérite une seconde vie</h2>
+  <p>Diagnostic téléphonique gratuit, sans engagement.</p>
+  <div class="cta-btns">
+    <a href="tel:0632441117" class="btn-cta-phone">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.65 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.94-8.12A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81A2 2 0 0 1 9.93 8.5L8.09 10.34a16 16 0 0 0 6 6l1.84-1.84a2 2 0 0 1 1.97-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      06 32 44 11 17
+    </a>
+    <a href="mailto:vandaelemarcel@orange.fr" class="btn-cta-mail">vandaelemarcel@orange.fr</a>
   </div>
 </section>
 
-<!-- ── FOOTER ── -->
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-logo">
-      <img src="assets/logo.svg" alt="Logo ETS Vandaele" />
-    </div>
+    <div class="footer-logo"><img src="assets/logo.svg" alt="Logo ETS Vandaele" /></div>
     <div class="footer-info">
       <a href="tel:0632441117">📞 06 32 44 11 17</a>
       <a href="mailto:vandaelemarcel@orange.fr">✉️ vandaelemarcel@orange.fr</a>
     </div>
   </div>
-  <div class="footer-inner">
-    <div class="footer-copy">© 2025 ETS Vandaele Marcel &amp; Fils – Tous droits réservés</div>
-  </div>
+  <div class="footer-copy">© 2025 ETS Vandaele Marcel &amp; Fils – Tous droits réservés</div>
 </footer>
 
 </body>
