@@ -161,17 +161,53 @@
     .split-videos video { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow-lg); display: block; }
 
     /* STEPS */
+    .steps-heading-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem; gap: 1rem;
+    }
     .steps-heading {
       font-family: var(--font-display); font-size: clamp(1.4rem, 2.5vw, 1.85rem);
-      font-weight: 700; color: var(--gray-900); margin-bottom: 2rem;
+      font-weight: 700; color: var(--gray-900); margin: 0;
     }
-    .steps { display: flex; flex-direction: column; gap: 1rem; max-width: 720px; }
+    .carousel-arrows { display: flex; gap: .5rem; flex-shrink: 0; }
+    .carousel-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--green-900); border: none; cursor: pointer;
+      color: var(--white); display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+    .carousel-btn:hover { background: var(--green-500); transform: scale(1.05); }
+    .carousel-btn:disabled { opacity: .3; cursor: default; transform: none; }
+    .steps {
+      display: flex; flex-direction: row;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      gap: 1rem; padding-bottom: .5rem;
+      scrollbar-width: none; -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+      cursor: grab;
+    }
+    .steps::-webkit-scrollbar { display: none; }
+    .steps.grabbing { cursor: grabbing; }
     .step {
+      flex: 0 0 min(100%, 620px);
+      scroll-snap-align: start;
       position: relative; overflow: hidden;
       background: var(--green-900);
       border-radius: 18px; padding: 1.6rem;
       border: 1px solid rgba(255,255,255,.06);
       display: flex; flex-direction: column; gap: .5rem;
+    }
+    .carousel-dots {
+      display: flex; gap: .45rem; justify-content: center; margin-top: 1.25rem;
+    }
+    .carousel-dot {
+      width: 7px; height: 7px; border-radius: 100px;
+      background: var(--gray-100); border: 1.5px solid var(--gray-100);
+      transition: all .3s; cursor: pointer; padding: 0;
+      background: rgba(19,61,34,.15);
+    }
+    .carousel-dot.active {
+      width: 24px; background: var(--green-500); border-color: var(--green-500);
     }
     .step-header { display: flex; align-items: flex-start; }
     .step-n {
@@ -306,8 +342,18 @@
 
 <section class="section">
   <div class="container">
-    <div class="steps-heading">Les étapes du chantier</div>
-    <div class="steps">
+    <div class="steps-heading-row">
+      <div class="steps-heading">Les étapes du chantier</div>
+      <div class="carousel-arrows">
+        <button class="carousel-btn" id="prev-step" aria-label="Étape précédente">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="carousel-btn" id="next-step" aria-label="Étape suivante">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="steps" id="steps-carousel">
       <div class="step">
         <span class="step-n">01</span>
         <div class="step-header">
@@ -403,6 +449,13 @@
         </div>
       </div>
     </div>
+    <div class="carousel-dots" id="steps-dots">
+      <button class="carousel-dot active" data-idx="0"></button>
+      <button class="carousel-dot" data-idx="1"></button>
+      <button class="carousel-dot" data-idx="2"></button>
+      <button class="carousel-dot" data-idx="3"></button>
+      <button class="carousel-dot" data-idx="4"></button>
+    </div>
   </div>
 </section>
 
@@ -429,5 +482,47 @@
   <div class="footer-copy">© 2025 ETS Vandaele Marcel &amp; Fils – Tous droits réservés</div>
 </footer>
 
+<script>
+(function() {
+  const rail = document.getElementById('steps-carousel');
+  const dots = document.querySelectorAll('#steps-dots .carousel-dot');
+  const btnPrev = document.getElementById('prev-step');
+  const btnNext = document.getElementById('next-step');
+  const steps = rail.querySelectorAll('.step');
+  const total = steps.length;
+
+  function getIdx() {
+    const cardW = steps[0].offsetWidth + 16; // gap 1rem = 16px
+    return Math.round(rail.scrollLeft / cardW);
+  }
+
+  function goTo(idx) {
+    idx = Math.max(0, Math.min(total - 1, idx));
+    const cardW = steps[0].offsetWidth + 16;
+    rail.scrollTo({ left: idx * cardW, behavior: 'smooth' });
+  }
+
+  function update() {
+    const idx = getIdx();
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    btnPrev.disabled = idx === 0;
+    btnNext.disabled = idx === total - 1;
+  }
+
+  rail.addEventListener('scroll', update, { passive: true });
+  btnPrev.addEventListener('click', () => goTo(getIdx() - 1));
+  btnNext.addEventListener('click', () => goTo(getIdx() + 1));
+  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.idx)));
+
+  // drag to scroll (desktop)
+  let isDown = false, startX, scrollLeft;
+  rail.addEventListener('mousedown', e => { isDown = true; rail.classList.add('grabbing'); startX = e.pageX - rail.offsetLeft; scrollLeft = rail.scrollLeft; });
+  rail.addEventListener('mouseleave', () => { isDown = false; rail.classList.remove('grabbing'); });
+  rail.addEventListener('mouseup', () => { isDown = false; rail.classList.remove('grabbing'); });
+  rail.addEventListener('mousemove', e => { if (!isDown) return; e.preventDefault(); const x = e.pageX - rail.offsetLeft; rail.scrollLeft = scrollLeft - (x - startX); });
+
+  update();
+})();
+</script>
 </body>
 </html>
