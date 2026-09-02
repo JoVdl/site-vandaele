@@ -130,6 +130,8 @@
       box-shadow: var(--shadow-lg); display: block;
       aspect-ratio: 16/10; object-fit: cover;
     }
+    .split-videos { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .split-videos video { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow-lg); display: block; }
 
     /* STEPS */
     .steps-heading {
@@ -261,9 +263,12 @@
           <li>Applicable toute l'année, sans contrainte météo</li>
         </ul>
       </div>
-      <div class="split-video">
+      <div class="split-videos">
         <video autoplay muted loop playsinline>
           <source src="assets/video/hydrocurage_douves.mp4" type="video/mp4" />
+        </video>
+        <video autoplay muted loop playsinline>
+          <source src="assets/video/hydrocurage.mp4" type="video/mp4" />
         </video>
       </div>
     </div>
