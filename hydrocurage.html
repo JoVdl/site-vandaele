@@ -177,24 +177,22 @@
       display: flex; align-items: center; margin-bottom: .75rem;
     }
     .step-pip {
-      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
-      border: 2px solid var(--gray-200); background: var(--white);
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 7px;
+      border: 2px solid var(--green-400); background: transparent;
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-display); font-size: .72rem; font-weight: 800;
-      color: var(--gray-400); cursor: pointer;
+      color: var(--green-400); cursor: pointer;
       transition: all .3s; position: relative; z-index: 1;
     }
     .step-pip.done {
       background: var(--green-800); border-color: var(--green-800); color: var(--white);
-    }
-    .step-pip.done::after {
-      content: '';
-      position: absolute; inset: -1px; border-radius: 50%;
+      border-radius: 7px;
     }
     .step-pip.active {
       background: var(--green-500); border-color: var(--green-500);
-      color: var(--white); transform: scale(1.18);
-      box-shadow: 0 0 0 5px rgba(86,181,122,.2);
+      color: var(--white); transform: scale(1.15);
+      box-shadow: 0 0 0 4px rgba(86,181,122,.22);
+      border-radius: 7px;
     }
     .step-line {
       flex: 1; height: 2px; background: var(--gray-200);
