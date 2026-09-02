@@ -155,6 +155,9 @@
     .step p { font-size: .875rem; color: var(--gray-500); line-height: 1.65; margin: 0; }
     .step-media { margin-top: .9rem; border-radius: 10px; overflow: hidden; }
     .step-media img, .step-media video { width: 100%; height: 240px; object-fit: cover; display: block; }
+    .step-media-duo { margin-top: .9rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .step-media-duo video { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; display: block; }
+    @media (max-width: 540px) { .step-media-duo { grid-template-columns: 1fr; } .step-media-duo video { height: 200px; } }
     .step-alt {
       margin-top: .85rem; padding: .65rem .9rem;
       background: var(--gray-50); border-left: 3px solid var(--green-400);
@@ -296,11 +299,14 @@
         <div>
           <div class="step-label">Acheminement par tuyaux</div>
           <p>Le mélange eau-vase est refoulé par un réseau de tuyaux depuis la pompe jusqu'au bassin d'accueil — parfois sur plusieurs centaines de mètres, sans perturbation des abords.</p>
-          <figure class="step-media">
+          <div class="step-media-duo">
             <video autoplay muted loop playsinline>
               <source src="assets/video/acheminement-tuyaux.mp4" type="video/mp4" />
             </video>
-          </figure>
+            <video autoplay muted loop playsinline>
+              <source src="assets/video/sortie-vase.mp4" type="video/mp4" />
+            </video>
+          </div>
         </div>
       </div>
       <div class="step">
