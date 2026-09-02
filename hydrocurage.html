@@ -158,6 +158,10 @@
     .step-media-duo { margin-top: .9rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
     .step-media-duo video { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; display: block; }
     @media (max-width: 540px) { .step-media-duo { grid-template-columns: 1fr; } .step-media-duo video { height: 200px; } }
+    .step-media-trio { margin-top: .9rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .step-media-trio img { width: 100%; height: 190px; object-fit: cover; border-radius: 10px; display: block; }
+    .step-media-trio img:first-child { grid-column: span 2; height: 220px; }
+    @media (max-width: 540px) { .step-media-trio { grid-template-columns: 1fr; } .step-media-trio img, .step-media-trio img:first-child { grid-column: span 1; height: 200px; } }
     .step-alt {
       margin-top: .85rem; padding: .65rem .9rem;
       background: var(--gray-50); border-left: 3px solid var(--green-400);
@@ -330,8 +334,13 @@
       <div class="step">
         <span class="step-n">05</span>
         <div>
-          <div class="step-label">Séchage et valorisation agricole</div>
-          <p>Une fois le pompage terminé, la vase laissée dans le bassin sèche puis est évacuée et épandue sur des terres agricoles voisines comme amendement naturel.</p>
+          <div class="step-label">Séchage, nivellement et revalorisation</div>
+          <p>Une fois le pompage terminé, la vase laissée dans le bassin sèche naturellement. Le bassin est ensuite nivelé, et la vase évacuée est épandue sur des terres agricoles voisines comme amendement naturel.</p>
+          <div class="step-media-trio">
+            <img src="assets/img/bassin-rempli.jpg" alt="Bassin d'accueil rempli de vase liquide — ETS Vandaele" loading="lazy" />
+            <img src="assets/img/vase-sechee.jpg" alt="Vase séchée et craquelée dans le bassin — ETS Vandaele" loading="lazy" />
+            <img src="assets/img/bassin-nivelé.jpg" alt="Bassin nivelé après séchage — ETS Vandaele" loading="lazy" />
+          </div>
         </div>
       </div>
     </div>
