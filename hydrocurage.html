@@ -55,11 +55,11 @@
     }
     .hero-video {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; opacity: .55;
+      object-fit: cover; opacity: .85;
     }
     .hero-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to bottom, rgba(10,31,18,.55) 0%, rgba(10,31,18,.72) 60%, rgba(10,31,18,.95) 100%);
+      background: linear-gradient(to bottom, rgba(10,31,18,.35) 0%, rgba(10,31,18,.5) 55%, rgba(10,31,18,.88) 100%);
     }
     .hero-content {
       position: relative; z-index: 1; width: 100%;
@@ -99,17 +99,26 @@
     .btn-hero:hover { background: var(--green-400); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(61,158,98,.45); }
     .hero-scroll {
       position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-      z-index: 2; display: flex; flex-direction: column; align-items: center; gap: .4rem;
-      color: rgba(255,255,255,.35); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+      z-index: 2; display: flex; flex-direction: column; align-items: center; gap: .5rem;
+      color: rgba(255,255,255,.7); font-size: .72rem; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+      background: none; border: none; text-decoration: none;
+      transition: color var(--transition);
     }
-    .hero-scroll-line {
-      width: 1px; height: 36px;
-      background: linear-gradient(to bottom, var(--green-400), transparent);
-      animation: scrollPulse 2s ease-in-out infinite;
+    .hero-scroll:hover { color: var(--green-400); }
+    .hero-scroll-arrow {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.25);
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+      animation: bounceArrow 2.2s ease-in-out infinite;
     }
-    @keyframes scrollPulse {
-      0%, 100% { opacity: .4; transform: scaleY(1); }
-      50% { opacity: 1; transform: scaleY(1.1); }
+    .hero-scroll:hover .hero-scroll-arrow {
+      border-color: var(--green-400); background: rgba(86,181,122,.15);
+    }
+    @keyframes bounceArrow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
     }
 
     /* SECTIONS */
@@ -260,12 +269,15 @@
       Nous appeler
     </a>
   </div>
-  <div class="hero-scroll">
-    <div class="hero-scroll-line"></div>
-  </div>
+  <a href="#principe" class="hero-scroll">
+    Découvrir
+    <div class="hero-scroll-arrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" transform="rotate(0)"/></svg>
+    </div>
+  </a>
 </section>
 
-<section class="section">
+<section class="section" id="principe">
   <div class="container">
     <div class="split">
       <div class="split-text">
