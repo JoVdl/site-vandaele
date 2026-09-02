@@ -157,21 +157,21 @@
     }
     .steps { display: flex; flex-direction: column; gap: 0; max-width: 720px; }
     .step {
-      display: flex; gap: 1.25rem; align-items: flex-start;
+      display: flex; flex-direction: column; gap: .55rem;
       padding: 1.4rem 0;
       border-bottom: 1px solid rgba(0,0,0,.06);
     }
     .step:last-child { border-bottom: none; }
+    .step-header { display: flex; align-items: center; gap: .75rem; }
     .step-n {
-      flex-shrink: 0; width: 2.25rem; height: 2.25rem;
+      flex-shrink: 0; width: 2.1rem; height: 2.1rem;
       background: var(--green-500); color: var(--white);
       border-radius: 50%; font-family: var(--font-display);
-      font-size: .8rem; font-weight: 800;
+      font-size: .78rem; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
-      margin-top: .1rem;
     }
-    .step-label { font-weight: 700; font-size: .97rem; color: var(--gray-900); margin-bottom: .25rem; }
-    .step p { font-size: .875rem; color: var(--gray-500); line-height: 1.65; margin: 0; }
+    .step-label { font-weight: 700; font-size: .97rem; color: var(--gray-900); }
+    .step-body p { font-size: .875rem; color: var(--gray-500); line-height: 1.65; margin: 0; }
     .step-media { margin-top: .9rem; border-radius: 10px; overflow: hidden; }
     .step-media img, .step-media video { width: 100%; height: 240px; object-fit: cover; display: block; }
     .step-media-duo { margin-top: .9rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
@@ -296,9 +296,11 @@
     <div class="steps-heading">Les étapes du chantier</div>
     <div class="steps">
       <div class="step">
-        <span class="step-n">01</span>
-        <div>
+        <div class="step-header">
+          <span class="step-n">01</span>
           <div class="step-label">Création du bassin d'accueil</div>
+        </div>
+        <div class="step-body">
           <p>Un bassin est creusé à proximité de l'étang pour accueillir les sédiments pompés. Il joue le rôle de décanteur : les boues se déposent au fond, l'eau clarifiée remonte en surface.</p>
           <figure class="step-media">
             <img src="assets/img/bassin-accueil-sediments.jpg" alt="Bassin d'accueil des sédiments en cours de création — ETS Vandaele" loading="lazy" />
@@ -314,9 +316,11 @@
         </div>
       </div>
       <div class="step">
-        <span class="step-n">02</span>
-        <div>
+        <div class="step-header">
+          <span class="step-n">02</span>
           <div class="step-label">Aspiration de la vase</div>
+        </div>
+        <div class="step-body">
           <p>La pompe mélange la vase et l'eau du fond pour obtenir un matériau liquide chargé en sédiments, qui est ensuite aspiré et refoulé en continu hors de l'étang.</p>
           <figure class="step-media">
             <video autoplay muted loop playsinline>
@@ -326,9 +330,11 @@
         </div>
       </div>
       <div class="step">
-        <span class="step-n">03</span>
-        <div>
+        <div class="step-header">
+          <span class="step-n">03</span>
           <div class="step-label">Acheminement par tuyaux</div>
+        </div>
+        <div class="step-body">
           <p>Le mélange eau-vase est refoulé par un réseau de tuyaux depuis la pompe jusqu'au bassin d'accueil — parfois sur plusieurs centaines de mètres, sans perturbation des abords.</p>
           <div class="step-media-duo">
             <video autoplay muted loop playsinline>
@@ -341,9 +347,11 @@
         </div>
       </div>
       <div class="step">
-        <span class="step-n">04</span>
-        <div>
+        <div class="step-header">
+          <span class="step-n">04</span>
           <div class="step-label">Retour de l'eau clarifiée</div>
+        </div>
+        <div class="step-body">
           <p>L'eau qui surnage dans le bassin de décantation est réinjectée dans l'étang en continu.</p>
           <figure class="step-media">
             <video autoplay muted loop playsinline>
@@ -353,9 +361,11 @@
         </div>
       </div>
       <div class="step">
-        <span class="step-n">05</span>
-        <div>
+        <div class="step-header">
+          <span class="step-n">05</span>
           <div class="step-label">Séchage, nivellement et revalorisation</div>
+        </div>
+        <div class="step-body">
           <p>Une fois le pompage terminé, la vase laissée dans le bassin sèche naturellement. Le bassin est ensuite nivelé, et la vase évacuée est épandue sur des terres agricoles voisines comme amendement naturel.</p>
           <div class="step-media-trio">
             <img src="assets/img/bassin-rempli.jpg" alt="Bassin d'accueil rempli de vase liquide — ETS Vandaele" loading="lazy" />
