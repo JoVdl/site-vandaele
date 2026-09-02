@@ -162,6 +162,17 @@
 
     /* STEPS */
     .step-indicator { margin-bottom: 1.5rem; }
+    .step-indicator-heading { margin-bottom: 1.5rem; }
+    .step-indicator-tag {
+      display: inline-block; font-size: .68rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--green-500); margin-bottom: .4rem;
+    }
+    .step-indicator-title {
+      font-family: var(--font-display); font-size: clamp(1.35rem, 2.8vw, 1.9rem);
+      font-weight: 800; color: var(--gray-900); line-height: 1.15;
+      letter-spacing: -.02em; margin: 0;
+    }
     .step-track {
       display: flex; align-items: center; margin-bottom: .75rem;
     }
@@ -357,6 +368,10 @@
 <section class="section">
   <div class="container">
     <div class="step-indicator">
+      <div class="step-indicator-heading">
+        <span class="step-indicator-tag">Processus</span>
+        <h2 class="step-indicator-title">Les étapes du curage par aspiration</h2>
+      </div>
       <div class="step-track" id="step-track">
         <button class="step-pip active" data-idx="0">01</button>
         <div class="step-line"><div class="step-line-fill"></div></div>
@@ -368,7 +383,6 @@
         <div class="step-line"><div class="step-line-fill"></div></div>
         <button class="step-pip" data-idx="4">05</button>
       </div>
-      <div class="step-active-label" id="step-active-label">Création du bassin d'accueil des sédiments</div>
     </div>
     <div class="steps" id="steps-carousel">
       <div class="step">
@@ -497,16 +511,8 @@
   const rail = document.getElementById('steps-carousel');
   const pips = document.querySelectorAll('#step-track .step-pip');
   const lines = document.querySelectorAll('#step-track .step-line-fill');
-  const labelEl = document.getElementById('step-active-label');
   const cards = rail.querySelectorAll('.step');
   const total = cards.length;
-  const names = [
-    'Création du bassin d\'accueil des sédiments',
-    'Aspiration de la vase',
-    'Acheminement par tuyaux',
-    'Retour de l\'eau clarifiée',
-    'Séchage, nivellement et revalorisation'
-  ];
 
   function cardW() { return rail.offsetWidth; }
 
@@ -526,7 +532,6 @@
       p.classList.toggle('done', i < idx);
     });
     lines.forEach((l, i) => l.classList.toggle('filled', i < idx));
-    labelEl.textContent = names[idx];
   }
 
   rail.addEventListener('scroll', update, { passive: true });
