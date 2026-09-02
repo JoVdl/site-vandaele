@@ -289,12 +289,20 @@
     }
     .step-media-trio img:first-child { grid-column: span 2; }
     @media (max-width: 600px) {
-      .steps { height: clamp(500px, 80dvh, 700px); }
-      .step { padding: 1.1rem 1.2rem; }
-      .step-body > p { font-size: .8rem; line-height: 1.55; margin-bottom: .5rem; }
-      .step-label { font-size: .95rem; }
-      .step-alt { padding: .5rem .75rem; font-size: .74rem; }
-      .step-alt-imgs img { height: 56px; }
+      .steps { height: clamp(520px, 88dvh, 740px); }
+      .step { padding: 1rem 1.15rem; gap: 0; }
+      .step-tag { font-size: .62rem; margin-bottom: .2rem; }
+      .step-label { font-size: .9rem; }
+      .step-header { margin-bottom: .4rem; }
+      .step-body > p {
+        font-size: .78rem; line-height: 1.5; margin-bottom: .5rem;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+      }
+      .step-alt { padding: .45rem .7rem; font-size: .72rem; margin-top: .5rem; }
+      .step-alt-imgs img { height: 52px; }
+      .step-media-trio { margin-top: .5rem; }
+      .step-media-duo { margin-top: .5rem; }
+      .step-media { margin-top: .5rem; }
     }
 
     /* CTA */
