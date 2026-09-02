@@ -163,52 +163,44 @@
     /* STEPS */
     .steps-heading {
       font-family: var(--font-display); font-size: clamp(1.4rem, 2.5vw, 1.85rem);
-      font-weight: 700; color: var(--gray-900); margin-bottom: 2.5rem;
+      font-weight: 700; color: var(--gray-900); margin-bottom: 2rem;
     }
-    .steps {
-      display: flex; flex-direction: column; gap: 0;
-      max-width: 720px; position: relative;
-    }
-    .steps::before {
-      content: '';
-      position: absolute; left: 1.05rem; top: .8rem; bottom: 1.5rem;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--green-500), rgba(86,181,122,.15));
-      border-radius: 2px;
-    }
+    .steps { display: flex; flex-direction: column; gap: 1rem; max-width: 720px; }
     .step {
-      position: relative;
+      position: relative; overflow: hidden;
+      background: var(--green-900);
+      border-radius: 18px; padding: 1.6rem;
+      border: 1px solid rgba(255,255,255,.06);
       display: flex; flex-direction: column; gap: .5rem;
-      padding: 0 0 2.5rem 3.5rem;
     }
-    .step:last-child { padding-bottom: 0; }
-    .step-header { display: flex; align-items: center; min-height: 2.1rem; }
+    .step-header { display: flex; align-items: flex-start; }
     .step-n {
-      position: absolute; left: 0; top: 0;
-      width: 2.1rem; height: 2.1rem;
-      background: var(--green-500); color: var(--white);
-      border-radius: 50%; font-family: var(--font-display);
-      font-size: .78rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 0 4px var(--gray-50); z-index: 1;
+      position: absolute; right: -.4rem; top: -.6rem;
+      font-family: var(--font-display); font-size: 7.5rem; font-weight: 800; line-height: 1;
+      color: rgba(255,255,255,.045);
+      user-select: none; pointer-events: none; letter-spacing: -.02em;
     }
-    .step-label { font-weight: 700; font-size: 1.05rem; color: var(--gray-900); line-height: 1.3; }
-    .step-body p { font-size: .875rem; color: var(--gray-500); line-height: 1.7; margin: .3rem 0 0; }
-    .step-media { margin-top: 1rem; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+    .step-tag {
+      display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--green-400); margin-bottom: .4rem;
+    }
+    .step-label { font-weight: 700; font-size: 1.05rem; color: var(--white); line-height: 1.3; }
+    .step-body p { font-size: .875rem; color: rgba(255,255,255,.55); line-height: 1.72; margin: .3rem 0 0; }
+    .step-media { margin-top: 1rem; border-radius: 10px; overflow: hidden; }
     .step-media img, .step-media video { width: 100%; height: 260px; object-fit: cover; display: block; }
-    .step-media-duo { margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-    .step-media-duo video { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; display: block; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+    .step-media-duo { margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .step-media-duo video { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; display: block; }
     @media (max-width: 540px) { .step-media-duo { grid-template-columns: 1fr; } }
-    .step-media-trio { margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-    .step-media-trio img { width: 100%; height: 190px; object-fit: cover; border-radius: 12px; display: block; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+    .step-media-trio { margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .step-media-trio img { width: 100%; height: 190px; object-fit: cover; border-radius: 10px; display: block; }
     .step-media-trio img:first-child { grid-column: span 2; height: 230px; }
     @media (max-width: 540px) { .step-media-trio { grid-template-columns: 1fr; } .step-media-trio img, .step-media-trio img:first-child { grid-column: span 1; height: 200px; } }
     .step-alt {
       margin-top: 1rem; padding: .75rem 1rem;
-      background: var(--green-50); border-left: 3px solid var(--green-400);
-      border-radius: 0 10px 10px 0; font-size: .8rem; color: var(--gray-600); line-height: 1.6;
+      background: rgba(255,255,255,.06); border-left: 3px solid var(--green-400);
+      border-radius: 0 10px 10px 0; font-size: .8rem; color: rgba(255,255,255,.55); line-height: 1.6;
     }
-    .step-alt strong { color: var(--gray-900); display: block; margin-bottom: .15rem; font-size: .82rem; }
+    .step-alt strong { color: var(--white); display: block; margin-bottom: .15rem; font-size: .82rem; }
     .step-alt-imgs { display: flex; flex-direction: column; gap: .5rem; margin-top: .75rem; }
     .step-alt-imgs img { width: 100%; border-radius: 6px; display: block; }
 
@@ -312,14 +304,17 @@
   </div>
 </section>
 
-<section class="section section--gray">
+<section class="section">
   <div class="container">
     <div class="steps-heading">Les étapes du chantier</div>
     <div class="steps">
       <div class="step">
+        <span class="step-n">01</span>
         <div class="step-header">
-          <span class="step-n">01</span>
-          <div class="step-label">Création du bassin d'accueil</div>
+          <div>
+            <div class="step-tag">Étape 01</div>
+            <div class="step-label">Création du bassin d'accueil des sédiments</div>
+          </div>
         </div>
         <div class="step-body">
           <p>Un bassin est creusé à proximité de l'étang pour accueillir les sédiments pompés. Il joue le rôle de décanteur : les boues se déposent au fond, l'eau clarifiée remonte en surface.</p>
@@ -337,9 +332,12 @@
         </div>
       </div>
       <div class="step">
+        <span class="step-n">02</span>
         <div class="step-header">
-          <span class="step-n">02</span>
-          <div class="step-label">Aspiration de la vase</div>
+          <div>
+            <div class="step-tag">Étape 02</div>
+            <div class="step-label">Aspiration de la vase</div>
+          </div>
         </div>
         <div class="step-body">
           <p>La pompe mélange la vase et l'eau du fond pour obtenir un matériau liquide chargé en sédiments, qui est ensuite aspiré et refoulé en continu hors de l'étang.</p>
@@ -351,9 +349,12 @@
         </div>
       </div>
       <div class="step">
+        <span class="step-n">03</span>
         <div class="step-header">
-          <span class="step-n">03</span>
-          <div class="step-label">Acheminement par tuyaux</div>
+          <div>
+            <div class="step-tag">Étape 03</div>
+            <div class="step-label">Acheminement par tuyaux</div>
+          </div>
         </div>
         <div class="step-body">
           <p>Le mélange eau-vase est refoulé par un réseau de tuyaux depuis la pompe jusqu'au bassin d'accueil — parfois sur plusieurs centaines de mètres, sans perturbation des abords.</p>
@@ -368,9 +369,12 @@
         </div>
       </div>
       <div class="step">
+        <span class="step-n">04</span>
         <div class="step-header">
-          <span class="step-n">04</span>
-          <div class="step-label">Retour de l'eau clarifiée</div>
+          <div>
+            <div class="step-tag">Étape 04</div>
+            <div class="step-label">Retour de l'eau clarifiée</div>
+          </div>
         </div>
         <div class="step-body">
           <p>L'eau qui surnage dans le bassin de décantation est réinjectée dans l'étang en continu.</p>
@@ -382,9 +386,12 @@
         </div>
       </div>
       <div class="step">
+        <span class="step-n">05</span>
         <div class="step-header">
-          <span class="step-n">05</span>
-          <div class="step-label">Séchage, nivellement et revalorisation</div>
+          <div>
+            <div class="step-tag">Étape 05</div>
+            <div class="step-label">Séchage, nivellement et revalorisation</div>
+          </div>
         </div>
         <div class="step-body">
           <p>Une fois le pompage terminé, la vase laissée dans le bassin sèche naturellement. Le bassin est ensuite nivelé, et la vase évacuée est épandue sur des terres agricoles voisines comme amendement naturel.</p>
