@@ -174,8 +174,21 @@
       letter-spacing: -.02em; margin: 0;
     }
     .step-track {
-      display: flex; align-items: center; margin-bottom: .75rem;
+      display: flex; align-items: flex-start; margin-bottom: .75rem;
     }
+    .step-pip-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: .3rem; flex-shrink: 0;
+    }
+    .step-pip-label {
+      font-size: .5rem; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--gray-400); text-align: center;
+      line-height: 1.2; max-width: 44px;
+    }
+    .step-pip-wrap .step-pip.active ~ .step-pip-label,
+    .step-pip-wrap:has(.step-pip.active) .step-pip-label { color: var(--green-500); }
+    .step-pip-wrap:has(.step-pip.done) .step-pip-label { color: var(--green-700); }
+    .step-line { margin-top: 15px; }
     .step-pip {
       flex-shrink: 0; width: 32px; height: 32px; border-radius: 7px;
       border: 2px solid var(--green-400); background: transparent;
@@ -419,15 +432,30 @@
         <h2 class="step-indicator-title">Les étapes du curage par aspiration</h2>
       </div>
       <div class="step-track" id="step-track">
-        <button class="step-pip active" data-idx="0">01</button>
+        <div class="step-pip-wrap">
+          <button class="step-pip active" data-idx="0">01</button>
+          <span class="step-pip-label">Bassin</span>
+        </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
-        <button class="step-pip" data-idx="1">02</button>
+        <div class="step-pip-wrap">
+          <button class="step-pip" data-idx="1">02</button>
+          <span class="step-pip-label">Curage</span>
+        </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
-        <button class="step-pip" data-idx="2">03</button>
+        <div class="step-pip-wrap">
+          <button class="step-pip" data-idx="2">03</button>
+          <span class="step-pip-label">Refoulement</span>
+        </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
-        <button class="step-pip" data-idx="3">04</button>
+        <div class="step-pip-wrap">
+          <button class="step-pip" data-idx="3">04</button>
+          <span class="step-pip-label">Retour eau</span>
+        </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
-        <button class="step-pip" data-idx="4">05</button>
+        <div class="step-pip-wrap">
+          <button class="step-pip" data-idx="4">05</button>
+          <span class="step-pip-label">Séchage</span>
+        </div>
       </div>
     </div>
     <div class="steps" id="steps-carousel">
