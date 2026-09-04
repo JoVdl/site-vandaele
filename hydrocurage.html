@@ -174,21 +174,20 @@
       letter-spacing: -.02em; margin: 0;
     }
     .step-track {
-      display: flex; align-items: flex-start; margin-bottom: .75rem;
+      display: flex; align-items: flex-end; margin-bottom: .75rem;
     }
     .step-pip-wrap {
       display: flex; flex-direction: column; align-items: center;
-      gap: .3rem; flex-shrink: 0;
+      gap: .35rem; flex-shrink: 0;
     }
     .step-pip-label {
-      font-size: .5rem; font-weight: 700; letter-spacing: .07em;
-      text-transform: uppercase; color: var(--gray-400); text-align: center;
-      line-height: 1.2; max-width: 44px;
+      font-size: clamp(.6rem, 1.4vw, .75rem); font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--green-500); text-align: center;
+      line-height: 1; white-space: nowrap;
     }
-    .step-pip-wrap .step-pip.active ~ .step-pip-label,
-    .step-pip-wrap:has(.step-pip.active) .step-pip-label { color: var(--green-500); }
-    .step-pip-wrap:has(.step-pip.done) .step-pip-label { color: var(--green-700); }
-    .step-line { margin-top: 15px; }
+    .step-pip-wrap:has(.step-pip.active) .step-pip-label { color: var(--green-400); }
+    .step-pip-wrap:has(.step-pip.done) .step-pip-label { color: var(--green-600); }
+    .step-line { margin-bottom: 15px; }
     .step-pip {
       flex-shrink: 0; width: 32px; height: 32px; border-radius: 7px;
       border: 2px solid var(--green-400); background: transparent;
@@ -433,28 +432,28 @@
       </div>
       <div class="step-track" id="step-track">
         <div class="step-pip-wrap">
-          <button class="step-pip active" data-idx="0">01</button>
           <span class="step-pip-label">Bassin</span>
+          <button class="step-pip active" data-idx="0">01</button>
         </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
         <div class="step-pip-wrap">
-          <button class="step-pip" data-idx="1">02</button>
           <span class="step-pip-label">Curage</span>
+          <button class="step-pip" data-idx="1">02</button>
         </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
         <div class="step-pip-wrap">
-          <button class="step-pip" data-idx="2">03</button>
           <span class="step-pip-label">Refoulement</span>
+          <button class="step-pip" data-idx="2">03</button>
         </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
         <div class="step-pip-wrap">
-          <button class="step-pip" data-idx="3">04</button>
           <span class="step-pip-label">Retour eau</span>
+          <button class="step-pip" data-idx="3">04</button>
         </div>
         <div class="step-line"><div class="step-line-fill"></div></div>
         <div class="step-pip-wrap">
-          <button class="step-pip" data-idx="4">05</button>
           <span class="step-pip-label">Séchage</span>
+          <button class="step-pip" data-idx="4">05</button>
         </div>
       </div>
     </div>
