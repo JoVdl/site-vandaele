@@ -1456,11 +1456,11 @@ function renderEmailDetail(m) {
       </div>
       <div class="dsec">
         <h3>Suivi</h3>
-        <label class="em-field">Statut
-          <select id="em-statut" class="demarche-sel">
-            ${EMAIL_STATUTS.map(s => `<option value="${s}"${s === statut ? ' selected' : ''}>${esc(statutLabel(s))}</option>`).join('')}
-          </select>
-        </label>
+        <div class="em-field">Statut
+          <div class="em-status-btns">
+            ${EMAIL_STATUTS.map(s => `<button type="button" class="em-status-btn s-${s}${s === statut ? ' active' : ''}" data-statut="${s}">${esc(statutLabel(s))}</button>`).join('')}
+          </div>
+        </div>
         <label class="em-field">Notes
           <textarea id="em-note" class="demarche-note-ta" rows="4" placeholder="Ex. appelé le 12/03, rappeler la semaine suivante…">${esc(m.note || '')}</textarea>
         </label>
@@ -1471,17 +1471,34 @@ function renderEmailDetail(m) {
         </div>
       </div>
     </div>`;
-  document.getElementById('em-save').addEventListener('click', () => saveEmailFollowUp(m.id));
+  document.getElementById('em-save').addEventListener('click', () => saveEmailNote(m.id));
+  document.querySelectorAll('#em-detail .em-status-btn').forEach(btn => {
+    btn.addEventListener('click', () => setEmailStatut(m.id, btn.dataset.statut));
+  });
 }
 
-async function saveEmailFollowUp(id) {
+async function setEmailStatut(id, statut) {
+  try {
+    await db.collection('emails-contacts').doc(id).update({
+      statut,
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.querySelectorAll('#em-detail .em-status-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.statut === statut);
+    });
+  } catch (err) {
+    console.error('[Emails] statut error:', err);
+    document.getElementById('em-status-msg').textContent = `Erreur : ${err.code || err.message}`;
+  }
+}
+
+async function saveEmailNote(id) {
   const btn = document.getElementById('em-save');
   const msg = document.getElementById('em-status-msg');
   btn.disabled = true;
   msg.textContent = '';
   try {
     await db.collection('emails-contacts').doc(id).update({
-      statut:     document.getElementById('em-statut').value,
       note:       document.getElementById('em-note').value.trim(),
       updated_at: firebase.firestore.FieldValue.serverTimestamp(),
     });

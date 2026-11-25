@@ -353,6 +353,10 @@
     #em-detail .detail-scroll { padding: 1.25rem 1.5rem; }
     .em-field { display: flex; flex-direction: column; gap: .35rem; font-size: .78rem; font-weight: 600; color: var(--gray-700); margin-bottom: .75rem; }
     .em-body { font-size: .83rem; line-height: 1.6; color: var(--gray-700); white-space: pre-wrap; word-break: break-word; }
+    .em-status-btns { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .3rem; }
+    .em-status-btn { padding: .45rem .8rem; border: 1.5px solid var(--gray-200); border-radius: 7px; background: var(--white); font-size: .78rem; font-weight: 600; color: var(--gray-600); cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s, color .15s; }
+    .em-status-btn:hover { border-color: var(--green-400); }
+    .em-status-btn.active { background: var(--green-600); border-color: var(--green-600); color: var(--white); }
     .em-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .25rem; }
     .em-actions .btn-doc-print { text-decoration: none; display: inline-block; }
     #em-status-msg { font-size: .78rem; color: var(--green-600); }
