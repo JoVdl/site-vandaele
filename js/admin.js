@@ -1292,7 +1292,10 @@ document.getElementById('btn-emails-section')?.addEventListener('click', showEma
 document.querySelectorAll('.fnav-btn[data-status], #btn-real-section, #btn-tarifs')
   .forEach(el => el.addEventListener('click', hideEmailsSection));
 document.getElementById('em-search')?.addEventListener('input', renderEmailList);
-document.getElementById('em-status-filter')?.addEventListener('change', renderEmailList);
+document.getElementById('em-cat-filter')?.addEventListener('change', e => {
+  emailCategoryFilter = e.target.value;
+  renderEmailList();
+});
 
 function showEmailsSection() {
   document.getElementById('emails-section').classList.add('active');
@@ -1328,21 +1331,81 @@ function startEmailsListener() {
     });
 }
 
-function renderEmailList() {
-  const listEl = document.getElementById('em-list');
-  const filter = document.getElementById('em-status-filter').value;
-  const query  = document.getElementById('em-search').value.toLowerCase().trim();
+const EMAIL_CATEGORIES = [
+  { key: 'formulaire', label: 'Formulaire du site' },
+  { key: 'travaux',    label: 'Devis et travaux' },
+  { key: 'location',   label: 'Location de matériel' },
+  { key: 'ao',         label: "Appels d'offres" },
+  { key: 'autre',      label: 'Autres' },
+];
 
-  let items = allEmails.filter(m => filter === 'all' || (m.statut || 'nouveau') === filter);
+const EMAIL_STATUT_CHIPS = [
+  ['all', 'Tous'],
+  ['nouveau', 'Non lus'],
+  ['contacte', 'Contactés'],
+  ['devis_envoye', 'Devis envoyé'],
+  ['chantier_gagne', 'Gagnés'],
+  ['sans_suite', 'Sans suite'],
+];
+
+let emailStatusFilter = 'all';
+let emailCategoryFilter = 'all';
+
+function emailCategory(m) {
+  const text = `${m.subject || ''} ${m.snippet || ''} ${m.from_email || ''}`.toLowerCase();
+  if (/contact@curagevandaele|formulaire/.test(text)) return 'formulaire';
+  if (/appel d.offre|consultation|march[ée]s?\b|\bao\b|présélection|mémoire technique/.test(text)) return 'ao';
+  if (/location|louer|loue\b|pelle|dumper|drague|barge/.test(text)) return 'location';
+  if (/devis|curage|curer|faucard|étang|etang|\bmare\b|bief|douve|berge|aspiration|désenvas|enrochement|travaux|chantier|fauch|saules|marais|moulin/.test(text)) return 'travaux';
+  return 'autre';
+}
+
+function renderEmailSummary() {
+  const counts = {};
+  allEmails.forEach(m => {
+    const s = m.statut || 'nouveau';
+    counts[s] = (counts[s] || 0) + 1;
+  });
+  document.getElementById('em-total').textContent = allEmails.length;
+  const chipsEl = document.getElementById('em-chips');
+  chipsEl.innerHTML = EMAIL_STATUT_CHIPS.map(([key, label]) => {
+    const n = key === 'all' ? allEmails.length : (counts[key] || 0);
+    const active = key === emailStatusFilter ? ' active' : '';
+    return `<button class="em-chip${active}" data-status="${key}">${esc(label)}<span>${n}</span></button>`;
+  }).join('');
+  chipsEl.querySelectorAll('.em-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      emailStatusFilter = btn.dataset.status;
+      renderEmailList();
+    });
+  });
+}
+
+function renderEmailList() {
+  renderEmailSummary();
+  const listEl = document.getElementById('em-list');
+  const query = document.getElementById('em-search').value.toLowerCase().trim();
+
+  let items = allEmails.filter(m => emailStatusFilter === 'all' || (m.statut || 'nouveau') === emailStatusFilter);
+  if (emailCategoryFilter !== 'all') items = items.filter(m => emailCategory(m) === emailCategoryFilter);
   if (query) {
     items = items.filter(m => [m.from_name, m.from_email, m.subject, m.snippet].join(' ').toLowerCase().includes(query));
   }
 
   if (!items.length) {
-    listEl.innerHTML = '<div class="state-msg">Aucun mail trouvé.</div>';
+    listEl.innerHTML = '<div class="state-msg">Aucun mail ne correspond à ces filtres.</div>';
     return;
   }
-  listEl.innerHTML = items.map(renderEmailCard).join('');
+
+  listEl.innerHTML = EMAIL_CATEGORIES
+    .map(cat => ({ ...cat, items: items.filter(m => emailCategory(m) === cat.key) }))
+    .filter(cat => cat.items.length)
+    .map(cat => `
+      <div class="em-group">
+        <div class="em-group-title">${esc(cat.label)} <span>${cat.items.length}</span></div>
+        ${cat.items.map(renderEmailCard).join('')}
+      </div>`)
+    .join('');
   listEl.querySelectorAll('.req-card').forEach(card => {
     card.addEventListener('click', () => openEmail(card.dataset.id));
   });
@@ -1351,12 +1414,14 @@ function renderEmailList() {
 function renderEmailCard(m) {
   const statut = m.statut || 'nouveau';
   const active = m.id === openEmailId ? ' is-active' : '';
+  const cat = EMAIL_CATEGORIES.find(c => c.key === emailCategory(m));
   return `
     <div class="req-card s-${esc(statut)}${active}" data-id="${esc(m.id)}">
       <div class="card-main">
         <div class="card-name">${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</div>
         <div class="card-addr">${esc(m.subject || '(sans objet)')}</div>
         <div class="card-preview">${esc(m.snippet || '')}</div>
+        <div class="card-tags"><span class="ctag">${esc(cat.label)}</span></div>
       </div>
       <div class="card-right">
         <div class="card-date">${esc(fmtRelative(m.date))}</div>
@@ -1379,7 +1444,7 @@ function renderEmailDetail(m) {
     <div class="detail-header">
       <div>
         <h2>${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</h2>
-        <div class="detail-meta">${esc(m.from_email || '')} · reçu le ${esc(fmtDate(m.date))}</div>
+        <div class="detail-meta">${esc(m.from_email || '')} · reçu le ${esc(fmtDate(m.date))} · ${esc(EMAIL_CATEGORIES.find(c => c.key === emailCategory(m)).label)}</div>
       </div>
     </div>
     <div class="detail-scroll">
