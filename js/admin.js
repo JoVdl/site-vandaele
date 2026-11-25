@@ -1333,6 +1333,7 @@ const EMAIL_CATEGORIES = [
   { key: 'travaux',    label: 'Devis et travaux',   icon: '🌊', color: '#0f766e' },
   { key: 'location',   label: 'Location de matériel', icon: '🚜', color: '#ea580c' },
   { key: 'ao',         label: "Appels d'offres",    icon: '📋', color: '#7c3aed' },
+  { key: 'compta',     label: 'Comptabilité',       icon: '🧾', color: '#b45309' },
   { key: 'autre',      label: 'Autres',             icon: '✉️', color: '#6b7280' },
 ];
 
@@ -1352,6 +1353,7 @@ function emailCategory(m) {
   const text = `${m.subject || ''} ${m.snippet || ''} ${m.from_email || ''}`.toLowerCase();
   if (/contact@curagevandaele|formulaire/.test(text)) return 'formulaire';
   if (/appel d.offre|consultation|march[ée]s?\b|\bao\b|présélection|mémoire technique/.test(text)) return 'ao';
+  if (/facture|relance|bilan|extrait de compte|\bpaie|paies|impayé|proforma|virement|\btva\b|chorus|comptab|règlement|échue|duplicata|avoir n|cardans|btimmerman|execo|scr-recouvrement|dgflexservices|nlub|virginiegdp|bfh-equipements|districompta|provigis|sfnp/.test(text)) return 'compta';
   if (/location|louer|loue\b|pelle|dumper|drague|barge/.test(text)) return 'location';
   if (/devis|curage|curer|faucard|étang|etang|\bmare\b|bief|douve|berge|aspiration|désenvas|enrochement|travaux|chantier|fauch|saules|marais|moulin/.test(text)) return 'travaux';
   return 'autre';
