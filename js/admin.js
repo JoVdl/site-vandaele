@@ -1471,6 +1471,7 @@ function renderEmailDetail(m) {
       <div class="dsec">
         <h3>Mail</h3>
         <div style="font-weight:600;margin-bottom:.5rem">${esc(m.subject || '(sans objet)')}</div>
+        ${gmailMessageUrl(m.message_id) ? `<a class="btn-copy-fiche" style="margin-bottom:.6rem;display:inline-block" target="_blank" rel="noopener" href="${esc(gmailMessageUrl(m.message_id))}">Voir le mail dans Gmail</a>` : ''}
         <div class="em-body">${esc(m.texte || m.snippet || '')}</div>
         ${m.suite ? `<div class="em-suite"><strong>Suite du fil</strong>${esc(m.suite)}</div>` : ''}
       </div>
@@ -1480,7 +1481,7 @@ function renderEmailDetail(m) {
           <textarea id="em-reponse" class="em-reponse-ta" rows="9">${esc(m.reponse)}</textarea>
           <div class="em-actions">
             <button class="btn-copy-fiche" id="em-copy-reponse">Copier la réponse</button>
-            <a class="btn-copy-fiche" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.from_email || '')}&su=${encodeURIComponent('Re: ' + (m.subject || ''))}&body=${encodeURIComponent(m.reponse)}">Ouvrir dans Gmail</a>
+            <a class="btn-copy-fiche" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.from_email || '')}&su=${encodeURIComponent('Re: ' + (m.subject || ''))}&body=${encodeURIComponent(m.reponse)}">Répondre dans Gmail</a>
           </div>` : '<div class="demarche-none">Pas de réponse proposée pour ce mail.</div>'}
       </div>
       ${m.historique ? `<div class="dsec"><h3>Historique des échanges</h3>${JSON.parse(m.historique).map(h => `<div class="em-hist"><div class="em-hist-meta"><strong>${esc(h.de)}</strong> · ${esc(h.date)}</div><div class="em-hist-txt">${esc(h.texte)}</div></div>`).join('')}</div>` : ''}
@@ -1513,6 +1514,11 @@ function renderEmailDetail(m) {
 }
 
 let emMiniMap = null;
+
+function gmailMessageUrl(id) {
+  if (!id || !/^[0-9a-f]+$/i.test(id)) return '';
+  return `https://mail.google.com/mail/#all/msg-f:${BigInt('0x' + id).toString()}`;
+}
 
 function renderEmailMiniMap(m) {
   const el = document.getElementById('em-mini-map');
