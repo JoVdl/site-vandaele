@@ -1517,7 +1517,7 @@ let emMiniMap = null;
 
 function gmailMessageUrl(id) {
   if (!id || !/^[0-9a-f]+$/i.test(id)) return '';
-  return `https://mail.google.com/mail/#all/msg-f:${BigInt('0x' + id).toString()}`;
+  return `https://mail.google.com/mail/?authuser=vandaelemarcelpro%40gmail.com#all/msg-f:${BigInt('0x' + id).toString()}`;
 }
 
 function renderEmailMiniMap(m) {
