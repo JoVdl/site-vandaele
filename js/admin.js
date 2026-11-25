@@ -41,6 +41,7 @@ auth.onAuthStateChanged(user => {
     dashboard.hidden   = false;
     set('user-email', user.email);
     startListener();
+    showEmailsSection();
   } else {
     loginScreen.hidden = false;
     dashboard.hidden   = true;
