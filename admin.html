@@ -340,6 +340,13 @@
     .em-total { font-size: .78rem; color: var(--gray-500); margin-bottom: .5rem; }
     .em-total strong { font-size: 1.1rem; color: var(--gray-900); margin-right: .25rem; }
     .em-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .em-cat-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
+    .em-cat-chip { padding: .35rem .65rem; border: 1.5px solid var(--gray-200); border-radius: 8px; background: var(--white); font-size: .74rem; font-weight: 600; color: var(--gray-700); cursor: pointer; font-family: inherit; border-left: 4px solid var(--cat, var(--gray-300)); }
+    .em-cat-chip span { display: inline-block; min-width: 1.2rem; margin-left: .25rem; padding: 0 .3rem; border-radius: 99px; background: var(--gray-100); text-align: center; }
+    .em-cat-chip:hover { border-color: var(--cat, var(--green-400)); }
+    .em-cat-chip.active { background: var(--cat, var(--green-600)); color: var(--white); border-color: var(--cat, var(--green-600)); }
+    .em-cat-chip.active span { background: rgba(255,255,255,.25); color: var(--white); }
+    .em-cat-tag { background: color-mix(in srgb, var(--cat) 14%, white) !important; color: var(--cat) !important; border: 1px solid color-mix(in srgb, var(--cat) 35%, white); }
     .em-chip { padding: .3rem .6rem; border: 1.5px solid var(--gray-200); border-radius: 99px; background: var(--white); font-size: .72rem; font-weight: 600; color: var(--gray-600); cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
     .em-chip span { display: inline-block; min-width: 1.2rem; margin-left: .2rem; padding: 0 .3rem; border-radius: 99px; background: var(--gray-100); color: var(--gray-700); text-align: center; }
     .em-chip:hover { border-color: var(--green-400); }
@@ -963,19 +970,12 @@
     <div id="emails-section">
       <div class="list-pane">
         <div class="em-summary">
+          <div class="em-cat-chips" id="em-cat-chips"></div>
           <div class="em-total"><strong id="em-total">0</strong> contacts <button class="em-chip" id="em-map-toggle" type="button">🗺️ Carte</button></div>
           <div class="em-chips" id="em-chips"></div>
         </div>
         <div class="list-toolbar">
           <input type="search" id="em-search" placeholder="Rechercher un nom, un sujet…">
-          <select id="em-cat-filter">
-            <option value="all">Toutes catégories</option>
-            <option value="formulaire">Formulaire du site</option>
-            <option value="travaux">Devis et travaux</option>
-            <option value="location">Location de matériel</option>
-            <option value="ao">Appels d'offres</option>
-            <option value="autre">Autres</option>
-          </select>
         </div>
         <div id="em-list">
           <div class="state-msg">Chargement…</div>

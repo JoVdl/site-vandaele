@@ -1293,10 +1293,6 @@ document.getElementById('btn-emails-section')?.addEventListener('click', showEma
 document.querySelectorAll('.fnav-btn[data-status], #btn-real-section, #btn-tarifs')
   .forEach(el => el.addEventListener('click', hideEmailsSection));
 document.getElementById('em-search')?.addEventListener('input', renderEmailList);
-document.getElementById('em-cat-filter')?.addEventListener('change', e => {
-  emailCategoryFilter = e.target.value;
-  renderEmailList();
-});
 
 function showEmailsSection() {
   document.getElementById('emails-section').classList.add('active');
@@ -1333,11 +1329,11 @@ function startEmailsListener() {
 }
 
 const EMAIL_CATEGORIES = [
-  { key: 'formulaire', label: 'Formulaire du site' },
-  { key: 'travaux',    label: 'Devis et travaux' },
-  { key: 'location',   label: 'Location de matériel' },
-  { key: 'ao',         label: "Appels d'offres" },
-  { key: 'autre',      label: 'Autres' },
+  { key: 'formulaire', label: 'Formulaire du site', icon: '📝', color: '#2563eb' },
+  { key: 'travaux',    label: 'Devis et travaux',   icon: '🌊', color: '#0f766e' },
+  { key: 'location',   label: 'Location de matériel', icon: '🚜', color: '#ea580c' },
+  { key: 'ao',         label: "Appels d'offres",    icon: '📋', color: '#7c3aed' },
+  { key: 'autre',      label: 'Autres',             icon: '✉️', color: '#6b7280' },
 ];
 
 const EMAIL_STATUT_CHIPS = [
@@ -1380,6 +1376,20 @@ function renderEmailSummary() {
       renderEmailList();
     });
   });
+  const catCounts = {};
+  allEmails.forEach(m => { const c = emailCategory(m); catCounts[c] = (catCounts[c] || 0) + 1; });
+  const catEl = document.getElementById('em-cat-chips');
+  catEl.innerHTML = [{ key: 'all', label: 'Toutes', icon: '', color: '#374151' }, ...EMAIL_CATEGORIES].map(c => {
+    const n = c.key === 'all' ? allEmails.length : (catCounts[c.key] || 0);
+    const active = c.key === emailCategoryFilter ? ' active' : '';
+    return `<button class="em-cat-chip${active}" data-cat="${c.key}" style="--cat:${c.color}">${c.icon ? esc(c.icon) + ' ' : ''}${esc(c.label)}<span>${n}</span></button>`;
+  }).join('');
+  catEl.querySelectorAll('.em-cat-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      emailCategoryFilter = btn.dataset.cat;
+      renderEmailList();
+    });
+  });
 }
 
 function renderEmailList() {
@@ -1398,15 +1408,7 @@ function renderEmailList() {
     return;
   }
 
-  listEl.innerHTML = EMAIL_CATEGORIES
-    .map(cat => ({ ...cat, items: items.filter(m => emailCategory(m) === cat.key) }))
-    .filter(cat => cat.items.length)
-    .map(cat => `
-      <div class="em-group">
-        <div class="em-group-title">${esc(cat.label)} <span>${cat.items.length}</span></div>
-        ${cat.items.map(renderEmailCard).join('')}
-      </div>`)
-    .join('');
+  listEl.innerHTML = items.map(renderEmailCard).join('');
   listEl.querySelectorAll('.req-card').forEach(card => {
     card.addEventListener('click', () => openEmail(card.dataset.id));
   });
@@ -1422,7 +1424,7 @@ function renderEmailCard(m) {
         <div class="card-name">${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</div>
         <div class="card-addr">${esc(m.subject || '(sans objet)')}</div>
         <div class="card-preview">${esc(m.snippet || '')}</div>
-        <div class="card-tags"><span class="ctag">${esc(cat.label)}</span></div>
+        <div class="card-tags"><span class="ctag em-cat-tag" style="--cat:${cat.color}">${esc(cat.icon)} ${esc(cat.label)}</span></div>
       </div>
       <div class="card-right">
         <div class="card-date">${esc(fmtRelative(m.date))}</div>
