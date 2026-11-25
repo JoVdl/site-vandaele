@@ -1471,7 +1471,7 @@ function renderEmailDetail(m) {
       <div class="dsec">
         <h3>Mail</h3>
         <div style="font-weight:600;margin-bottom:.5rem">${esc(m.subject || '(sans objet)')}</div>
-        ${gmailMessageUrl(m.message_id) ? `<a class="btn-copy-fiche" style="margin-bottom:.6rem;display:inline-block" target="_blank" rel="noopener" href="${esc(gmailMessageUrl(m.message_id))}">Voir le mail dans Gmail</a>` : ''}
+        ${gmailMessageUrl(m) ? `<a class="btn-copy-fiche" style="margin-bottom:.6rem;display:inline-block" target="_blank" rel="noopener" href="${esc(gmailMessageUrl(m))}">Retrouver le mail dans Gmail</a>` : ''}
         <div class="em-body">${esc(m.texte || m.snippet || '')}</div>
         ${m.suite ? `<div class="em-suite"><strong>Suite du fil</strong>${esc(m.suite)}</div>` : ''}
       </div>
@@ -1515,9 +1515,11 @@ function renderEmailDetail(m) {
 
 let emMiniMap = null;
 
-function gmailMessageUrl(id) {
-  if (!id || !/^[0-9a-f]+$/i.test(id)) return '';
-  return `https://mail.google.com/mail/u/1/#all/msg-f:${BigInt('0x' + id).toString()}`;
+function gmailMessageUrl(m) {
+  if (!m.from_email) return '';
+  const subject = (m.subject || '').replace(/["()]/g, '').slice(0, 60).trim();
+  const query = subject ? `from:${m.from_email} subject:"${subject}"` : `from:${m.from_email}`;
+  return `https://mail.google.com/mail/u/1/#search/${encodeURIComponent(query)}`;
 }
 
 function renderEmailMiniMap(m) {
