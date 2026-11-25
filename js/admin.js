@@ -1471,6 +1471,15 @@ function renderEmailDetail(m) {
         ${m.suite ? `<div class="em-suite"><strong>Suite du fil</strong>${esc(m.suite)}</div>` : ''}
       </div>
       <div class="dsec">
+        <h3>Réponse proposée</h3>
+        ${m.reponse ? `
+          <textarea id="em-reponse" class="em-reponse-ta" rows="9">${esc(m.reponse)}</textarea>
+          <div class="em-actions">
+            <button class="btn-copy-fiche" id="em-copy-reponse">Copier la réponse</button>
+            <a class="btn-copy-fiche" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.from_email || '')}&su=${encodeURIComponent('Re: ' + (m.subject || ''))}&body=${encodeURIComponent(m.reponse)}">Ouvrir dans Gmail</a>
+          </div>` : '<div class="demarche-none">Pas de réponse proposée pour ce mail.</div>'}
+      </div>
+      <div class="dsec">
         <h3>Suivi</h3>
         <div class="em-field">Statut
           <div class="em-status-btns">
@@ -1492,6 +1501,10 @@ function renderEmailDetail(m) {
     btn.addEventListener('click', () => setEmailStatut(m.id, btn.dataset.statut));
   });
   renderEmailMiniMap(m);
+  document.getElementById('em-copy-reponse')?.addEventListener('click', e => {
+    const ta = document.getElementById('em-reponse');
+    navigator.clipboard.writeText(ta.value).then(() => { e.target.textContent = 'Copié'; });
+  });
 }
 
 let emMiniMap = null;
