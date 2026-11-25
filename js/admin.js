@@ -1449,10 +1449,26 @@ function renderEmailDetail(m) {
       </div>
     </div>
     <div class="detail-scroll">
+      <div class="dsec em-trajet-card">
+        <div class="em-trajet-map" id="em-mini-map"></div>
+        <div class="em-trajet-info">
+          <div><strong>${esc(m.lieu_geocode || m.lieu || 'Localisation inconnue')}</strong></div>
+          <div id="em-trajet-text" class="em-trajet-text">${m.distance_km ? `à vol d'oiseau : ${esc(m.distance_km)} km` : ''}</div>
+        </div>
+      </div>
+      <div class="dsec">
+        <h3>Demande</h3>
+        <div class="em-facts">
+          <div><span>Type</span>${esc(m.type || '–')}</div>
+          <div><span>Période</span>${esc(m.periode || '–')}</div>
+          <div><span>Urgence</span>${m.urgence ? `<b class="em-urg em-urg-${esc(m.urgence.toLowerCase())}">${esc(m.urgence)}</b> ${esc(m.urgence_raison || '')}` : '–'}</div>
+        </div>
+      </div>
       <div class="dsec">
         <h3>Mail</h3>
         <div style="font-weight:600;margin-bottom:.5rem">${esc(m.subject || '(sans objet)')}</div>
-        <div class="em-body">${esc(m.snippet || '')}</div>
+        <div class="em-body">${esc(m.texte || m.snippet || '')}</div>
+        ${m.suite ? `<div class="em-suite"><strong>Suite du fil</strong>${esc(m.suite)}</div>` : ''}
       </div>
       <div class="dsec">
         <h3>Suivi</h3>
@@ -1475,6 +1491,46 @@ function renderEmailDetail(m) {
   document.querySelectorAll('#em-detail .em-status-btn').forEach(btn => {
     btn.addEventListener('click', () => setEmailStatut(m.id, btn.dataset.statut));
   });
+  renderEmailMiniMap(m);
+}
+
+let emMiniMap = null;
+
+function renderEmailMiniMap(m) {
+  const el = document.getElementById('em-mini-map');
+  const text = document.getElementById('em-trajet-text');
+  if (!el) return;
+  if (!m.lat || !m.lng) {
+    el.innerHTML = '<div class="em-trajet-none">Pas de localisation</div>';
+    return;
+  }
+  loadLeaflet(() => setTimeout(() => {
+    if (emMiniMap) { emMiniMap.remove(); emMiniMap = null; }
+    emMiniMap = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: true });
+    L.tileLayer(
+      'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+      '&FORMAT=image%2Fpng&STYLE=normal',
+      { maxZoom: 18 }
+    ).addTo(emMiniMap);
+    L.marker([DEPOT_LAT, DEPOT_LNG]).bindTooltip('Chez moi (dépôt)').addTo(emMiniMap);
+    L.marker([m.lat, m.lng]).bindTooltip(m.lieu_geocode || m.lieu || 'Chantier').addTo(emMiniMap);
+    emMiniMap.fitBounds([[DEPOT_LAT, DEPOT_LNG], [m.lat, m.lng]], { padding: [24, 24] });
+    const url = `https://router.project-osrm.org/route/v1/driving/${DEPOT_LNG},${DEPOT_LAT};${m.lng},${m.lat}?overview=full&geometries=geojson`;
+    fetch(url, { signal: AbortSignal.timeout(8000) })
+      .then(r => r.json())
+      .then(data => {
+        const route = data.routes?.[0];
+        if (!route) return;
+        const km = (route.distance / 1000).toFixed(0);
+        const mins = Math.round(route.duration / 60);
+        const h = Math.floor(mins / 60), mm = mins % 60;
+        const t = h > 0 ? `${h} h ${String(mm).padStart(2, '0')}` : `${mins} min`;
+        if (text) text.innerHTML = `<strong>${km} km</strong> · ${t} de trajet depuis chez moi`;
+        L.geoJSON(route.geometry, { style: { color: '#1d4ed8', weight: 3, opacity: .85 } }).addTo(emMiniMap);
+      })
+      .catch(() => {});
+  }, 60));
 }
 
 async function setEmailStatut(id, statut) {
