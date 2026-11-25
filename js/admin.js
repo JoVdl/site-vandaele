@@ -1479,6 +1479,7 @@ function renderEmailDetail(m) {
             <a class="btn-copy-fiche" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.from_email || '')}&su=${encodeURIComponent('Re: ' + (m.subject || ''))}&body=${encodeURIComponent(m.reponse)}">Ouvrir dans Gmail</a>
           </div>` : '<div class="demarche-none">Pas de réponse proposée pour ce mail.</div>'}
       </div>
+      ${m.historique ? `<div class="dsec"><h3>Historique des échanges</h3>${JSON.parse(m.historique).map(h => `<div class="em-hist"><div class="em-hist-meta"><strong>${esc(h.de)}</strong> · ${esc(h.date)}</div><div class="em-hist-txt">${esc(h.texte)}</div></div>`).join('')}</div>` : ''}
       <div class="dsec">
         <h3>Suivi</h3>
         <div class="em-field">Statut
@@ -1579,6 +1580,61 @@ async function saveEmailNote(id) {
     btn.disabled = false;
   }
 }
+
+let emBigMap = null;
+
+function toggleEmailMap(show) {
+  document.querySelector('#emails-section .list-pane').hidden = show;
+  document.getElementById('em-detail').hidden = show;
+  document.getElementById('em-map-view').hidden = !show;
+  document.getElementById('em-map-toggle').classList.toggle('active', show);
+  if (show) renderEmailBigMap();
+}
+
+function renderEmailBigMap() {
+  loadLeaflet(() => setTimeout(() => {
+    if (emBigMap) { emBigMap.remove(); emBigMap = null; }
+    emBigMap = L.map(document.getElementById('em-big-map'));
+    L.tileLayer(
+      'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' +
+      '&FORMAT=image%2Fpng&STYLE=normal',
+      { maxZoom: 18 }
+    ).addTo(emBigMap);
+    L.marker([DEPOT_LAT, DEPOT_LNG]).bindTooltip('Chez moi (dépôt)').addTo(emBigMap);
+    const pts = [[DEPOT_LAT, DEPOT_LNG]];
+    allEmails.filter(m => m.lat && m.lng).forEach(m => {
+      const d = m.distance_km || 0;
+      const color = d < 100 ? '#16a34a' : d < 300 ? '#f59e0b' : '#dc2626';
+      const marker = L.circleMarker([m.lat, m.lng], { radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(emBigMap);
+      const texte = (m.texte || m.snippet || '').slice(0, 220);
+      marker.bindPopup(`
+        <div class="em-preview">
+          <strong>${esc(m.from_name || m.from_email)}</strong>
+          <div class="em-preview-sub">${esc(m.lieu_geocode || m.lieu || '')} · ${esc(d)} km</div>
+          <div class="em-preview-subj">${esc(m.subject || '')}</div>
+          <div class="em-preview-txt">${esc(texte)}${texte.length >= 220 ? '…' : ''}</div>
+          <button type="button" class="em-preview-open" data-id="${esc(m.id)}">Voir le mail →</button>
+        </div>`);
+      pts.push([m.lat, m.lng]);
+    });
+    emBigMap.on('popupopen', e => {
+      const btn = e.popup.getElement()?.querySelector('.em-preview-open');
+      btn?.addEventListener('click', () => {
+        emBigMap.closePopup();
+        toggleEmailMap(false);
+        openEmail(btn.dataset.id);
+      });
+    });
+    emBigMap.fitBounds(pts, { padding: [30, 30] });
+    emBigMap.invalidateSize();
+  }, 60));
+}
+
+document.getElementById('em-map-toggle')?.addEventListener('click', () => {
+  const showing = document.getElementById('em-map-view').hidden;
+  toggleEmailMap(showing);
+});
 
 // ── UTILS ────────────────────────────────────────────────────
 function esc(str) {
