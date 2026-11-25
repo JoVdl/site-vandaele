@@ -40,6 +40,11 @@ service cloud.firestore {
     match /realisations/{realId} {
       allow read, write, delete: if request.auth != null;
     }
+
+    // Mails clients synchronisés depuis la boîte Orange (écrits par la routine)
+    match /emails-contacts/{mailId} {
+      allow read, update, delete: if request.auth != null;
+    }
   }
 }
 

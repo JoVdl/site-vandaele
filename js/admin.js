@@ -1281,6 +1281,153 @@ function fmtSurface(ha) {
   return `${parseFloat(ha).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ha`;
 }
 
+// ── EMAILS CLIENTS (synchronisés depuis la boîte Orange) ─────
+let allEmails = [];
+let emailsUnsubscribe = null;
+let openEmailId = null;
+
+const EMAIL_STATUTS = ['nouveau', 'contacte', 'devis_envoye', 'chantier_gagne', 'sans_suite'];
+
+document.getElementById('btn-emails-section')?.addEventListener('click', showEmailsSection);
+document.querySelectorAll('.fnav-btn[data-status], #btn-real-section, #btn-tarifs')
+  .forEach(el => el.addEventListener('click', hideEmailsSection));
+document.getElementById('em-search')?.addEventListener('input', renderEmailList);
+document.getElementById('em-status-filter')?.addEventListener('change', renderEmailList);
+
+function showEmailsSection() {
+  document.getElementById('emails-section').classList.add('active');
+  document.querySelector('.admin-content').style.display = 'none';
+  document.getElementById('realisations-panel').classList.remove('active');
+  document.getElementById('btn-real-section').classList.remove('active');
+  const tp = document.getElementById('tarifs-panel');
+  if (!tp.hidden) { tp.hidden = true; document.getElementById('btn-tarifs')?.classList.remove('active'); }
+  document.getElementById('btn-emails-section').classList.add('active');
+  if (!emailsUnsubscribe) startEmailsListener();
+}
+
+function hideEmailsSection() {
+  const section = document.getElementById('emails-section');
+  if (!section.classList.contains('active')) return;
+  section.classList.remove('active');
+  document.getElementById('btn-emails-section').classList.remove('active');
+  if (!document.getElementById('realisations-panel').classList.contains('active')) {
+    document.querySelector('.admin-content').style.display = '';
+  }
+}
+
+function startEmailsListener() {
+  emailsUnsubscribe = db.collection('emails-contacts')
+    .orderBy('date', 'desc')
+    .limit(500)
+    .onSnapshot(snap => {
+      allEmails = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderEmailList();
+    }, err => {
+      console.error('[Emails] listener error:', err);
+      document.getElementById('em-list').innerHTML = `<div class="state-msg" style="color:var(--red)">⚠️ Erreur Firestore : ${esc(err.code || err.message)}<br><small>Vérifiez les règles de sécurité (collection <strong>emails-contacts</strong>).</small></div>`;
+    });
+}
+
+function renderEmailList() {
+  const listEl = document.getElementById('em-list');
+  const filter = document.getElementById('em-status-filter').value;
+  const query  = document.getElementById('em-search').value.toLowerCase().trim();
+
+  let items = allEmails.filter(m => filter === 'all' || (m.statut || 'nouveau') === filter);
+  if (query) {
+    items = items.filter(m => [m.from_name, m.from_email, m.subject, m.snippet].join(' ').toLowerCase().includes(query));
+  }
+
+  if (!items.length) {
+    listEl.innerHTML = '<div class="state-msg">Aucun mail trouvé.</div>';
+    return;
+  }
+  listEl.innerHTML = items.map(renderEmailCard).join('');
+  listEl.querySelectorAll('.req-card').forEach(card => {
+    card.addEventListener('click', () => openEmail(card.dataset.id));
+  });
+}
+
+function renderEmailCard(m) {
+  const statut = m.statut || 'nouveau';
+  const active = m.id === openEmailId ? ' is-active' : '';
+  return `
+    <div class="req-card s-${esc(statut)}${active}" data-id="${esc(m.id)}">
+      <div class="card-main">
+        <div class="card-name">${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</div>
+        <div class="card-addr">${esc(m.subject || '(sans objet)')}</div>
+        <div class="card-preview">${esc(m.snippet || '')}</div>
+      </div>
+      <div class="card-right">
+        <div class="card-date">${esc(fmtRelative(m.date))}</div>
+        <div class="card-badge"><span class="badge b-${esc(statut)}">${esc(statutLabel(statut))}</span></div>
+      </div>
+    </div>`;
+}
+
+function openEmail(id) {
+  openEmailId = id;
+  renderEmailList();
+  const m = allEmails.find(x => x.id === id);
+  if (m) renderEmailDetail(m);
+}
+
+function renderEmailDetail(m) {
+  const statut = m.statut || 'nouveau';
+  const subjectRe = encodeURIComponent(`Re: ${m.subject || ''}`);
+  document.getElementById('em-detail').innerHTML = `
+    <div class="detail-header">
+      <div>
+        <h2>${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</h2>
+        <div class="detail-meta">${esc(m.from_email || '')} · reçu le ${esc(fmtDate(m.date))}</div>
+      </div>
+    </div>
+    <div class="detail-scroll">
+      <div class="dsec">
+        <h3>Mail</h3>
+        <div style="font-weight:600;margin-bottom:.5rem">${esc(m.subject || '(sans objet)')}</div>
+        <div class="em-body">${esc(m.snippet || '')}</div>
+      </div>
+      <div class="dsec">
+        <h3>Suivi</h3>
+        <label class="em-field">Statut
+          <select id="em-statut" class="demarche-sel">
+            ${EMAIL_STATUTS.map(s => `<option value="${s}"${s === statut ? ' selected' : ''}>${esc(statutLabel(s))}</option>`).join('')}
+          </select>
+        </label>
+        <label class="em-field">Notes
+          <textarea id="em-note" class="demarche-note-ta" rows="4" placeholder="Ex. appelé le 12/03, rappeler la semaine suivante…">${esc(m.note || '')}</textarea>
+        </label>
+        <div class="em-actions">
+          <button class="btn-doc-print" id="em-save">Enregistrer</button>
+          <a class="btn-copy-fiche" href="mailto:${esc(m.from_email || '')}?subject=${esc(subjectRe)}">✉️ Répondre</a>
+          <span id="em-status-msg"></span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('em-save').addEventListener('click', () => saveEmailFollowUp(m.id));
+}
+
+async function saveEmailFollowUp(id) {
+  const btn = document.getElementById('em-save');
+  const msg = document.getElementById('em-status-msg');
+  btn.disabled = true;
+  msg.textContent = '';
+  try {
+    await db.collection('emails-contacts').doc(id).update({
+      statut:     document.getElementById('em-statut').value,
+      note:       document.getElementById('em-note').value.trim(),
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    msg.textContent = 'Enregistré';
+  } catch (err) {
+    console.error('[Emails] save error:', err);
+    msg.textContent = `Erreur : ${err.code || err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── UTILS ────────────────────────────────────────────────────
 function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
