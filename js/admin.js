@@ -1439,13 +1439,21 @@ function openEmail(id) {
   openEmailId = id;
   renderEmailList();
   const m = allEmails.find(x => x.id === id);
-  if (m) renderEmailDetail(m);
+  if (!m) return;
+  renderEmailDetail(m);
+  // Mobile : on passe de la liste au détail (une seule colonne à la fois)
+  const section = document.getElementById('emails-section');
+  section.classList.add('em-mobile-detail');
+  if (window.matchMedia('(max-width: 800px)').matches) {
+    document.getElementById('em-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function renderEmailDetail(m) {
   const statut = m.statut || 'nouveau';
   const subjectRe = encodeURIComponent(`Re: ${m.subject || ''}`);
   document.getElementById('em-detail').innerHTML = `
+    <button type="button" class="em-back" id="em-back">← Retour à la liste</button>
     <div class="detail-header">
       <div>
         <h2>${esc(m.from_name || m.from_email || 'Expéditeur inconnu')}</h2>
@@ -1507,6 +1515,10 @@ function renderEmailDetail(m) {
     btn.addEventListener('click', () => setEmailStatut(m.id, btn.dataset.statut));
   });
   renderEmailMiniMap(m);
+  document.getElementById('em-back')?.addEventListener('click', () => {
+    document.getElementById('emails-section').classList.remove('em-mobile-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   document.getElementById('em-copy-reponse')?.addEventListener('click', e => {
     const ta = document.getElementById('em-reponse');
     navigator.clipboard.writeText(ta.value).then(() => { e.target.textContent = 'Copié'; });

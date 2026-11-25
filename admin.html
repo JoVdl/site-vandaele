@@ -395,6 +395,9 @@
     .em-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .25rem; }
     .em-actions .btn-doc-print { text-decoration: none; display: inline-block; }
     #em-status-msg { font-size: .78rem; color: var(--green-600); }
+    /* [hidden] doit gagner sur les display:flex de la section mails */
+    #emails-section [hidden] { display: none !important; }
+    .em-back { display: none; }
 
     /* ── TARIFS PANEL ──────────────────────────────────── */
     .tarifs-panel {
@@ -847,10 +850,67 @@
       .coeff-bar { padding: .65rem .75rem; gap: .5rem; }
       .coeff-slider { max-width: 100%; }
 
+      /* En-tête : passe sur deux lignes au lieu de déborder de l'écran */
+      /* Section mails ouverte : on masque compteurs et filtres « demandes » (les boutons de section restent) */
+      body:has(#emails-section.active) .stats-grid,
+      body:has(#emails-section.active) .filter-nav .fnav-btn,
+      body:has(#emails-section.active) .filter-nav-label,
+      body:has(#emails-section.active) .sidebar-sep { display: none; }
+
+      .admin-header { height: auto; }
+      .admin-header-inner { height: auto; flex-wrap: wrap; row-gap: .4rem; padding: .5rem .75rem; }
+      .admin-user { gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+      .btn-tarifs, .btn-logout { padding: .35rem .6rem; font-size: .74rem; }
+
       .list-pane { width: 100%; border-right: none; border-bottom: 1px solid var(--gray-200); max-height: 50vh; }
       #requests-list { max-height: calc(50vh - 48px); }
       .detail-pane { min-height: 400px; }
       #user-email { display: none; }
+
+      /* ── Emails clients : une seule colonne, liste OU détail ── */
+      #emails-section { flex-direction: column; overflow: visible; }
+      #emails-section .list-pane { width: 100%; max-height: none; border-bottom: none; overflow: visible; }
+      #emails-section .em-summary { padding: .6rem .75rem .5rem; }
+      #emails-section .em-total { font-size: .85rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+      #emails-section .em-cat-chips,
+      #emails-section .em-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: .15rem; }
+      #emails-section .em-cat-chips::-webkit-scrollbar,
+      #emails-section .em-chips::-webkit-scrollbar { display: none; }
+      #emails-section .em-chip,
+      #emails-section .em-cat-chip { flex-shrink: 0; min-height: 40px; padding: .45rem .75rem; font-size: .82rem; }
+      #emails-section .list-toolbar { padding: .6rem .75rem; }
+      #emails-section #em-search { font-size: 16px; min-height: 44px; }
+      #em-list { overflow: visible; padding: .25rem .6rem .75rem; }
+      #emails-section .req-card { padding: .75rem .8rem; }
+      #emails-section .card-name { font-size: .95rem; white-space: normal; }
+      #emails-section .card-addr { font-size: .86rem; }
+      #emails-section .card-preview { font-size: .8rem; -webkit-line-clamp: 2; }
+      #emails-section .card-date, #emails-section .badge { font-size: .72rem; }
+
+      /* Détail : pleine largeur, visible seulement après avoir ouvert un mail */
+      #em-detail { width: 100%; overflow: visible; background: var(--gray-100); }
+      #emails-section:not(.em-mobile-detail) #em-detail { display: none; }
+      #emails-section.em-mobile-detail .list-pane { display: none; }
+      #em-detail .detail-header { padding: .75rem 1rem; background: var(--white); border-bottom: 1px solid var(--gray-200); }
+      #em-detail .detail-header h2 { font-size: 1.1rem; word-break: break-word; }
+      #em-detail .detail-meta { font-size: .78rem; word-break: break-word; }
+      #em-detail .detail-scroll { padding: .75rem; overflow: visible; }
+      #em-detail .dsec { padding: .9rem; }
+      .em-back { display: inline-flex; align-items: center; gap: .35rem; margin-bottom: .6rem; min-height: 44px; padding: .45rem .9rem; border: 1.5px solid var(--gray-200); border-radius: 8px; background: var(--white); font-size: .88rem; font-weight: 600; color: var(--green-600); font-family: inherit; cursor: pointer; }
+      .em-body { font-size: .95rem; line-height: 1.65; }
+      .em-facts { font-size: .92rem; }
+      .em-hist-txt { font-size: .9rem; }
+      .em-suite { font-size: .9rem; }
+      .em-reponse-ta { font-size: 16px; min-height: 180px; }
+      .em-status-btn { min-height: 44px; padding: .5rem .9rem; font-size: .86rem; }
+      .em-actions .btn-copy-fiche { min-height: 44px; padding: .5rem 1rem; font-size: .86rem; }
+      .em-trajet-card { flex-direction: column; }
+      .em-trajet-map { width: 100%; height: 180px; }
+      .em-trajet-info { font-size: .9rem; }
+      #em-map-view { min-height: 70vh; padding: .5rem; }
+      #em-big-map { min-height: 60vh; }
+      .em-map-legend { font-size: .8rem; }
+      .em-preview { min-width: 0; max-width: 240px; }
     }
     @media (max-width: 500px) {
       .info-grid { grid-template-columns: 1fr; }
