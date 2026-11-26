@@ -1635,7 +1635,7 @@ function renderEmailBigMap() {
       marker.bindPopup(`
         <div class="em-preview">
           <strong>${esc(m.from_name || m.from_email)}</strong>
-          <div class="em-preview-sub">Contact du ${esc(fmtDate(m.date))}</div>
+          <div class="em-preview-date${emailAgeDays(m.date) > 90 ? ' is-old' : ''}"><strong>${esc(fmtDate(m.date))}</strong> · ${esc(fmtAge(m.date))}</div>
           <div class="em-preview-sub">${esc(m.lieu_geocode || m.lieu || '')} · ${esc(d)} km</div>
           <div class="em-preview-subj">${esc(m.subject || '')}</div>
           <div class="em-preview-txt">${esc(texte)}${texte.length >= 220 ? '…' : ''}</div>
@@ -1683,6 +1683,23 @@ function fmtDate(ts) {
   return d.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
+// Nombre de jours écoulés depuis la date du mail (0 si inconnue)
+function emailAgeDays(ts) {
+  const d = toDate(ts);
+  if (!d) return 0;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+// Ancienneté lisible : « il y a 3 jours », « il y a 4 mois », « il y a 2 ans »
+function fmtAge(ts) {
+  const days = emailAgeDays(ts);
+  if (!toDate(ts)) return '';
+  if (days < 1) return 'aujourd\'hui';
+  if (days < 30) return `il y a ${days} jour${days > 1 ? 's' : ''}`;
+  const months = Math.floor(days / 30.44);
+  if (months < 12) return `il y a ${months} mois`;
+  const years = Math.floor(months / 12);
+  return `il y a ${years} an${years > 1 ? 's' : ''}`;
+}
 function fmtRelative(ts) {
   const d = toDate(ts);
   if (!d) return '';
