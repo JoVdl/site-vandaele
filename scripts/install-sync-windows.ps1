@@ -44,5 +44,14 @@ Register-ScheduledTask -TaskName 'Sync mails Orange admin' -Action $action -Trig
     -Settings $settings -Description 'Synchronise la boite Orange vers Firestore (admin Vandaele)' -Force | Out-Null
 Write-Host 'Tache planifiee creee : toutes les heures, quand la session est ouverte.'
 
+# Surveillance : synchro immediate quand le bouton "Rafraichir les mails" de l'admin est utilise
+$watchAction = New-ScheduledTaskAction -Execute $python -Argument "`"$syncScript`" --watch" -WorkingDirectory $repo
+$watchTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$watchSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
+Register-ScheduledTask -TaskName 'Sync mails Orange (rafraichir)' -Action $watchAction -Trigger $watchTrigger `
+    -Settings $watchSettings -Description 'Synchro immediate des mails Orange sur demande depuis l admin' -Force | Out-Null
+Start-ScheduledTask -TaskName 'Sync mails Orange (rafraichir)'
+Write-Host 'Tache de surveillance creee : la synchro se lance des que tu cliques sur Rafraichir les mails.'
+
 Write-Host 'Premiere synchro...'
 & $python $syncScript

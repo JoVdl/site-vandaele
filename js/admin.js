@@ -1315,7 +1315,43 @@ function hideEmailsSection() {
   }
 }
 
+// Demande de rafraîchissement de la synchro Orange : écrit une demande ; le PC la traite (script --watch)
+function syncOrangeDoc() {
+  return db.collection('config').doc('sync-orange');
+}
+
+let syncStatusUnsub = null;
+function startSyncStatusListener() {
+  if (syncStatusUnsub) return;
+  syncStatusUnsub = syncOrangeDoc().onSnapshot(snap => {
+    const st = document.getElementById('em-refresh-status');
+    if (!st) return;
+    const d = snap.data() || {};
+    const req = d.requested_at?.toDate?.();
+    const done = d.last_done_at?.toDate?.();
+    if (req && (!done || done < req)) {
+      st.textContent = 'Synchro demandée à ' + fmtDate(req) + ', en attente du PC (allumé et connecté ?)';
+    } else if (done) {
+      st.textContent = 'Dernière synchro : ' + fmtDate(done) + (d.last_error ? ' · erreur : ' + d.last_error : '');
+    } else {
+      st.textContent = '';
+    }
+  }, () => {});
+}
+
+document.getElementById('em-refresh')?.addEventListener('click', async () => {
+  const st = document.getElementById('em-refresh-status');
+  if (st) st.textContent = 'Demande envoyée…';
+  try {
+    await syncOrangeDoc().set({ requested_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  } catch (err) {
+    console.error('[Emails] refresh error:', err);
+    if (st) st.textContent = 'Erreur : ' + (err.code || err.message);
+  }
+});
+
 function startEmailsListener() {
+  startSyncStatusListener();
   emailsUnsubscribe = db.collection('emails-contacts')
     .orderBy('date', 'desc')
     .limit(500)

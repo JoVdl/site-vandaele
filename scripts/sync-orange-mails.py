@@ -8,6 +8,9 @@ Variables d'environnement :
   SYNC_SINCE             date IMAP de départ, ex. 01-Jan-2026 (optionnel)
 
 Usage : python3 scripts/sync-orange-mails.py [--dry-run]
+        python3 scripts/sync-orange-mails.py --watch
+  --watch : reste allumé et lance la synchro dès que le bouton « Rafraîchir les mails »
+            de l'admin écrit une demande (document config/sync-orange).
 Les mails déjà présents ne sont pas réécrits : les statuts saisis dans l'admin sont conservés.
 """
 import hashlib
@@ -16,6 +19,7 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from email import message_from_bytes
 from email.header import decode_header, make_header
@@ -32,6 +36,8 @@ SKIP_SENDER = re.compile(r'no-?reply|donotreply|do-not-reply|notification|mailer
 SNIPPET_LEN = 400
 DRY_RUN = '--dry-run' in sys.argv
 SCOPES = ['https://www.googleapis.com/auth/datastore']
+REQUEST_DOC = 'config/sync-orange'   # demande (requested_at) et résultat (last_done_at) écrits par l'admin et le script
+WATCH_INTERVAL = 60                  # secondes entre deux vérifications en mode --watch
 
 
 def header_text(value):
@@ -162,5 +168,66 @@ def main():
         imap.logout()
 
 
+def sync_doc_url(project):
+    return f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/{REQUEST_DOC}'
+
+
+def parse_ts(value):
+    if not value:
+        return None
+    # Firestore renvoie des fractions de seconde : on les retire avant de parser
+    return datetime.fromisoformat(re.sub(r'\.\d+', '', value).replace('Z', '+00:00'))
+
+
+def read_sync_state(session, project):
+    resp = session.get(sync_doc_url(project))
+    if resp.status_code == 404:
+        return None, None
+    resp.raise_for_status()
+    fields = resp.json().get('fields', {})
+    return (parse_ts(fields.get('requested_at', {}).get('timestampValue')),
+            parse_ts(fields.get('last_done_at', {}).get('timestampValue')))
+
+
+def write_sync_result(session, project, when, error=''):
+    fields = {'last_done_at': {'timestampValue': when.strftime('%Y-%m-%dT%H:%M:%SZ')},
+              'last_error': {'stringValue': error}}
+    resp = session.patch(sync_doc_url(project),
+                         params=[('updateMask.fieldPaths', 'last_done_at'), ('updateMask.fieldPaths', 'last_error')],
+                         json={'fields': fields})
+    resp.raise_for_status()
+
+
+def needs_sync(requested, done):
+    return requested is not None and (done is None or requested > done)
+
+
+def watch():
+    creds_info = json.loads(os.environ['FIREBASE_SERVICE_ACCOUNT_JSON'])
+    project = creds_info['project_id']
+    session = AuthorizedSession(
+        service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES))
+    print('Mode surveillance : en attente d\'une demande depuis l\'admin.', flush=True)
+    while True:
+        try:
+            requested, done = read_sync_state(session, project)
+            if needs_sync(requested, done):
+                print(f'{datetime.now():%H:%M:%S} demande reçue, synchro en cours…', flush=True)
+                error = ''
+                try:
+                    main()
+                except Exception as exc:  # on garde la boucle en vie et on note l'erreur
+                    error = str(exc)[:300]
+                    print('erreur synchro :', error, flush=True)
+                write_sync_result(session, project, datetime.now(timezone.utc), error)
+                print(f'{datetime.now():%H:%M:%S} synchro terminée.', flush=True)
+        except Exception as exc:
+            print('erreur surveillance :', exc, flush=True)
+        time.sleep(WATCH_INTERVAL)
+
+
 if __name__ == '__main__':
-    main()
+    if '--watch' in sys.argv:
+        watch()
+    else:
+        main()
