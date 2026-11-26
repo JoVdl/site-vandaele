@@ -1615,6 +1615,15 @@ function toggleEmailMap(show) {
   if (show) renderEmailBigMap();
 }
 
+// Couleurs des statuts, identiques à la bordure des cartes de la liste
+const EMAIL_STATUT_COLORS = {
+  nouveau: '#ef4444',
+  contacte: '#f59e0b',
+  devis_envoye: '#3b82f6',
+  chantier_gagne: '#3d9e62',
+  sans_suite: '#9ca3af'
+};
+
 function renderEmailBigMap() {
   loadLeaflet(() => setTimeout(() => {
     if (emBigMap) { emBigMap.remove(); emBigMap = null; }
@@ -1629,7 +1638,8 @@ function renderEmailBigMap() {
     const pts = [[DEPOT_LAT, DEPOT_LNG]];
     allEmails.filter(m => m.lat && m.lng).forEach(m => {
       const d = m.distance_km || 0;
-      const color = d < 100 ? '#16a34a' : d < 300 ? '#f59e0b' : '#dc2626';
+      // Même couleur que la liste : selon le statut du mail
+      const color = EMAIL_STATUT_COLORS[m.statut || 'nouveau'] || '#9ca3af';
       const marker = L.circleMarker([m.lat, m.lng], { radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(emBigMap);
       const texte = (m.texte || m.snippet || '').slice(0, 220);
       marker.bindPopup(`
