@@ -1635,6 +1635,7 @@ function renderEmailBigMap() {
       marker.bindPopup(`
         <div class="em-preview">
           <strong>${esc(m.from_name || m.from_email)}</strong>
+          <div class="em-preview-sub">Contact du ${esc(fmtDate(m.date))}</div>
           <div class="em-preview-sub">${esc(m.lieu_geocode || m.lieu || '')} · ${esc(d)} km</div>
           <div class="em-preview-subj">${esc(m.subject || '')}</div>
           <div class="em-preview-txt">${esc(texte)}${texte.length >= 220 ? '…' : ''}</div>
