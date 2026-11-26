@@ -1640,7 +1640,14 @@ function renderEmailBigMap() {
       const d = m.distance_km || 0;
       // Même couleur que la liste : selon le statut du mail
       const color = EMAIL_STATUT_COLORS[m.statut || 'nouveau'] || '#9ca3af';
-      const marker = L.circleMarker([m.lat, m.lng], { radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(emBigMap);
+      // Pastille : couleur du statut + ancienneté du contact, lisible sans cliquer
+      const textColor = m.statut === 'contacte' ? '#1f2937' : '#ffffff';
+      const icon = L.divIcon({
+        className: 'em-pin-icon',
+        iconSize: null,
+        html: `<div class="em-pin" style="background:${color};color:${textColor}">${esc(fmtAgeShort(m.date))}</div>`
+      });
+      const marker = L.marker([m.lat, m.lng], { icon }).addTo(emBigMap);
       const texte = (m.texte || m.snippet || '').slice(0, 220);
       marker.bindPopup(`
         <div class="em-preview">
@@ -1698,6 +1705,17 @@ function emailAgeDays(ts) {
   const d = toDate(ts);
   if (!d) return 0;
   return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+// Version courte pour les étiquettes de la carte : « 3 j », « 4 mois », « 2 ans »
+function fmtAgeShort(ts) {
+  if (!toDate(ts)) return '?';
+  const days = emailAgeDays(ts);
+  if (days < 1) return 'auj.';
+  if (days < 30) return `${days} j`;
+  const months = Math.floor(days / 30.44);
+  if (months < 12) return `${months} mois`;
+  const years = Math.floor(months / 12);
+  return `${years} an${years > 1 ? 's' : ''}`;
 }
 // Ancienneté lisible : « il y a 3 jours », « il y a 4 mois », « il y a 2 ans »
 function fmtAge(ts) {
