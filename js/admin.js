@@ -1624,9 +1624,77 @@ const EMAIL_STATUT_COLORS = {
   sans_suite: '#9ca3af'
 };
 
+// Marqueurs de la carte, par id de mail (pour les mettre à jour sans recharger la carte)
+let emMarkerById = {};
+
+// Pastille : couleur du statut + ancienneté du contact
+function emailPinIcon(m) {
+  const color = EMAIL_STATUT_COLORS[m.statut || 'nouveau'] || '#9ca3af';
+  const textColor = m.statut === 'contacte' ? '#1f2937' : '#ffffff';
+  return L.divIcon({
+    className: 'em-pin-icon',
+    iconSize: [64, 26],
+    iconAnchor: [32, 13],
+    html: `<div class="em-pin" style="background:${color};color:${textColor}">${esc(fmtAgeShort(m.date))}</div>`
+  });
+}
+
+// Contenu du petit cadre : infos, aperçu, changement de statut, lien vers le mail
+function buildEmailPopup(m) {
+  const texte = (m.texte || m.snippet || '').slice(0, 220);
+  const statut = m.statut || 'nouveau';
+  return `
+    <div class="em-preview" data-id="${esc(m.id)}">
+      <strong>${esc(m.from_name || m.from_email)}</strong>
+      <div class="em-preview-date${emailAgeDays(m.date) > 90 ? ' is-old' : ''}"><strong>${esc(fmtDate(m.date))}</strong> · ${esc(fmtAge(m.date))}</div>
+      <div class="em-preview-sub">${esc(m.lieu_geocode || m.lieu || '')} · ${esc(m.distance_km || 0)} km</div>
+      <div class="em-preview-subj">${esc(m.subject || '')}</div>
+      <div class="em-preview-txt">${esc(texte)}${texte.length >= 220 ? '…' : ''}</div>
+      <div class="em-pop-statut">
+        ${EMAIL_STATUTS.map(s => `<button type="button" class="em-pop-status s-${s}${s === statut ? ' active' : ''}" data-statut="${s}">${esc(statutLabel(s))}</button>`).join('')}
+      </div>
+      <button type="button" class="em-preview-open" data-id="${esc(m.id)}">Voir le mail →</button>
+    </div>`;
+}
+
+// Changement de statut depuis la carte : mise à jour immédiate, puis écriture Firestore
+function setEmailStatutFromMap(id, statut) {
+  const m = allEmails.find(x => x.id === id);
+  if (!m) return;
+  m.statut = statut;
+  const marker = emMarkerById[id];
+  if (marker) {
+    const wasOpen = marker.isPopupOpen();
+    marker.setIcon(emailPinIcon(m));
+    marker.setPopupContent(buildEmailPopup(m));
+    // Le changement d'icône peut fermer le popup : on le rouvre s'il était ouvert
+    if (wasOpen && !marker.isPopupOpen()) marker.openPopup();
+  }
+  renderEmailList();
+  setEmailStatut(id, statut);
+}
+
+// Délégation : un seul écouteur, valable même quand le contenu du popup est remplacé
+document.getElementById('em-big-map')?.addEventListener('click', e => {
+  const st = e.target.closest('.em-pop-status');
+  if (st) {
+    const id = st.closest('.em-preview')?.dataset.id;
+    // Différé : Leaflet doit finir de traiter le clic avant que le contenu du popup soit remplacé
+    if (id) setTimeout(() => setEmailStatutFromMap(id, st.dataset.statut), 0);
+    return;
+  }
+  const open = e.target.closest('.em-preview-open');
+  if (open) {
+    emBigMap?.closePopup();
+    toggleEmailMap(false);
+    openEmail(open.dataset.id);
+  }
+});
+
 function renderEmailBigMap() {
   loadLeaflet(() => setTimeout(() => {
     if (emBigMap) { emBigMap.remove(); emBigMap = null; }
+    emMarkerById = {};
     emBigMap = L.map(document.getElementById('em-big-map'));
     L.tileLayer(
       'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
@@ -1637,37 +1705,10 @@ function renderEmailBigMap() {
     L.marker([DEPOT_LAT, DEPOT_LNG]).bindTooltip('Chez moi (dépôt)').addTo(emBigMap);
     const pts = [[DEPOT_LAT, DEPOT_LNG]];
     allEmails.filter(m => m.lat && m.lng).forEach(m => {
-      const d = m.distance_km || 0;
-      // Même couleur que la liste : selon le statut du mail
-      const color = EMAIL_STATUT_COLORS[m.statut || 'nouveau'] || '#9ca3af';
-      // Pastille : couleur du statut + ancienneté du contact, lisible sans cliquer
-      const textColor = m.statut === 'contacte' ? '#1f2937' : '#ffffff';
-      const icon = L.divIcon({
-        className: 'em-pin-icon',
-        iconSize: [64, 26],
-        iconAnchor: [32, 13],
-        html: `<div class="em-pin" style="background:${color};color:${textColor}">${esc(fmtAgeShort(m.date))}</div>`
-      });
-      const marker = L.marker([m.lat, m.lng], { icon }).addTo(emBigMap);
-      const texte = (m.texte || m.snippet || '').slice(0, 220);
-      marker.bindPopup(`
-        <div class="em-preview">
-          <strong>${esc(m.from_name || m.from_email)}</strong>
-          <div class="em-preview-date${emailAgeDays(m.date) > 90 ? ' is-old' : ''}"><strong>${esc(fmtDate(m.date))}</strong> · ${esc(fmtAge(m.date))}</div>
-          <div class="em-preview-sub">${esc(m.lieu_geocode || m.lieu || '')} · ${esc(d)} km</div>
-          <div class="em-preview-subj">${esc(m.subject || '')}</div>
-          <div class="em-preview-txt">${esc(texte)}${texte.length >= 220 ? '…' : ''}</div>
-          <button type="button" class="em-preview-open" data-id="${esc(m.id)}">Voir le mail →</button>
-        </div>`);
+      const marker = L.marker([m.lat, m.lng], { icon: emailPinIcon(m) }).addTo(emBigMap);
+      marker.bindPopup(buildEmailPopup(m));
+      emMarkerById[m.id] = marker;
       pts.push([m.lat, m.lng]);
-    });
-    emBigMap.on('popupopen', e => {
-      const btn = e.popup.getElement()?.querySelector('.em-preview-open');
-      btn?.addEventListener('click', () => {
-        emBigMap.closePopup();
-        toggleEmailMap(false);
-        openEmail(btn.dataset.id);
-      });
     });
     emBigMap.fitBounds(pts, { padding: [30, 30] });
     emBigMap.invalidateSize();
