@@ -1322,6 +1322,8 @@ function startEmailsListener() {
     .onSnapshot(snap => {
       allEmails = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderEmailList();
+      // Carte affichée d'office au premier chargement (pas à chaque mise à jour)
+      if (!emMapAutoShown) { emMapAutoShown = true; toggleEmailMap(true); }
     }, err => {
       console.error('[Emails] listener error:', err);
       document.getElementById('em-list').innerHTML = `<div class="state-msg" style="color:var(--red)">⚠️ Erreur Firestore : ${esc(err.code || err.message)}<br><small>Vérifiez les règles de sécurité (collection <strong>emails-contacts</strong>).</small></div>`;
@@ -1626,6 +1628,7 @@ const EMAIL_STATUT_COLORS = {
 
 // Marqueurs de la carte, par id de mail (pour les mettre à jour sans recharger la carte)
 let emMarkerById = {};
+let emMapAutoShown = false;
 
 // Pastille : couleur du statut + ancienneté du contact
 function emailPinIcon(m) {
@@ -1703,14 +1706,13 @@ function renderEmailBigMap() {
       { maxZoom: 18 }
     ).addTo(emBigMap);
     L.marker([DEPOT_LAT, DEPOT_LNG]).bindTooltip('Chez moi (dépôt)').addTo(emBigMap);
-    const pts = [[DEPOT_LAT, DEPOT_LNG]];
     allEmails.filter(m => m.lat && m.lng).forEach(m => {
       const marker = L.marker([m.lat, m.lng], { icon: emailPinIcon(m) }).addTo(emBigMap);
       marker.bindPopup(buildEmailPopup(m));
       emMarkerById[m.id] = marker;
-      pts.push([m.lat, m.lng]);
     });
-    emBigMap.fitBounds(pts, { padding: [30, 30] });
+    // Vue régionale centrée sur le dépôt : les mails lointains restent accessibles en dézoomant
+    emBigMap.setView([DEPOT_LAT, DEPOT_LNG], window.innerWidth < 800 ? 7 : 8);
     emBigMap.invalidateSize();
   }, 60));
 }
