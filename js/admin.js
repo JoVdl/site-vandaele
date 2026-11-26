@@ -1644,7 +1644,8 @@ function renderEmailBigMap() {
       const textColor = m.statut === 'contacte' ? '#1f2937' : '#ffffff';
       const icon = L.divIcon({
         className: 'em-pin-icon',
-        iconSize: null,
+        iconSize: [64, 26],
+        iconAnchor: [32, 13],
         html: `<div class="em-pin" style="background:${color};color:${textColor}">${esc(fmtAgeShort(m.date))}</div>`
       });
       const marker = L.marker([m.lat, m.lng], { icon }).addTo(emBigMap);
