@@ -788,8 +788,9 @@
     #panel-4 .wz-side #leaflet-map { height: 62vh; min-height: 380px; }
     #panel-4 .wz-squares { display: none; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
     #panel-4.wz-mode .wz-squares { display: flex; }
-    #panel-4 .wz-sq { width: 84px; min-height: 66px; border: 2px solid var(--gray-200); border-radius: 12px; background: #fff; padding: .4rem .5rem; text-align: left; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: .15rem; }
+    #panel-4 .wz-sq { width: 104px; min-height: 70px; border: 2px solid var(--gray-200); border-radius: 12px; background: #fff; padding: .4rem .5rem; text-align: left; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: .15rem; }
     #panel-4 .wz-sq .n { font-size: .7rem; font-weight: 700; color: var(--gray-500); }
+    #panel-4 .wz-sq .t { font-size: .74rem; font-weight: 700; color: var(--green-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     #panel-4 .wz-sq .v { font-size: .78rem; font-weight: 600; color: var(--gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     #panel-4 .wz-sq.done { border-color: var(--green-500); background: var(--green-100); }
     #panel-4 .wz-sq.current { border-color: var(--green-800); box-shadow: 0 0 0 3px rgba(19,61,34,.15); }
@@ -1117,7 +1118,7 @@
                 <div id="leaflet-map"></div>
               </div>
               <div id="zone-info" style="display:none; margin-bottom:.5rem;"></div>
-              <p class="map-instruction">💡 Tracez le contour → surface et périmètre se calculent automatiquement. Vous pouvez aussi saisir manuellement ci-dessous.</p>
+              <p class="map-instruction">💡 Tracez le contour → surface et périmètre se calculent automatiquement.</p>
             </div>
 
             <div class="form-row">

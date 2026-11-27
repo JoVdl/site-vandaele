@@ -225,6 +225,23 @@ function wzEligible() {
   });
 }
 
+// Mot court qui désigne chaque question (affiché dans son carré)
+function wzName(el) {
+  const has = sel => !!el.querySelector(sel);
+  if (has('#adresse')) return 'Adresse';
+  if (has('#acces')) return 'Accès';
+  if (has('#ep-hydrocurage, #prof-vase')) return 'Vase';
+  if (has('#pct-curage')) return 'Zone traitée';
+  if (has('#destination-vase, input[name="dest-vase-hydro"], #nature-terrain-hydro')) return 'Destination';
+  if (has('#adresse-stockage-hydro, #adresse-stockage-curage, input[name^="epandage-dispo"]')) return 'Stockage';
+  if (has('#dist-depot-hydro')) return 'Distance';
+  if (has('#pct-fauc, input[id^="fauc-"]')) return 'Végétation';
+  if (has('#lg-berges, input[name="type-berge"]')) return 'Berges';
+  if (has('#surf-broyage-forestier, #surf-broyage-roseaux')) return 'Surface';
+  const lab = el.querySelector('label')?.textContent.replace(/[^\p{L}\p{N} ]/gu, ' ').trim() || 'Question';
+  return lab.split(' ').slice(0, 2).join(' ');
+}
+
 function wzEsc(t) {
   return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -319,10 +336,11 @@ function wzShow() {
   // Carrés : un par question, rempli avec la réponse, cliquable pour revenir en arrière
   const sq = document.getElementById('wz-squares');
   if (sq) {
-    sq.innerHTML = list.map((el, i) => {
+    // Seules les questions déjà atteintes sont affichées : les suivantes apparaissent plus tard
+    sq.innerHTML = list.slice(0, idx + 1).map((el, i) => {
       const v = wzValue(el);
       const cls = ['wz-sq', v ? 'done' : '', el === wzCurrent ? 'current' : ''].join(' ');
-      return `<button type="button" class="${cls}" data-i="${i}"><span class="n">${i + 1}</span><span class="v">${wzEsc(v || '–')}</span></button>`;
+      return `<button type="button" class="${cls}" data-i="${i}"><span class="n">${i + 1}</span><span class="t">${wzEsc(wzName(el))}</span><span class="v">${wzEsc(v || '–')}</span></button>`;
     }).join('');
     sq.querySelectorAll('.wz-sq').forEach(b => b.onclick = () => { wzCurrent = list[+b.dataset.i]; wzShow(); });
   }
