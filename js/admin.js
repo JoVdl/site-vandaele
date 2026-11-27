@@ -1440,16 +1440,21 @@ function renderEmailSummary() {
   });
 }
 
-function renderEmailList() {
-  renderEmailSummary();
-  const listEl = document.getElementById('em-list');
+// Mails visibles dans la liste, avec les filtres de statut, de catégorie et de recherche
+function filteredEmails() {
   const query = document.getElementById('em-search').value.toLowerCase().trim();
-
   let items = allEmails.filter(m => emailStatusFilter === 'all' || (m.statut || 'nouveau') === emailStatusFilter);
   if (emailCategoryFilter !== 'all') items = items.filter(m => emailCategory(m) === emailCategoryFilter);
   if (query) {
     items = items.filter(m => [m.from_name, m.from_email, m.subject, m.snippet].join(' ').toLowerCase().includes(query));
   }
+  return items;
+}
+
+function renderEmailList() {
+  renderEmailSummary();
+  const listEl = document.getElementById('em-list');
+  const items = filteredEmails();
 
   if (!items.length) {
     listEl.innerHTML = '<div class="state-msg">Aucun mail ne correspond à ces filtres.</div>';
@@ -1574,7 +1579,7 @@ function renderEmailDetail(m) {
     </div>`;
   document.getElementById('em-save').addEventListener('click', () => saveEmailNote(m.id));
   document.querySelectorAll('#em-detail .em-status-btn').forEach(btn => {
-    btn.addEventListener('click', () => setEmailStatut(m.id, btn.dataset.statut));
+    btn.addEventListener('click', () => classerEtSuivant(m.id, btn.dataset.statut));
   });
   renderEmailMiniMap(m);
   document.getElementById('em-back')?.addEventListener('click', () => {
@@ -1719,6 +1724,28 @@ function buildEmailPopup(m) {
       </div>
       <button type="button" class="em-preview-open" data-id="${esc(m.id)}">Voir le mail →</button>
     </div>`;
+}
+
+// Classer un mail depuis sa fiche : il sort de la liste si le filtre ne correspond plus,
+// et le mail suivant (ou précédent) s'ouvre automatiquement
+function classerEtSuivant(id, statut) {
+  const before = filteredEmails();
+  const idx = before.findIndex(x => x.id === id);
+  const m = allEmails.find(x => x.id === id);
+  if (m) m.statut = statut;
+  setEmailStatut(id, statut);
+  const after = new Set(filteredEmails().map(x => x.id));
+  const following = before.slice(idx + 1).map(x => x.id).find(x => after.has(x));
+  const preceding = before.slice(0, Math.max(idx, 0)).map(x => x.id).reverse().find(x => after.has(x));
+  const nextId = following || preceding || null;
+  renderEmailList();
+  if (nextId) {
+    openEmail(nextId);
+  } else {
+    document.getElementById('em-detail').innerHTML = `
+      <div class="detail-empty"><div class="detail-empty-icon">✅</div><p>Plus aucun mail dans cette liste</p></div>`;
+    document.getElementById('emails-section').classList.remove('em-mobile-detail');
+  }
 }
 
 // Changement de statut depuis la carte : mise à jour immédiate, puis écriture Firestore
