@@ -315,7 +315,7 @@ def append_to_thread(session, project, doc_id, entry, when, from_me):
     mask = ['historique', 'dernier_message', 'dernier_message_at']
     if from_me and current == 'nouveau':
         body['statut'] = {'stringValue': 'contacte'}; mask.append('statut')
-    if not from_me and current == 'contacte':
+    if not from_me and current in ('contacte', 'lu'):
         body['statut'] = {'stringValue': 'a_traiter'}; mask.append('statut')
     session.patch(doc_url(project, doc_id), params=[('updateMask.fieldPaths', m) for m in mask],
                   json={'fields': body}).raise_for_status()

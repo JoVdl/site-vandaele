@@ -1287,7 +1287,7 @@ let allEmails = [];
 let emailsUnsubscribe = null;
 let openEmailId = null;
 
-const EMAIL_STATUTS = ['nouveau', 'contacte', 'devis_envoye', 'chantier_gagne', 'sans_suite'];
+const EMAIL_STATUTS = ['nouveau', 'contacte', 'devis_envoye', 'chantier_gagne', 'sans_suite', 'lu'];
 
 document.getElementById('btn-emails-section')?.addEventListener('click', showEmailsSection);
 document.querySelectorAll('.fnav-btn[data-status], #btn-real-section, #btn-tarifs')
@@ -1382,6 +1382,7 @@ const EMAIL_STATUT_CHIPS = [
   ['devis_envoye', 'Devis envoyé'],
   ['chantier_gagne', 'Gagnés'],
   ['sans_suite', 'Sans suite'],
+  ['lu', 'Lus'],
 ];
 
 let emailStatusFilter = 'all';
@@ -1675,7 +1676,8 @@ const EMAIL_STATUT_COLORS = {
   contacte: '#f59e0b',
   devis_envoye: '#3b82f6',
   chantier_gagne: '#3d9e62',
-  sans_suite: '#9ca3af'
+  sans_suite: '#9ca3af',
+  lu: '#8b5cf6'
 };
 
 // Marqueurs de la carte, par id de mail (pour les mettre à jour sans recharger la carte)
@@ -1842,7 +1844,7 @@ function fmtRelative(ts) {
 }
 
 function statutLabel(s) {
-  return { nouveau:'Non lu', a_traiter:'À traiter', contacte:'Contacté', devis_envoye:'Devis envoyé', chantier_gagne:'Gagné', sans_suite:'Sans suite' }[s] || s;
+  return { nouveau:'Non lu', a_traiter:'À traiter', contacte:'Contacté', devis_envoye:'Devis envoyé', chantier_gagne:'Gagné', sans_suite:'Sans suite', lu:'Lu, sans réponse' }[s] || s;
 }
 
 function travailLabel(t) {
