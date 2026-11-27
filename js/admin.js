@@ -1778,6 +1778,140 @@ document.getElementById('em-map-toggle')?.addEventListener('click', () => {
   toggleEmailMap(showing);
 });
 
+// ── STATISTIQUES DU SITE ─────────────────────────────────────
+let statsDays = 30;
+
+function showStatsSection() {
+  document.getElementById('emails-section').classList.remove('active');
+  document.getElementById('btn-emails-section').classList.remove('active');
+  document.getElementById('realisations-panel').classList.remove('active');
+  document.getElementById('btn-real-section').classList.remove('active');
+  const tp = document.getElementById('tarifs-panel');
+  if (!tp.hidden) { tp.hidden = true; document.getElementById('btn-tarifs')?.classList.remove('active'); }
+  document.querySelector('.admin-content').style.display = 'none';
+  document.getElementById('stats-section').classList.add('active');
+  document.getElementById('btn-stats-section').classList.add('active');
+  loadStats();
+}
+
+function hideStatsSection() {
+  const sec = document.getElementById('stats-section');
+  if (!sec || !sec.classList.contains('active')) return;
+  sec.classList.remove('active');
+  document.getElementById('btn-stats-section').classList.remove('active');
+  document.querySelector('.admin-content').style.display = '';
+}
+
+document.getElementById('btn-stats-section')?.addEventListener('click', showStatsSection);
+// Quitter les statistiques quand on revient aux autres vues (avant leur propre affichage)
+document.addEventListener('click', e => {
+  if (e.target.closest('.fnav-btn, #btn-real-section, #btn-emails-section')) hideStatsSection();
+}, true);
+document.querySelectorAll('#stats-section [data-days]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    statsDays = parseInt(btn.dataset.days, 10);
+    document.querySelectorAll('#stats-section [data-days]').forEach(b => b.classList.toggle('active', b === btn));
+    loadStats();
+  });
+});
+
+async function loadStats() {
+  const body = document.getElementById('stats-body');
+  body.innerHTML = '<div class="state-msg">Chargement…</div>';
+  const since = new Date(Date.now() - statsDays * 86400000);
+  try {
+    const snap = await db.collection('visites').where('ts', '>=', since).orderBy('ts').limit(10000).get();
+    body.innerHTML = renderStats(snap.docs.map(d => d.data()), statsDays);
+  } catch (err) {
+    console.error('[Stats] load error:', err);
+    body.innerHTML = `<div class="state-msg" style="color:var(--red)">Erreur : ${esc(err.code || err.message)}<br><small>Vérifie les règles Firestore (collection visites).</small></div>`;
+  }
+}
+
+function dayKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function pageName(path) {
+  const p = (path || '/').split('/').pop();
+  return p === '' ? 'index.html' : p;
+}
+
+function bareList(rows, total) {
+  return rows.map(([label, n, extra]) => `
+    <tr><td>${esc(label)}${extra ? `<br><small>${esc(extra)}</small>` : ''}
+      <div class="st-bare"><i style="width:${total ? Math.round(n / total * 100) : 0}%"></i></div></td>
+      <td class="n">${n}</td></tr>`).join('');
+}
+
+function renderStats(rows, days) {
+  if (!rows.length) return '<div class="state-msg">Aucune visite enregistrée sur cette période.</div>';
+  const visits = rows.length;
+  const sessions = new Set(rows.map(r => r.sid)).size;
+  const avgSeconds = Math.round(rows.reduce((a, r) => a + (r.duration || 0), 0) / visits);
+  const fmtDur = s => s >= 60 ? `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`;
+
+  // Visites par jour (heure de Paris de l'administrateur)
+  const byDay = {};
+  rows.forEach(r => {
+    const d = toDate(r.ts);
+    if (!d) return;
+    const k = dayKey(d);
+    byDay[k] = byDay[k] || { v: 0, s: new Set() };
+    byDay[k].v++;
+    byDay[k].s.add(r.sid);
+  });
+  const series = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const k = dayKey(d);
+    series.push({ k, d, v: byDay[k]?.v || 0, s: byDay[k]?.s.size || 0 });
+  }
+  const max = Math.max(1, ...series.map(x => x.v));
+  const bars = series.map(x => `<div class="st-bar" title="${x.d.toLocaleDateString('fr-FR')} : ${x.v} vue(s), ${x.s} visiteur(s)"><span style="height:${Math.round(x.v / max * 100)}%"></span></div>`).join('');
+  const first = series[0].d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  const last = series[series.length - 1].d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+
+  // Pages, provenances, pages d'entrée, appareils
+  const count = (key, fn) => {
+    const m = {};
+    rows.forEach(r => { const k = fn(r); if (!k) return; m[k] = m[k] || { n: 0, dur: 0 }; m[k].n++; m[k].dur += r.duration || 0; });
+    return Object.entries(m).sort((a, b) => b[1].n - a[1].n);
+  };
+  const pages = count('path', r => pageName(r.path)).slice(0, 12).map(([k, v]) => [k, v.n, `temps moyen ${fmtDur(Math.round(v.dur / v.n))}`]);
+  const sources = count('source', r => r.source || 'inconnue').map(([k, v]) => [k, v.n]);
+  const referrers = count('ref', r => (r.referrer || '').replace(/^www\./, '')).filter(([k]) => !/curagevandaele\.fr$/.test(k)).slice(0, 10).map(([k, v]) => [k, v.n]);
+  const entries = count('entry', r => r.entry ? pageName(r.path) : '').slice(0, 10).map(([k, v]) => [k, v.n]);
+  const devices = count('device', r => r.device || 'inconnu').map(([k, v]) => [k, v.n]);
+  const campaigns = count('campaign', r => r.campaign || '').map(([k, v]) => [k, v.n]);
+
+  const section = (title, list) => `
+    <div class="st-card"><h3>${esc(title)}</h3>
+      ${list.length ? `<table class="st-table">${bareList(list, list.reduce((a, x) => a + x[1], 0) || 1)}</table>` : '<div class="state-msg" style="padding:.5rem">—</div>'}
+    </div>`;
+
+  return `
+    <div class="st-kpis">
+      <div class="st-kpi"><b>${visits}</b><span>Pages vues</span></div>
+      <div class="st-kpi"><b>${sessions}</b><span>Visites</span></div>
+      <div class="st-kpi"><b>${(visits / Math.max(sessions, 1)).toFixed(1).replace('.', ',')}</b><span>Pages par visite</span></div>
+      <div class="st-kpi"><b>${fmtDur(avgSeconds)}</b><span>Temps moyen par page</span></div>
+    </div>
+    <div class="st-card">
+      <h3>Pages vues par jour</h3>
+      <div class="st-chart">${bars}</div>
+      <div class="st-axis"><span>${first}</span><span>${last}</span></div>
+    </div>
+    <div class="st-grid">
+      ${section('Pages les plus vues', pages)}
+      ${section("Comment les visiteurs arrivent", sources)}
+      ${section("Sites qui envoient des visiteurs", referrers)}
+      ${section("Pages d'entrée", entries)}
+      ${section('Appareils', devices)}
+      ${campaigns.length ? section('Campagnes (utm_campaign)', campaigns) : ''}
+    </div>`;
+}
+
 // ── UTILS ────────────────────────────────────────────────────
 function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

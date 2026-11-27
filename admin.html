@@ -305,7 +305,7 @@
     .fnav-archived { margin-top: .35rem; border-top: 1px solid var(--gray-200); color: var(--gray-500) !important; }
     .fnav-archived.active { background: #f5f3ff !important; color: #7c3aed !important; }
 
-    #btn-real-section, #btn-emails-section {
+    #btn-real-section, #btn-emails-section, #btn-stats-section {
       display: flex; align-items: center; gap: .55rem;
       margin-top: .6rem; padding: .65rem .9rem;
       width: 100%; border: 1.5px solid var(--green-200);
@@ -315,11 +315,11 @@
       transition: background .15s, border-color .15s, box-shadow .15s;
       border-top: 2px solid var(--green-200);
     }
-    #btn-real-section:hover, #btn-emails-section:hover {
+    #btn-real-section:hover, #btn-emails-section:hover, #btn-stats-section:hover {
       background: var(--green-100); border-color: var(--green-400);
       box-shadow: 0 1px 4px rgba(86,181,122,.18);
     }
-    #btn-real-section.active, #btn-emails-section.active {
+    #btn-real-section.active, #btn-emails-section.active, #btn-stats-section.active {
       background: var(--green-600); color: #fff;
       border-color: var(--green-600);
       box-shadow: 0 2px 8px rgba(86,181,122,.3);
@@ -381,6 +381,30 @@
     .em-preview-sub { color: var(--gray-500); font-size: .72rem; margin: .15rem 0 .3rem; }
     .em-preview-subj { font-weight: 600; margin-bottom: .3rem; }
     .em-pin-icon { background: none !important; border: none !important; }
+    #stats-section { display: none; flex: 1; min-width: 0; overflow-y: auto; background: var(--gray-100); padding: 1.25rem 1.5rem; }
+    #stats-section.active { display: block; }
+    .stats-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+    .stats-head h2 { font-size: 1.1rem; color: var(--gray-900); }
+    .stats-periods { display: flex; gap: .35rem; }
+    .st-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+    .st-kpi { background: var(--white); border-radius: 10px; padding: .9rem 1rem; box-shadow: var(--shadow); }
+    .st-kpi b { display: block; font-size: 1.5rem; color: var(--gray-900); }
+    .st-kpi span { font-size: .7rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; }
+    .st-card { background: var(--white); border-radius: 10px; padding: 1rem; box-shadow: var(--shadow); margin-bottom: 1rem; }
+    .st-card h3 { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); margin-bottom: .75rem; }
+    .st-chart { display: flex; align-items: flex-end; gap: 3px; height: 170px; }
+    .st-bar { flex: 1; height: 100%; display: flex; align-items: flex-end; min-width: 3px; }
+    .st-bar span { display: block; width: 100%; background: var(--green-500); border-radius: 3px 3px 0 0; min-height: 2px; }
+    .st-bar:hover span { background: var(--green-600); }
+    .st-axis { display: flex; justify-content: space-between; font-size: .68rem; color: var(--gray-500); margin-top: .35rem; }
+    .st-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .st-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .st-table td { padding: .4rem .25rem; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+    .st-table td.n { text-align: right; color: var(--gray-600); white-space: nowrap; }
+    .st-table td small { color: var(--gray-500); }
+    .st-bare { height: 7px; background: var(--gray-100); border-radius: 4px; overflow: hidden; margin-top: .25rem; }
+    .st-bare i { display: block; height: 100%; background: var(--green-500); }
+    @media (max-width: 800px) { #stats-section { padding: .75rem; } .st-grid { grid-template-columns: 1fr; } }
     .em-last { display: inline-block; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 99px; margin-bottom: .5rem; }
     .em-last.is-me { background: #eff6ff; color: #1d4ed8; }
     .em-last.is-client { background: #fff7ed; color: #c2410c; }
@@ -863,7 +887,7 @@
       .filter-nav-label { display: none; }
       .filter-nav .fnav-btn { font-size: .72rem; padding: .28rem .55rem; white-space: nowrap; flex-shrink: 0; }
       .fnav-archived { margin-top: 0; border-top: none; }
-      #btn-real-section, #btn-emails-section { margin: 0; padding: .28rem .7rem; font-size: .72rem; white-space: nowrap; flex-shrink: 0; width: auto; }
+      #btn-real-section, #btn-emails-section, #btn-stats-section { margin: 0; padding: .28rem .7rem; font-size: .72rem; white-space: nowrap; flex-shrink: 0; width: auto; }
 
 
       /* Grille tarifaire : 1 colonne sur mobile */
@@ -1030,6 +1054,10 @@
           <span style="font-size:1rem">✉️</span>
           Emails clients
         </button>
+        <button id="btn-stats-section">
+          <span style="font-size:1rem">📊</span>
+          Statistiques
+        </button>
       </nav>
       <div class="sidebar-sep"></div>
     </aside>
@@ -1087,6 +1115,19 @@
           <span>Chiffre : temps depuis le contact</span>
         </div>
       </div>
+    </div>
+
+    <!-- STATISTIQUES DU SITE -->
+    <div id="stats-section">
+      <div class="stats-head">
+        <h2>📊 Statistiques du site</h2>
+        <div class="stats-periods">
+          <button class="em-chip" data-days="7" type="button">7 jours</button>
+          <button class="em-chip active" data-days="30" type="button">30 jours</button>
+          <button class="em-chip" data-days="90" type="button">90 jours</button>
+        </div>
+      </div>
+      <div id="stats-body"><div class="state-msg">Chargement…</div></div>
     </div>
 
     <!-- CONTENU PRINCIPAL (list + détail) -->

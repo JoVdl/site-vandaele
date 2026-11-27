@@ -14,6 +14,24 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Mesure d'audience (js/stats.js) : le site ajoute une ligne par page vue.
+    // Lecture et suppression réservées à l'admin connecté.
+    match /visites/{visiteId} {
+      allow create: if request.resource.data.keys().hasOnly(
+          ['path', 'ts', 'duration', 'source', 'referrer', 'device', 'sid', 'entry', 'campaign'])
+        && request.resource.data.path is string && request.resource.data.path.size() <= 200
+        && request.resource.data.ts is timestamp
+        && request.resource.data.duration is int && request.resource.data.duration >= 0
+        && request.resource.data.duration <= 7200
+        && request.resource.data.source is string && request.resource.data.source.size() <= 40
+        && request.resource.data.referrer is string && request.resource.data.referrer.size() <= 120
+        && request.resource.data.device is string && request.resource.data.device.size() <= 20
+        && request.resource.data.sid is string && request.resource.data.sid.size() <= 40
+        && request.resource.data.entry is bool
+        && request.resource.data.campaign is string && request.resource.data.campaign.size() <= 80;
+      allow read, update, delete: if request.auth != null;
+    }
+
     match /demandes/{demandeId} {
 
       // Le formulaire public peut créer une demande (INSERT)
