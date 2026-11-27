@@ -88,7 +88,7 @@ def normalize_subject(text):
     return re.sub(r'^((re|tr|fw|fwd)\s*:\s*)+', '', (text or '').strip().lower())
 
 
-def already_imported(session, project, from_email, subject, date_iso):
+def already_imported(session, project, from_email, subject, date_iso, form=False):
     """Vrai si un mail du même expéditeur, avec le même objet et une date à moins de 2 jours, existe déjà."""
     query = {'structuredQuery': {
         'from': [{'collectionId': COLLECTION}],
@@ -110,7 +110,33 @@ def already_imported(session, project, from_email, subject, date_iso):
         ts = fields.get('date', {}).get('timestampValue', '')
         if ts and abs((parse_ts(ts) - target).total_seconds()) < 2 * 86400:
             return True
+    if form:
+        # copie créée avec l'expéditeur du site : même moment (10 minutes)
+        q2 = {'structuredQuery': {
+            'from': [{'collectionId': COLLECTION}],
+            'where': {'fieldFilter': {'field': {'fieldPath': 'from_email'}, 'op': 'EQUAL',
+                                      'value': {'stringValue': 'contact@' + OWN_DOMAIN}}},
+            'limit': 500}}
+        resp2 = session.post(f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents:runQuery',
+                             json=q2)
+        resp2.raise_for_status()
+        for item in resp2.json():
+            doc = item.get('document')
+            ts = doc and doc['fields'].get('date', {}).get('timestampValue', '')
+            if ts and abs((parse_ts(ts) - target).total_seconds()) < 600:
+                return True
     return False
+
+
+FORM_PERSON = re.compile(r'Pr[ée]nom\s*:\s*(.+?)\s*/?\s*Nom\s*:\s*(.+?)\s*/?\s*Email\s*:\s*([^\s/<>]+@[^\s/<>]+)', re.I)
+
+
+def form_person(body):
+    """Pour un mail du formulaire du site : (nom complet, email du client), sinon (None, None)."""
+    match = FORM_PERSON.search(body)
+    if not match:
+        return None, None
+    return f"{match.group(1).strip()} {match.group(2).strip()}".strip(), match.group(3).strip().lower()
 
 
 def is_advertising(subject, from_email, body):
@@ -358,9 +384,6 @@ def main():
 
             head_subject = header_text(head.get('Subject'))
             head_date = parse_date(head.get('Date')).strftime('%Y-%m-%dT%H:%M:%SZ')
-            if already_imported(session, project, from_email, head_subject, head_date):
-                present += 1  # même mail déjà présent (copie Gmail) : on ne le duplique pas
-                continue
 
             if DRY_RUN:
                 print(f'[dry-run] nouveau : {header_text(head.get("Subject"))}')
@@ -370,6 +393,13 @@ def main():
             full = fetch_full(imap, num)
             if is_advertising(header_text(full.get('Subject')), from_email, body_of(full)):
                 skipped += 1  # publicité ou newsletter, lue dans le texte du mail
+                continue
+            person_name, person_email = (None, None)
+            if from_email.endswith('@' + OWN_DOMAIN):
+                person_name, person_email = form_person(body_of(full))
+            if already_imported(session, project, person_email or from_email, head_subject, head_date,
+                                form=from_email.endswith('@' + OWN_DOMAIN)):
+                present += 1  # même mail déjà présent : on ne le duplique pas
                 continue
             when = parse_date(head.get('Date'))
             thread = find_thread_doc(session, project, refs_of(head), from_email, head_subject, when)
@@ -381,9 +411,9 @@ def main():
                 continue
             record = {
                 'message_id': message_id or fallback,
-                'from_email': from_email,
-                'from_name':  from_name,
-                'subject':    header_text(full.get('Subject')),
+                'from_email': person_email or from_email,
+                'from_name':  person_name or from_name,
+                'subject':    'Demande via le formulaire du site' if person_email else header_text(full.get('Subject')),
                 'snippet':    snippet_of(full),
                 'date':       parse_date(full.get('Date')).strftime('%Y-%m-%dT%H:%M:%SZ'),
             }
