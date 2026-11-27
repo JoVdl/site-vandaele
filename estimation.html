@@ -89,6 +89,8 @@
       margin-bottom: 2.5rem;
       counter-reset: step;
     }
+    .step-item.future { display: none; }
+    .step-item.active::after { display: none; }
     .step-item {
       display: flex;
       flex-direction: column;
@@ -837,19 +839,19 @@
         <div class="step-circle">1</div>
         <div class="step-label">Zone</div>
       </div>
-      <div class="step-item" data-step="2">
+      <div class="step-item future" data-step="2">
         <div class="step-circle">2</div>
         <div class="step-label">Problèmes</div>
       </div>
-      <div class="step-item" data-step="3">
+      <div class="step-item future" data-step="3">
         <div class="step-circle">3</div>
         <div class="step-label">Travaux</div>
       </div>
-      <div class="step-item" data-step="4">
+      <div class="step-item future" data-step="4">
         <div class="step-circle">4</div>
         <div class="step-label">Mesures</div>
       </div>
-      <div class="step-item" data-step="5">
+      <div class="step-item future" data-step="5">
         <div class="step-circle">5</div>
         <div class="step-label">Coordonnées</div>
       </div>

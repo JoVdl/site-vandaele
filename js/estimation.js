@@ -370,9 +370,10 @@ function goToPanel(n) {
 
   document.querySelectorAll('.step-item').forEach(item => {
     const s = parseInt(item.dataset.step);
-    item.classList.remove('active', 'done');
+    item.classList.remove('active', 'done', 'future');
     if (s === n) item.classList.add('active');
     else if (s < n) item.classList.add('done');
+    else item.classList.add('future'); // étapes à venir : pas encore affichées
   });
 
   currentPanel = n;
@@ -386,7 +387,7 @@ function goToPanel(n) {
   if (n === 5) updatePanel5Fields();
   if (n === 6) {
     document.querySelectorAll('.step-item').forEach(item => {
-      item.classList.remove('active');
+      item.classList.remove('active', 'future');
       item.classList.add('done');
     });
   }
