@@ -1408,8 +1408,39 @@ async function checkEpandageZones(type, lat, lng) {
 
 // ── VÉRIFICATION ZONES ENVIRONNEMENTALES ─────────────────
 // Messages honnêtes : ce qui n'est pas vérifié est toujours dit
-function envNotes(failed) {
-  const wet = `<div class="zone-indispo" style="margin-top:.6rem">💧 <strong>Zones humides :</strong> non vérifiées automatiquement, car nous n'avons pas de source fiable pour ce contrôle. Un contrôle sur le terrain est indispensable avant tout travaux.</div>`;
+// Zones à dominante humide : inventaire officiel de l'Agence de l'eau Artois-Picardie (couche WFS)
+async function checkWetlandZdh(lat, lng, geometry) {
+  let bbox;
+  if (geometry?.type === 'Polygon') {
+    const c = geometry.coordinates[0];
+    const lngs = c.map(p => p[0]), lats = c.map(p => p[1]);
+    bbox = [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)];
+  } else {
+    bbox = [lng - 0.0005, lat - 0.0005, lng + 0.0005, lat + 0.0005];
+  }
+  const url = `https://artois-picardie.eaufrance.fr/geoserver/TEST_IDG/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=TEST_IDG:zdh&outputFormat=application/json&srsName=EPSG:4326&bbox=${bbox.join(',')},EPSG:4326`;
+  const unavailable = `<div class="zone-indispo" style="margin-top:.6rem">💧 <strong>Zones humides :</strong> vérification impossible (service de l'Agence de l'eau indisponible). Un contrôle sur le terrain est indispensable avant tout travaux.</div>`;
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 9000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(tid);
+    if (!res.ok) return unavailable;
+    const data = await res.json();
+    if (data.features?.length > 0) {
+      return `<div class="zone-alert zone-alert-zh">
+        <div class="zone-alert-title">💧 Zone à dominante humide relevée</div>
+        <div class="zone-item-impact">Présence de zone humide probable (inventaire de l'Agence de l'eau Artois-Picardie). Une zone humide relève de la loi sur l'eau : à confirmer sur le terrain avant tout travaux.</div>
+      </div>`;
+    }
+    return `<div class="zone-indispo" style="margin-top:.6rem">💧 <strong>Zones humides :</strong> aucune zone à dominante humide relevée dans l'inventaire de l'Agence de l'eau Artois-Picardie (base établie en 2008). Ce n'est pas une garantie : un contrôle sur le terrain reste indispensable.</div>`;
+  } catch {
+    return unavailable;
+  }
+}
+
+function envNotes(failed, wetHtml) {
+  const wet = wetHtml || `<div class="zone-indispo" style="margin-top:.6rem">💧 <strong>Zones humides :</strong> non vérifiées automatiquement. Un contrôle sur le terrain est indispensable avant tout travaux.</div>`;
   const miss = failed.length ? `<div class="zone-indispo" style="margin-top:.6rem">⚠️ <strong>Vérification incomplète :</strong> ${failed.join(', ')} n'ont pas pu être contrôlées (service indisponible). Ne considérez pas ce résultat comme définitif.</div>` : '';
   return wet + miss;
 }
@@ -1476,6 +1507,8 @@ async function checkEnvironmentalZones(lat, lng, geometry) {
     } catch { failed.push(c.name.replace(/<[^>]*>/g, '')); }
   }));
 
+  const wetHtml = await checkWetlandZdh(lat, lng, geometry);
+
   if (found.length === 0 && failed.length === checks.length) {
     zoneEl.innerHTML = `
       <div class="zone-indispo">
@@ -1495,7 +1528,7 @@ async function checkEnvironmentalZones(lat, lng, geometry) {
         ${head} (Natura 2000, <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>) à cette localisation.<br>
         <span>Ces données sont indicatives — vérification définitive lors de la visite technique.</span>
       </div>`;
-    zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
+    zoneEl.insertAdjacentHTML('beforeend', envNotes(failed, wetHtml));
     zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
@@ -1537,7 +1570,7 @@ async function checkEnvironmentalZones(lat, lng, geometry) {
       <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>
     </div>`;
 
-  zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
+  zoneEl.insertAdjacentHTML('beforeend', envNotes(failed, wetHtml));
   ensureAccompagnementCheckbox();
   zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
