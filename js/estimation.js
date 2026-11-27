@@ -213,6 +213,7 @@ function wzEligible() {
   if (!panel) return [];
   return Array.from(panel.querySelectorAll('.form-group')).filter(el => {
     if (el.querySelector('.form-group')) return false;
+    if (el.closest('.wz-side')) return false;
     let p = el;
     while (p && p !== panel) {
       if (p.hidden || p.style.display === 'none' || (p.classList.contains('detail-section') && !p.classList.contains('visible'))) return false;
@@ -222,9 +223,62 @@ function wzEligible() {
   });
 }
 
+function wzEsc(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Valeur saisie pour une question (affichée dans son carré)
+function wzValue(el) {
+  if (!el.dataset.touched) return '';
+  const ins = Array.from(el.querySelectorAll('input,select,textarea')).filter(i => i.type !== 'hidden');
+  const picked = ins.filter(i => (i.type === 'radio' || i.type === 'checkbox') && i.checked)
+    .map(i => (i.closest('label')?.textContent || i.value).replace(/\s+/g, ' ').trim());
+  if (picked.length) return picked.join(', ');
+  const sel = ins.find(i => i.tagName === 'SELECT' && i.value);
+  if (sel) return sel.options[sel.selectedIndex]?.text.trim() || '';
+  const range = ins.find(i => i.type === 'range');
+  if (range) return range.value + ' ' + (el.querySelector('.range-val')?.textContent.replace(range.value, '').trim() || '');
+  const txt = ins.find(i => i.value && i.value.trim() !== '');
+  return txt ? txt.value.trim() : '';
+}
+
 function wzBuild() {
   const panel = document.getElementById('panel-4');
   if (!panel || document.getElementById('wz-nav')) return;
+  const cf = panel.querySelector('.contact-form');
+  const firstGroup = cf?.querySelector('.form-group');
+  if (cf && firstGroup && !cf.querySelector('.wz-layout')) {
+    const layout = document.createElement('div');
+    layout.className = 'wz-layout';
+    const main = document.createElement('div'); main.className = 'wz-main';
+    const side = document.createElement('div'); side.className = 'wz-side';
+    layout.append(main, side);
+    cf.insertBefore(layout, firstGroup);
+    const stop = cf.querySelector('.panel-nav');
+    let node = firstGroup;
+    while (node && node !== stop && node !== layout) {
+      const next = node.nextElementSibling;
+      main.appendChild(node);
+      node = next;
+    }
+    const mapGroup = side.parentElement && main.querySelector('#leaflet-map')?.closest('.form-group');
+    if (mapGroup) side.appendChild(mapGroup);
+  }
+  const squares = document.createElement('div');
+  squares.className = 'wz-squares';
+  squares.id = 'wz-squares';
+  cf?.insertBefore(squares, cf.querySelector('.wz-layout'));
+  // Saisie : on marque la question comme remplie
+  const mark = e => e.target.closest?.('.form-group')?.setAttribute('data-touched', '1');
+  panel.addEventListener('input', mark);
+  panel.addEventListener('change', mark);
+  // Adresse de stockage : localisée dès la saisie (Entrée ou sortie du champ)
+  [['adresse-stockage-hydro', 'hydro'], ['adresse-stockage-curage', 'curage']].forEach(([id, type]) => {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    inp.addEventListener('change', () => window.geocodeEpandage(type));
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.geocodeEpandage(type); } });
+  });
   const bar = document.createElement('div');
   bar.className = 'wz-nav';
   bar.id = 'wz-nav';
@@ -236,7 +290,7 @@ function wzBuild() {
   const prog = document.createElement('div');
   prog.className = 'wz-bar';
   prog.innerHTML = '<i id="wz-fill"></i>';
-  panel.querySelector('.contact-form')?.prepend(prog);
+  cf?.prepend(prog);
   document.getElementById('wz-prev').onclick = () => wzStep(-1);
   document.getElementById('wz-next').onclick = () => wzStep(1);
 }
@@ -249,7 +303,7 @@ function wzShow() {
   const panel = document.getElementById('panel-4');
   panel.querySelectorAll('.wz-off').forEach(el => el.classList.remove('wz-off'));
   panel.querySelectorAll('*').forEach(el => {
-    if (el.closest('.wz-nav, .wz-bar, .panel-nav')) return;
+    if (el.closest('.wz-nav, .wz-bar, .panel-nav, .wz-side, .wz-squares')) return;
     if (el.contains(wzCurrent) || wzCurrent.contains(el)) return;
     el.classList.add('wz-off');
   });
@@ -259,7 +313,17 @@ function wzShow() {
   document.getElementById('wz-fill').style.width = ((idx + 1) / n * 100) + '%';
   document.getElementById('wz-prev').textContent = idx === 0 ? '← Retour' : '← Précédent';
   document.getElementById('wz-next').textContent = idx === n - 1 ? 'Suivant →' : 'Continuer →';
-  if (wzCurrent.querySelector('#leaflet-map') && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 60);
+  if (leafletMap) setTimeout(() => leafletMap.invalidateSize(), 60);
+  // Carrés : un par question, rempli avec la réponse, cliquable pour revenir en arrière
+  const sq = document.getElementById('wz-squares');
+  if (sq) {
+    sq.innerHTML = list.map((el, i) => {
+      const v = wzValue(el);
+      const cls = ['wz-sq', v ? 'done' : '', el === wzCurrent ? 'current' : ''].join(' ');
+      return `<button type="button" class="${cls}" data-i="${i}"><span class="n">${i + 1}</span><span class="v">${wzEsc(v || '–')}</span></button>`;
+    }).join('');
+    sq.querySelectorAll('.wz-sq').forEach(b => b.onclick = () => { wzCurrent = list[+b.dataset.i]; wzShow(); });
+  }
   wzCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 

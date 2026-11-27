@@ -779,6 +779,23 @@
     #panel-4 .wz-bar { display: none; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin-bottom: 1.25rem; }
     #panel-4.wz-mode .wz-bar { display: block; }
     #panel-4 .wz-bar i { display: block; height: 100%; background: var(--green-500); transition: width .3s ease; }
+    #panel-4 .wz-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+    #panel-4 .wz-main { flex: 1; min-width: 0; }
+    #panel-4 .wz-side { width: 46%; position: sticky; top: 90px; }
+    #panel-4 .wz-side .form-group { margin-bottom: 0; }
+    #panel-4 .wz-side #leaflet-map { height: 62vh; min-height: 380px; }
+    #panel-4 .wz-squares { display: none; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+    #panel-4.wz-mode .wz-squares { display: flex; }
+    #panel-4 .wz-sq { width: 84px; min-height: 66px; border: 2px solid var(--gray-200); border-radius: 12px; background: #fff; padding: .4rem .5rem; text-align: left; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: .15rem; }
+    #panel-4 .wz-sq .n { font-size: .7rem; font-weight: 700; color: var(--gray-500); }
+    #panel-4 .wz-sq .v { font-size: .78rem; font-weight: 600; color: var(--gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    #panel-4 .wz-sq.done { border-color: var(--green-500); background: var(--green-100); }
+    #panel-4 .wz-sq.current { border-color: var(--green-800); box-shadow: 0 0 0 3px rgba(19,61,34,.15); }
+    @media (max-width: 800px) {
+      #panel-4 .wz-layout { flex-direction: column; }
+      #panel-4 .wz-side { width: 100%; position: static; }
+      #panel-4 .wz-side #leaflet-map { height: 300px; min-height: 260px; }
+    }
   </style>
 </head>
 <body>
