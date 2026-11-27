@@ -1487,6 +1487,21 @@ function openEmail(id) {
   }
 }
 
+// Qui a écrit en dernier dans le fil : « vous » (réponse envoyée) ou « le client »
+function lastSpeakerLine(m) {
+  let who = m.dernier_message || '', at = m.dernier_message_at ? fmtDate(m.dernier_message_at) : '';
+  if (!who && m.historique) {
+    try {
+      const h = JSON.parse(m.historique);
+      const last = h[h.length - 1];
+      if (last) { who = /jordan/i.test(last.de || '') ? 'vous' : 'client'; at = last.date || ''; }
+    } catch (e) { /* historique illisible : on n'affiche rien */ }
+  }
+  if (!who) return '';
+  const label = who === 'vous' ? 'Vous avez répondu en dernier' : 'Le client a écrit en dernier';
+  return `<div class="em-last ${who === 'vous' ? 'is-me' : 'is-client'}">${esc(label)}${at ? ' · ' + esc(at) : ''}</div>`;
+}
+
 function renderEmailDetail(m) {
   const statut = m.statut || 'nouveau';
   const subjectRe = encodeURIComponent(`Re: ${m.subject || ''}`);
@@ -1516,6 +1531,7 @@ function renderEmailDetail(m) {
       </div>
       <div class="dsec">
         <h3>Mail</h3>
+        ${lastSpeakerLine(m)}
         <div style="font-weight:600;margin-bottom:.5rem">${esc(m.subject || '(sans objet)')}</div>
         ${gmailMessageUrl(m) ? `<a class="btn-copy-fiche" style="margin-bottom:.6rem;display:inline-block" target="_blank" rel="noopener" href="${esc(gmailMessageUrl(m))}">Retrouver le mail dans Gmail</a>` : ''}
         <div class="em-body">${esc(m.texte || m.snippet || '')}</div>

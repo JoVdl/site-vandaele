@@ -191,6 +191,136 @@ def create(session, project, doc_id, record):
     return False
 
 
+REPLY_CUT = re.compile(r'^\s*(Le .+ a écrit|On .+ wrote|De ?:|From:|Envoyé ?:|-{3,}|_{5,}|Cordialement|Bien cordialement)', re.I)
+
+
+def new_text(msg, limit=800):
+    """Texte propre d'un message : sans les citations ni le texte repris du mail précédent."""
+    raw = ''
+    for part in msg.walk():
+        if part.get_content_type() == 'text/plain' and not part.get_filename():
+            raw = (part.get_payload(decode=True) or b'').decode(part.get_content_charset() or 'utf-8', errors='replace')
+            break
+    kept = []
+    for line in raw.splitlines():
+        if line.lstrip().startswith('>'):
+            continue
+        if REPLY_CUT.match(line) and kept:
+            break
+        kept.append(line)
+    return re.sub(r'\s+', ' ', ' '.join(kept)).strip()[:limit]
+
+
+def find_sent_folder(imap):
+    """Nom du dossier « Envoyés » tel que le serveur le désigne (drapeau \\Sent)."""
+    _, folders = imap.list()
+    for raw in folders or []:
+        line = raw.decode(errors='replace') if isinstance(raw, bytes) else str(raw)
+        if '\\Sent' in line:
+            match = re.search(r'\) "[^"]*" (.+)$', line)
+            if match:
+                return match.group(1).strip().strip('"')
+    return 'Sent'
+
+
+def refs_of(head):
+    return re.findall(r'<[^>]+>', (head.get('In-Reply-To') or '') + ' ' + (head.get('References') or ''))
+
+
+def find_thread_doc(session, project, refs, from_email, subject, when):
+    """Document existant du fil : d'abord par en-tête (In-Reply-To / References), sinon par expéditeur + objet."""
+    for ref in refs:
+        doc_id = doc_id_for(ref, '')
+        if exists(session, project, doc_id):
+            return doc_id
+    if not from_email:
+        return None
+    query = {'structuredQuery': {
+        'from': [{'collectionId': COLLECTION}],
+        'where': {'fieldFilter': {'field': {'fieldPath': 'from_email'}, 'op': 'EQUAL',
+                                  'value': {'stringValue': from_email}}},
+        'limit': 200}}
+    resp = session.post(f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents:runQuery',
+                        json=query)
+    resp.raise_for_status()
+    wanted = normalize_subject(subject)
+    best, best_date = None, None
+    for item in resp.json():
+        doc = item.get('document')
+        if not doc:
+            continue
+        fields = doc['fields']
+        if normalize_subject(fields.get('subject', {}).get('stringValue', '')) != wanted:
+            continue
+        ts = fields.get('date', {}).get('timestampValue', '')
+        if not ts or parse_ts(ts) > when:
+            continue
+        if best_date is None or parse_ts(ts) > best_date:
+            best, best_date = doc['name'].rsplit('/', 1)[-1], parse_ts(ts)
+    return best
+
+
+def append_to_thread(session, project, doc_id, entry, when, from_me):
+    """Ajoute un message à l'historique du fil, sans doublon, et met à jour le statut et le dernier auteur."""
+    resp = session.get(doc_url(project, doc_id))
+    if resp.status_code == 404:
+        return False
+    resp.raise_for_status()
+    fields = resp.json().get('fields', {})
+    history = json.loads(fields.get('historique', {}).get('stringValue') or '[]')
+    key = (entry['date'], entry['de'], entry['texte'][:80])
+    if any((h.get('date'), h.get('de'), (h.get('texte') or '')[:80]) == key for h in history):
+        return False
+    if not history:  # premier échange : on y met le mail d'origine
+        original = fields.get('date', {}).get('timestampValue', '')
+        history.append({'date': parse_ts(original).strftime('%Y-%m-%d') if original else entry['date'],
+                        'de': fields.get('from_name', {}).get('stringValue', '') or fields.get('from_email', {}).get('stringValue', ''),
+                        'texte': (fields.get('texte', {}).get('stringValue') or fields.get('snippet', {}).get('stringValue') or '')[:500]})
+    history.append(entry)
+    current = fields.get('statut', {}).get('stringValue', 'nouveau')
+    body = {'historique': {'stringValue': json.dumps(history, ensure_ascii=False)},
+            'dernier_message': {'stringValue': 'vous' if from_me else 'client'},
+            'dernier_message_at': {'timestampValue': when.strftime('%Y-%m-%dT%H:%M:%SZ')}}
+    mask = ['historique', 'dernier_message', 'dernier_message_at']
+    if from_me and current == 'nouveau':
+        body['statut'] = {'stringValue': 'contacte'}; mask.append('statut')
+    if not from_me and current == 'contacte':
+        body['statut'] = {'stringValue': 'a_traiter'}; mask.append('statut')
+    session.patch(doc_url(project, doc_id), params=[('updateMask.fieldPaths', m) for m in mask],
+                  json={'fields': body}).raise_for_status()
+    return True
+
+
+def sync_sent(imap, session, project):
+    """Rattache les réponses envoyées (dossier Envoyés) aux fils existants."""
+    folder = find_sent_folder(imap)
+    try:
+        imap.select(folder, readonly=True)
+    except imaplib.IMAP4.error as exc:
+        print(f'dossier Envoyés introuvable ({folder}) : {exc}', flush=True)
+        return 0
+    _, data = imap.search(None, 'SINCE', SINCE)
+    attached = 0
+    own = os.environ.get('ORANGE_IMAP_USER', '').lower()
+    for num in data[0].split():
+        _, raw = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID TO SUBJECT DATE IN-REPLY-TO REFERENCES)])')
+        head = message_from_bytes(raw[0][1])
+        _, to_email = parseaddr(header_text(head.get('To')))
+        to_email = to_email.lower()
+        if not to_email or to_email == own or to_email.endswith('@' + OWN_DOMAIN):
+            continue
+        when = parse_date(head.get('Date'))
+        target = find_thread_doc(session, project, refs_of(head), to_email, header_text(head.get('Subject')), when)
+        if not target:
+            continue
+        full = fetch_full(imap, num)
+        entry = {'date': when.strftime('%Y-%m-%d'), 'de': 'Jordan Vandaele', 'texte': new_text(full)}
+        if entry['texte'] and append_to_thread(session, project, target, entry, when, from_me=True):
+            attached += 1
+    print(f'{attached} réponses envoyées rattachées aux fils', flush=True)
+    return attached
+
+
 def main():
     creds_info = json.loads(os.environ['FIREBASE_SERVICE_ACCOUNT_JSON'])
     project = creds_info['project_id']
@@ -236,6 +366,14 @@ def main():
             if is_advertising(header_text(full.get('Subject')), from_email, body_of(full)):
                 skipped += 1  # publicité ou newsletter, lue dans le texte du mail
                 continue
+            when = parse_date(head.get('Date'))
+            thread = find_thread_doc(session, project, refs_of(head), from_email, head_subject, when)
+            if thread:
+                entry = {'date': when.strftime('%Y-%m-%d'), 'de': from_name or from_email, 'texte': new_text(full)}
+                if entry['texte']:
+                    append_to_thread(session, project, thread, entry, when, from_me=False)
+                present += 1  # réponse d'un client : ajoutée au fil existant, pas de nouvelle fiche
+                continue
             record = {
                 'message_id': message_id or fallback,
                 'from_email': from_email,
@@ -248,7 +386,9 @@ def main():
                 created += 1
 
         print(f'{len(ids)} mails lus depuis {SINCE} · {created} ajoutés · '
-              f'{present} déjà présents · {skipped} ignorés (expéditeurs automatiques)')
+              f'{present} déjà présents · {skipped} ignorés (expéditeurs automatiques)', flush=True)
+        imap.select('INBOX', readonly=True)
+        sync_sent(imap, session, project)
     finally:
         imap.logout()
 
