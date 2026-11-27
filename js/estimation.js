@@ -1135,7 +1135,7 @@ if (mapEl && typeof L !== 'undefined') {
         if (infoBar) infoBar.innerHTML =
           `✅ Surface : <strong>${areaHaDisplay} ha</strong> <span style="color:rgba(29,78,216,.6);font-size:.85em;">(${areaM2display} m²)</span> &nbsp;·&nbsp; Périmètre : <strong>${perim.toLocaleString('fr')} m</strong> &nbsp;·&nbsp; <span style="font-size:.85em;">⬇️ Vérification des zones en cours…</span>`;
         resetDrawingUI();
-        checkEnvironmentalZones(state.lat, state.lng);
+        checkEnvironmentalZones(state.lat, state.lng, state.geojson?.geometry?.type === 'Polygon' ? state.geojson.geometry : null);
       } catch(err) {
         if (infoBar) infoBar.innerHTML = '⚠️ Erreur lors du calcul — veuillez retracez le polygone.';
         console.error('[draw:created]', err);
@@ -1281,19 +1281,22 @@ async function checkEpandageZones(type, lat, lng) {
   const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
   const base  = 'https://apicarto.ign.fr/api/nature/';
   const checks = [
-    { url: `${base}zone-humide?geom=${geom}`,  icon: '💧', name: 'Zone humide',   impact: 'Épandage soumis à autorisation préfectorale (Loi sur l\'eau).' },
     { url: `${base}natura-habitat?geom=${geom}`, icon: '🌿', name: 'Natura 2000 (Habitats)', impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
     { url: `${base}natura-oiseaux?geom=${geom}`, icon: '🦅', name: 'Natura 2000 (Oiseaux)',  impact: 'Étude d\'incidences Natura 2000 potentiellement requise.' },
     { url: `${base}znieff1?geom=${geom}`,        icon: '🔬', name: 'ZNIEFF type I',          impact: 'Zone naturelle sensible — vérifier la compatibilité du projet.' },
     { url: `${base}znieff2?geom=${geom}`,        icon: '🌲', name: 'ZNIEFF type II',         impact: 'Zone naturelle d\'inventaire — contraintes réglementaires possibles.' },
   ];
   try {
-    const results = await Promise.allSettled(checks.map(c => fetch(c.url).then(r => r.json())));
+    const results = await Promise.allSettled(checks.map(c => fetch(c.url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
+    const failed = results.map((r, i) => r.status === 'rejected' ? checks[i].name : null).filter(Boolean);
     const found = results
       .map((r, i) => ({ ...checks[i], features: r.status === 'fulfilled' ? (r.value.features || []) : [] }))
       .filter(c => c.features.length > 0);
     if (!found.length) {
-      zoneEl.innerHTML = '<div class="zone-ok">✅ Aucune zone réglementaire détectée sur cette parcelle.</div>';
+      zoneEl.innerHTML = failed.length === checks.length
+        ? '<div class="zone-indispo">⚠️ Vérification impossible (service indisponible). Contrôle sur le terrain nécessaire.</div>'
+        : '<div class="zone-ok">✅ Aucune zone Natura 2000 ni ZNIEFF détectée sur cette parcelle.</div>';
+      zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
     } else {
       zoneEl.innerHTML = `<div class="zone-alert">
         <div class="zone-alert-title">⚠️ Zone(s) réglementaire(s) sur la parcelle d'épandage</div>
@@ -1302,33 +1305,34 @@ async function checkEpandageZones(type, lat, lng) {
           <div class="zone-item-impact">${z.impact}</div>
         </div>`).join('')}
       </div>`;
+      zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
       ensureAccompagnementCheckbox();
     }
   } catch {
-    zoneEl.innerHTML = '';
-    zoneEl.hidden = true;
+    zoneEl.innerHTML = '<div class="zone-indispo">⚠️ Vérification impossible. Contrôle sur le terrain nécessaire.</div>';
   }
 }
 
 // ── VÉRIFICATION ZONES ENVIRONNEMENTALES ─────────────────
-async function checkEnvironmentalZones(lat, lng) {
+// Messages honnêtes : ce qui n'est pas vérifié est toujours dit
+function envNotes(failed) {
+  const wet = `<div class="zone-indispo" style="margin-top:.6rem">💧 <strong>Zones humides :</strong> non vérifiées automatiquement, car nous n'avons pas de source fiable pour ce contrôle. Un contrôle sur le terrain est indispensable avant tout travaux.</div>`;
+  const miss = failed.length ? `<div class="zone-indispo" style="margin-top:.6rem">⚠️ <strong>Vérification incomplète :</strong> ${failed.join(', ')} n'ont pas pu être contrôlées (service indisponible). Ne considérez pas ce résultat comme définitif.</div>` : '';
+  return wet + miss;
+}
+
+async function checkEnvironmentalZones(lat, lng, geometry) {
   const zoneEl = document.getElementById('zone-info');
   if (!zoneEl || !lat || !lng) return;
 
   zoneEl.style.display = 'block';
   zoneEl.innerHTML = '<div class="zone-checking">🔍 Vérification des zones environnementales en cours…</div>';
 
-  const geom = encodeURIComponent(JSON.stringify({ type: 'Point', coordinates: [lng, lat] }));
+  // Contour du plan d'eau si on l'a tracé (sinon le centre) : une zone qui touche le plan d'eau est aussi détectée
+  const geom = encodeURIComponent(JSON.stringify(geometry || { type: 'Point', coordinates: [lng, lat] }));
   const base  = 'https://apicarto.ign.fr/api/nature/';
 
   const checks = [
-    {
-      url:    `${base}zone-humide?geom=${geom}`,
-      name:   'Zone humide (Loi sur l\'eau)',
-      icon:   '💧',
-      type:   'zh',
-      impact: `Tout remblai, assèchement ou travaux affectant une zone humide est soumis à déclaration (> 0,1 ha) ou autorisation préfectorale (> 1 ha) au titre de la rubrique 3.3.1.0 du Code de l'environnement (<abbr title="Installations, Ouvrages, Travaux et Activités">IOTA</abbr>). Un dossier Loi sur l'eau est obligatoire avant tout démarrage de chantier.`,
-    },
     {
       url:    `${base}natura-habitat?geom=${geom}`,
       name:   'Natura 2000 – Habitats (<abbr title="Zone Spéciale de Conservation">ZSC</abbr>/<abbr title="Site d\'Importance Communautaire">SIC</abbr>)',
@@ -1360,7 +1364,7 @@ async function checkEnvironmentalZones(lat, lng) {
   ];
 
   const found  = [];
-  let   errors = 0;
+  const failed = [];
 
   await Promise.allSettled(checks.map(async c => {
     try {
@@ -1368,7 +1372,7 @@ async function checkEnvironmentalZones(lat, lng) {
       const tid = setTimeout(() => controller.abort(), 9000);
       const res  = await fetch(c.url, { signal: controller.signal });
       clearTimeout(tid);
-      if (!res.ok) { errors++; return; }
+      if (!res.ok) { failed.push(c.name.replace(/<[^>]*>/g, '')); return; }
       const data = await res.json();
       if (data.features?.length > 0) {
         const props = data.features[0].properties;
@@ -1376,10 +1380,10 @@ async function checkEnvironmentalZones(lat, lng) {
           || props?.code_zh || props?.lb_zh || props?.type_zh || '';
         found.push({ ...c, siteName });
       }
-    } catch { errors++; }
+    } catch { failed.push(c.name.replace(/<[^>]*>/g, '')); }
   }));
 
-  if (found.length === 0 && errors === checks.length) {
+  if (found.length === 0 && failed.length === checks.length) {
     zoneEl.innerHTML = `
       <div class="zone-indispo">
         ⚠️ La vérification automatique des zones environnementales n'a pas abouti (service IGN indisponible).<br>
@@ -1390,11 +1394,15 @@ async function checkEnvironmentalZones(lat, lng) {
   }
 
   if (found.length === 0) {
+    const head = failed.length
+      ? '⚠️ <strong>Aucune zone détectée sur les contrôles qui ont pu être faits</strong>'
+      : '✅ <strong>Aucune zone protégée détectée</strong>';
     zoneEl.innerHTML = `
       <div class="zone-ok">
-        ✅ <strong>Aucune zone protégée détectée</strong> (zone humide, Natura 2000, <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>) à cette localisation.<br>
+        ${head} (Natura 2000, <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>) à cette localisation.<br>
         <span>Ces données sont indicatives — vérification définitive lors de la visite technique.</span>
       </div>`;
+    zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
     zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
@@ -1424,7 +1432,7 @@ async function checkEnvironmentalZones(lat, lng) {
 
   zoneEl.innerHTML = zhHtml + ecoHtml + `
     <div class="zone-alert-footer-global">
-      Ces informations sont basées sur les données IGN et sont indicatives. La vérification définitive est effectuée lors de la visite technique.
+      Natura 2000 et ZNIEFF : données IGN, indicatives. Les zones humides ne sont pas contrôlées automatiquement. La vérification définitive est faite lors de la visite technique.
     </div>
     <div class="zone-glossaire">
       <strong>Sigles</strong> :
@@ -1436,6 +1444,7 @@ async function checkEnvironmentalZones(lat, lng) {
       <abbr title="Zone Naturelle d'Intérêt Écologique, Faunistique et Floristique">ZNIEFF</abbr>
     </div>`;
 
+  zoneEl.insertAdjacentHTML('beforeend', envNotes(failed));
   ensureAccompagnementCheckbox();
   zoneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
