@@ -214,6 +214,8 @@ function wzEligible() {
   return Array.from(panel.querySelectorAll('.form-group')).filter(el => {
     if (el.querySelector('.form-group')) return false;
     if (el.closest('.wz-side')) return false;
+    // Surface et périmètre viennent du tracé sur la carte : pas de question dédiée
+    if (el.querySelector('#surface, #perimetre')) return false;
     let p = el;
     while (p && p !== panel) {
       if (p.hidden || p.style.display === 'none' || (p.classList.contains('detail-section') && !p.classList.contains('visible'))) return false;
