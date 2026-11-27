@@ -128,7 +128,7 @@ def already_imported(session, project, from_email, subject, date_iso, form=False
     return False
 
 
-FORM_PERSON = re.compile(r'Pr[ée]nom\s*:\s*(.+?)\s*/?\s*Nom\s*:\s*(.+?)\s*/?\s*Email\s*:\s*([^\s/<>]+@[^\s/<>]+)', re.I)
+FORM_PERSON = re.compile(r'Pr[ée]nom\s*:?\s*(.+?)\s*/?\s*Nom\s*:?\s*(.+?)\s*/?\s*Email\s*:?\s*([^\s/<>]+@[^\s/<>]+)', re.I)
 
 
 def form_person(body):
@@ -365,6 +365,7 @@ def main():
         _, data = imap.search(None, 'SINCE', SINCE)
         ids = data[0].split()
         created = skipped = present = 0
+        form_seen = form_created = form_present = form_ad = 0
 
         for num in ids:
             head = fetch_headers(imap, num)
@@ -391,15 +392,20 @@ def main():
                 continue
 
             full = fetch_full(imap, num)
+            is_form = from_email.endswith('@' + OWN_DOMAIN)
+            if is_form:
+                form_seen += 1
             if is_advertising(header_text(full.get('Subject')), from_email, body_of(full)):
                 skipped += 1  # publicité ou newsletter, lue dans le texte du mail
+                form_ad += is_form
                 continue
             person_name, person_email = (None, None)
-            if from_email.endswith('@' + OWN_DOMAIN):
+            if is_form:
                 person_name, person_email = form_person(body_of(full))
             if already_imported(session, project, person_email or from_email, head_subject, head_date,
-                                form=from_email.endswith('@' + OWN_DOMAIN)):
+                                form=is_form):
                 present += 1  # même mail déjà présent : on ne le duplique pas
+                form_present += is_form
                 continue
             when = parse_date(head.get('Date'))
             thread = find_thread_doc(session, project, refs_of(head), from_email, head_subject, when)
@@ -419,9 +425,12 @@ def main():
             }
             if create(session, project, doc_id, record):
                 created += 1
+                form_created += is_form
 
         print(f'{len(ids)} mails lus depuis {SINCE} · {created} ajoutés · '
-              f'{present} déjà présents · {skipped} ignorés (expéditeurs automatiques)', flush=True)
+              f'{present} déjà présents · {skipped} ignorés (publicité ou automatiques)', flush=True)
+        print(f'Formulaire du site : {form_seen} vus · {form_created} ajoutés · '
+              f'{form_present} déjà présents · {form_ad} ignorés (publicité)', flush=True)
         imap.select('INBOX', readonly=True)
         sync_sent(imap, session, project)
     finally:
