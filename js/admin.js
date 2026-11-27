@@ -1753,6 +1753,8 @@ function renderEmailBigMap() {
   }, 60));
 }
 
+document.getElementById('em-map-close')?.addEventListener('click', () => toggleEmailMap(false));
+
 document.getElementById('em-map-toggle')?.addEventListener('click', () => {
   const showing = document.getElementById('em-map-view').hidden;
   toggleEmailMap(showing);
