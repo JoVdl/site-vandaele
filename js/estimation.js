@@ -1235,7 +1235,10 @@ function ensureAccompagnementCheckbox() {
       <em>Dossier Loi sur l'eau · évaluation d'incidences Natura 2000 · déclaration préfectorale… Nous prenons en charge les démarches à votre place.</em>
     </span>`;
   zoneEl.appendChild(wrap);
-  wrap.querySelector('input').addEventListener('change', e => { state.demandeAccompagnement = e.target.checked; });
+  wrap.querySelector('input').addEventListener('change', e => {
+    state.demandeAccompagnement = e.target.checked;
+    wrap.classList.toggle('is-checked', e.target.checked);
+  });
 }
 
 async function checkEpandageZones(type, lat, lng) {

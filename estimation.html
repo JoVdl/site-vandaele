@@ -594,6 +594,11 @@
     .zone-accomp-text { display: flex; flex-direction: column; gap: .18rem; }
     .zone-accomp-text strong { font-size: .84rem; color: #78350f; }
     .zone-accomp-text em { font-size: .76rem; color: #92400e; font-style: normal; opacity: .85; }
+    .zone-accomp-label { transition: background .25s ease, border-color .25s ease; }
+    .zone-accomp-label.is-checked { background: #e8f5ee; border-color: #3d9e62; box-shadow: 0 0 0 3px rgba(61,158,98,.15); }
+    .zone-accomp-label.is-checked input[type="checkbox"] { accent-color: #2d7a4f; }
+    .zone-accomp-label.is-checked .zone-accomp-text strong { color: #14532d; }
+    .zone-accomp-label.is-checked .zone-accomp-text em { color: #166534; }
 
     /* ── RESULT CARD ── */
     .result-card {
