@@ -109,7 +109,8 @@ def create(session, project, doc_id, record):
     resp = session.patch(doc_url(project, doc_id), params={'currentDocument.exists': 'false'}, json=body)
     if resp.status_code == 200:
         return True
-    if resp.status_code == 400:
+    # 400 : document déjà là ; 409 : créé entre-temps par une autre synchro (tâche horaire + surveillance)
+    if resp.status_code in (400, 409):
         return False
     resp.raise_for_status()
     return False
