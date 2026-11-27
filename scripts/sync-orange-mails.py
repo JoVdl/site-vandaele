@@ -31,8 +31,9 @@ from google.oauth2 import service_account
 IMAP_HOST = 'imap.orange.fr'
 IMAP_PORT = 993
 COLLECTION = 'emails-contacts'
-SINCE = os.environ.get('SYNC_SINCE', '01-Jan-2026')
-SKIP_SENDER = re.compile(r'no-?reply|donotreply|do-not-reply|notification|mailer-daemon|newsletter|postmaster', re.I)
+SINCE = os.environ.get('SYNC_SINCE', '29-May-2026')
+SKIP_SENDER = re.compile(r'no-?reply|ne[-_]?pas[-_]?repondre|donotreply|do-not-reply|notification|mailer-daemon|postmaster|newsletter|news\.|actu@|marketing|promo|mailing|alerte|dematis|shipup|chronopost|avis-verifies|agrizone|bercy|ameli|hellobank|leroymerlin|kiloutou|made-in-china|zepros|profieldevents|robotshop', re.I)
+OWN_DOMAIN = 'curagevandaele.fr'  # le formulaire du site n'est jamais filtré
 SNIPPET_LEN = 400
 DRY_RUN = '--dry-run' in sys.argv
 SCOPES = ['https://www.googleapis.com/auth/datastore']
@@ -73,8 +74,23 @@ def parse_date(value):
 
 
 def fetch_headers(imap, num):
-    _, data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT DATE)])')
+    _, data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT DATE LIST-UNSUBSCRIBE LIST-ID PRECEDENCE AUTO-SUBMITTED)])')
     return message_from_bytes(data[0][1])
+
+
+def is_automatic(head, from_email):
+    """Newsletters, envois de masse, notifications automatiques : pas des mails clients."""
+    if from_email.endswith('@' + OWN_DOMAIN):
+        return False
+    if SKIP_SENDER.search(from_email):
+        return True
+    if head.get('List-Unsubscribe') or head.get('List-Id'):
+        return True
+    if (head.get('Precedence') or '').strip().lower() in ('bulk', 'list', 'junk'):
+        return True
+    if (head.get('Auto-Submitted') or 'no').strip().lower() != 'no':
+        return True
+    return False
 
 
 def fetch_full(imap, num):
@@ -134,7 +150,7 @@ def main():
             head = fetch_headers(imap, num)
             from_name, from_email = parseaddr(header_text(head.get('From')))
             from_email = from_email.lower()
-            if not from_email or SKIP_SENDER.search(from_email):
+            if not from_email or is_automatic(head, from_email):
                 skipped += 1
                 continue
 
