@@ -419,11 +419,18 @@ function updatePanel5Fields() {
 }
 
 // ── SYNC DETAIL SECTIONS ──────────────────────────────────────
+// Hydrocurage et curage mécanique cochés ensemble : une seule série de questions (vase et destination)
+function bothCurage() {
+  return state.travaux.has('hydrocurage') && state.travaux.has('curage');
+}
+
 function syncDetailSections() {
   ['hydrocurage', 'curage', 'faucardage', 'berges', 'broyage-forestier', 'broyage-roseaux', 'diagnostic'].forEach(t => {
     const sec = document.getElementById('detail-' + t);
     if (sec) sec.classList.toggle('visible', state.travaux.has(t));
   });
+  const hydroSec = document.getElementById('detail-hydrocurage');
+  if (hydroSec) hydroSec.classList.toggle('visible', state.travaux.has('hydrocurage') && !bothCurage());
   // Sync épandage sections based on current destination selections
   if (state.travaux.has('hydrocurage'))
     toggleEpandageSection('hydro', state.destinationVaseHydro === 'sur-place');
@@ -433,9 +440,19 @@ function syncDetailSections() {
 
 // ── COMPARATIF CURAGE ─────────────────────────────────────────
 function updateCurageCompare() {
+  // Comparatif détaillé retiré : une seule phrase, la méthode est choisie par nos soins
   const el = document.getElementById('curage-compare');
-  if (!el) return;
-  el.style.display = (state.travaux.has('hydrocurage') && state.travaux.has('curage')) ? '' : 'none';
+  if (el) el.style.display = 'none';
+  const block = document.getElementById('detail-curage');
+  let note = document.getElementById('curage-both-note');
+  if (!note && block) {
+    note = document.createElement('div');
+    note.id = 'curage-both-note';
+    note.style.cssText = 'background:#f0faf4;border:1px solid #a8dbb8;border-radius:12px;padding:.8rem 1rem;font-size:.9rem;color:#133d22;margin-bottom:1rem;';
+    note.textContent = 'Vous avez coché hydrocurage et curage mécanique : répondez une seule fois. Nous choisirons la méthode la plus adaptée à votre étang.';
+    block.prepend(note);
+  }
+  if (note) note.hidden = !bothCurage();
 }
 
 // ── TRAVAUX CHECKBOXES ────────────────────────────────────────
@@ -578,26 +595,34 @@ function computeEstimation() {
 
   const tc_ = svc => TARIFS[svc][state.typeClient] ?? TARIFS[svc].particulier;
 
+  // Hydrocurage et curage mécanique : une seule estimation (fourchette des deux méthodes)
+  let curageAlt = null;
   // HYDROCURAGE
   if (state.travaux.has('hydrocurage')) {
     hasTravaux = true;
     const t = TARIFS.hydrocurage;
     const tc = tc_('hydrocurage');
-    addMobi(t);
+    if (!bothCurage()) addMobi(t);
     const surfM2 = (state.surface > 0 ? state.surface : 0.5) * 10000;
-    const vol = Math.max(1, Math.round(surfM2 * (state.epaisseurHydro / 100)));
+    const epaisseur = bothCurage() ? state.profVase : state.epaisseurHydro;
+    const vol = Math.max(1, Math.round(surfM2 * (epaisseur / 100)));
     const m = accMod(t, acces);
     let cMin = vol * tc.base.min * m;
     let cMax = vol * tc.base.max * m;
-    if (state.destinationVaseHydro === 'evacuation' && tc.evacuation) {
+    const destHydro = bothCurage() ? state.destinationVase : state.destinationVaseHydro;
+    if (destHydro === 'evacuation' && tc.evacuation) {
       cMin += vol * tc.evacuation.min;
       cMax += vol * tc.evacuation.max;
     }
-    totalMin += cMin; totalMax += cMax;
-    const hydLabel = state.destinationVaseHydro === 'evacuation'
-      ? `Hydrocurage + évacuation (${vol.toLocaleString('fr')} m³)`
-      : `Hydrocurage (${vol.toLocaleString('fr')} m³)`;
-    lines.push({ label: hydLabel, val: fmtRange(cMin, cMax) });
+    if (bothCurage()) {
+      curageAlt = { min: cMin, max: cMax };
+    } else {
+      totalMin += cMin; totalMax += cMax;
+      const hydLabel = destHydro === 'evacuation'
+        ? `Hydrocurage + évacuation (${vol.toLocaleString('fr')} m³)`
+        : `Hydrocurage (${vol.toLocaleString('fr')} m³)`;
+      lines.push({ label: hydLabel, val: fmtRange(cMin, cMax) });
+    }
   }
 
   // CURAGE MÉCANIQUE
@@ -617,8 +642,14 @@ function computeEstimation() {
       cMin += volM3 * tc.evacuation.min;
       cMax += volM3 * tc.evacuation.max;
     }
-    totalMin += cMin; totalMax += cMax;
-    lines.push({ label: `Curage mécanique (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
+    if (curageAlt) {
+      const minAll = Math.min(curageAlt.min, cMin), maxAll = Math.max(curageAlt.max, cMax);
+      totalMin += minAll; totalMax += maxAll;
+      lines.push({ label: `Curage de l'étang (~${Math.round(volM3).toLocaleString('fr')} m³, méthode choisie par nos soins)`, val: fmtRange(minAll, maxAll) });
+    } else {
+      totalMin += cMin; totalMax += cMax;
+      lines.push({ label: `Curage mécanique (~${Math.round(volM3).toLocaleString('fr')} m³)`, val: fmtRange(cMin, cMax) });
+    }
   }
 
   // FAUCARDAGE
