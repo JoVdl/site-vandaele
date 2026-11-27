@@ -204,7 +204,99 @@ const state = {
 };
 
 // ── STEPPER NAVIGATION ────────────────────────────────────────
+// ── PAS À PAS DE L'ÉTAPE MESURES : une question à la fois ──
+let wzCurrent = null;
+
+// Questions visibles de l'étape Mesures (champs réellement affichés selon les travaux choisis)
+function wzEligible() {
+  const panel = document.getElementById('panel-4');
+  if (!panel) return [];
+  return Array.from(panel.querySelectorAll('.form-group')).filter(el => {
+    if (el.querySelector('.form-group')) return false;
+    let p = el;
+    while (p && p !== panel) {
+      if (p.hidden || p.style.display === 'none' || (p.classList.contains('detail-section') && !p.classList.contains('visible'))) return false;
+      p = p.parentElement;
+    }
+    return true;
+  });
+}
+
+function wzBuild() {
+  const panel = document.getElementById('panel-4');
+  if (!panel || document.getElementById('wz-nav')) return;
+  const bar = document.createElement('div');
+  bar.className = 'wz-nav';
+  bar.id = 'wz-nav';
+  bar.innerHTML = `<button class="btn btn-outline" type="button" id="wz-prev">← Précédent</button>
+    <span class="wz-count" id="wz-count"></span>
+    <button class="btn btn-primary" type="button" id="wz-next">Continuer →</button>`;
+  const pn = panel.querySelector('.panel-nav');
+  if (pn) pn.before(bar); else panel.appendChild(bar);
+  const prog = document.createElement('div');
+  prog.className = 'wz-bar';
+  prog.innerHTML = '<i id="wz-fill"></i>';
+  panel.querySelector('.contact-form')?.prepend(prog);
+  document.getElementById('wz-prev').onclick = () => wzStep(-1);
+  document.getElementById('wz-next').onclick = () => wzStep(1);
+}
+
+function wzShow() {
+  const list = wzEligible();
+  if (!list.length) return;
+  if (!wzCurrent || !list.includes(wzCurrent)) wzCurrent = list[0];
+  // On masque tout ce qui n'est pas la question en cours ni l'un de ses conteneurs
+  const panel = document.getElementById('panel-4');
+  panel.querySelectorAll('.wz-off').forEach(el => el.classList.remove('wz-off'));
+  panel.querySelectorAll('*').forEach(el => {
+    if (el.closest('.wz-nav, .wz-bar, .panel-nav')) return;
+    if (el.contains(wzCurrent) || wzCurrent.contains(el)) return;
+    el.classList.add('wz-off');
+  });
+  const idx = list.indexOf(wzCurrent);
+  const n = list.length;
+  document.getElementById('wz-count').textContent = `Question ${idx + 1} sur ${n}`;
+  document.getElementById('wz-fill').style.width = ((idx + 1) / n * 100) + '%';
+  document.getElementById('wz-prev').textContent = idx === 0 ? '← Retour' : '← Précédent';
+  document.getElementById('wz-next').textContent = idx === n - 1 ? 'Suivant →' : 'Continuer →';
+  if (wzCurrent.querySelector('#leaflet-map') && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 60);
+  wzCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function wzStep(dir) {
+  const list = wzEligible();
+  const idx = list.indexOf(wzCurrent);
+  if (dir > 0) {
+    const adresse = document.getElementById('adresse');
+    if (wzCurrent && wzCurrent.contains(adresse) && !adresse.value.trim()) {
+      showToast("Indiquez l'adresse ou la commune du chantier pour continuer.", 'error');
+      return;
+    }
+    if (idx >= 0 && idx < list.length - 1) { wzCurrent = list[idx + 1]; wzShow(); }
+    else goToPanel(5);
+  } else {
+    if (idx > 0) { wzCurrent = list[idx - 1]; wzShow(); }
+    else goToPanel(3);
+  }
+}
+
+function wzStart() {
+  wzBuild();
+  wzCurrent = null;
+  document.getElementById('panel-4')?.classList.add('wz-mode');
+  wzShow();
+}
+
+function wzExit() {
+  const panel = document.getElementById('panel-4');
+  if (!panel) return;
+  panel.classList.remove('wz-mode');
+  panel.querySelectorAll('.wz-off').forEach(el => el.classList.remove('wz-off'));
+  wzCurrent = null;
+}
+
 function goToPanel(n) {
+  if (n !== 4) wzExit();
   const panels = document.querySelectorAll('.est-panel');
   panels.forEach(p => p.classList.remove('active'));
   const target = document.getElementById('panel-' + n);
@@ -222,6 +314,7 @@ function goToPanel(n) {
   if (n === 2) renderProblems();
   if (n === 4) {
     syncDetailSections();
+    wzStart();
     setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 50);
   }
   if (n === 5) updatePanel5Fields();

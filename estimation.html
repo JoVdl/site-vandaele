@@ -769,6 +769,16 @@
     .p6-recontact-hint { color: var(--gray-500); font-size: .85rem; margin-bottom: 1.25rem; line-height: 1.6; }
     .p6-recontact-btns { display: flex; flex-direction: column; gap: .65rem; }
     .p6-disclaimer { font-size: .73rem; color: var(--gray-400); line-height: 1.65; text-align: center; margin-top: 1.25rem; }
+    /* Pas à pas de l'étape Mesures : une question à la fois */
+    #panel-4.wz-mode .wz-off { display: none !important; }
+    #panel-4.wz-mode .form-section-title { display: none; }
+    #panel-4.wz-mode .panel-nav { display: none; }
+    #panel-4 .wz-nav { display: none; }
+    #panel-4.wz-mode .wz-nav { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    #panel-4 .wz-count { font-size: .85rem; color: var(--gray-500); }
+    #panel-4 .wz-bar { display: none; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin-bottom: 1.25rem; }
+    #panel-4.wz-mode .wz-bar { display: block; }
+    #panel-4 .wz-bar i { display: block; height: 100%; background: var(--green-500); transition: width .3s ease; }
   </style>
 </head>
 <body>
