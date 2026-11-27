@@ -1367,34 +1367,28 @@ function startEmailsListener() {
 }
 
 const EMAIL_CATEGORIES = [
-  { key: 'formulaire', label: 'Formulaire du site', icon: '📝', color: '#2563eb' },
-  { key: 'travaux',    label: 'Devis et travaux',   icon: '🌊', color: '#0f766e' },
-  { key: 'location',   label: 'Location de matériel', icon: '🚜', color: '#ea580c' },
-  { key: 'ao',         label: "Appels d'offres",    icon: '📋', color: '#7c3aed' },
-  { key: 'compta',     label: 'Comptabilité',       icon: '🧾', color: '#b45309' },
-  { key: 'autre',      label: 'Autres',             icon: '✉️', color: '#6b7280' },
+  { key: 'client', label: 'Clients',          icon: '👥', color: '#0f766e' },
+  { key: 'compta', label: 'Facture et compta', icon: '🧾', color: '#b45309' },
+  { key: 'autre',  label: 'Autres',           icon: '✉️', color: '#6b7280' },
 ];
-
-const EMAIL_STATUT_CHIPS = [
-  ['all', 'Tous'],
-  ['nouveau', 'Non lus'],
-  ['contacte', 'Contactés'],
-  ['devis_envoye', 'Devis envoyé'],
-  ['chantier_gagne', 'Gagnés'],
-  ['sans_suite', 'Sans suite'],
-  ['lu', 'Lus'],
-];
-
-let emailStatusFilter = 'all';
-let emailCategoryFilter = 'all';
+// Mots qui montrent une demande de travaux, de location ou un appel d'offres
+const EMAIL_JOB_WORDS = /curage|étang|etang|\bmare|bief|douve|berge|drague|dragage|travaux|chantier|devis|location|louer|\bloue\b|pelle|broyage|fauch|faucard|enrochement|aspiration|haie|appel d.offre|consultation|march[ée]s?\b|\bao\b|mémoire technique|présélection|lot \d|désenvas|hydrocurage|débroussaill/;
+// Fournisseurs, cabinets et organismes de comptabilité, facturation et administration
+const EMAIL_COMPTA_SENDERS = /execo|cardans|btimmerman|districompta|scr-recouvrement|dgflexservices|nlub|virginiegdp|bfh-equipements|provigis|sfnp|pne\.totalenergies|hatz-diesel|multimeca|ibex|atline|atradius|moronval|chambagri|socgen|urssaf|impots|dgfip|facturation|isanetfact|gan@|courriel\.gan/;
+// Objets typiques des factures, relevés et démarches comptables
+const EMAIL_COMPTA_SUBJECT = /facture|relance|bilan|extrait de compte|\bpaies?\b|impayé|proforma|virement|\btva\b|chorus|comptab|règlement|échue|duplicata|avoir n|\bcfe\b|relevé|releve|dossier\s*\d|mutuelle|cotisation|avis d.imposition/;
 
 function emailCategory(m) {
-  const text = `${m.subject || ''} ${m.snippet || ''} ${m.from_email || ''}`.toLowerCase();
-  if (/contact@curagevandaele|formulaire/.test(text)) return 'formulaire';
-  if (/appel d.offre|consultation|march[ée]s?\b|\bao\b|présélection|mémoire technique/.test(text)) return 'ao';
-  if (/facture|relance|bilan|extrait de compte|\bpaie|paies|impayé|proforma|virement|\btva\b|chorus|comptab|règlement|échue|duplicata|avoir n|cardans|btimmerman|execo|scr-recouvrement|dgflexservices|nlub|virginiegdp|bfh-equipements|districompta|provigis|sfnp/.test(text)) return 'compta';
-  if (/location|louer|loue\b|pelle|dumper|drague|barge/.test(text)) return 'location';
-  if (/devis|curage|curer|faucard|étang|etang|\bmare\b|bief|douve|berge|aspiration|désenvas|enrochement|travaux|chantier|fauch|saules|marais|moulin/.test(text)) return 'travaux';
+  const subject = (m.subject || '').toLowerCase();
+  const from = (m.from_email || '').toLowerCase();
+  const text = `${subject} ${m.snippet || ''} ${m.texte || ''}`.toLowerCase();
+  // Tout ce qui vient du formulaire du site est un client
+  if (/curagevandaele/.test(from) || /formulaire/.test(subject)) return 'client';
+  const job = EMAIL_JOB_WORDS.test(text);
+  // Factures et comptabilité, sauf si le mail parle d'un chantier ou d'une demande
+  if (EMAIL_COMPTA_SENDERS.test(from) || EMAIL_COMPTA_SUBJECT.test(subject)) return job ? 'client' : 'compta';
+  // Toute demande de travaux, de location ou d'appel d'offres
+  if (job) return 'client';
   return 'autre';
 }
 
