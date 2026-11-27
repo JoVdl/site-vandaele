@@ -1371,6 +1371,19 @@ const EMAIL_CATEGORIES = [
   { key: 'compta', label: 'Facture et compta', icon: '🧾', color: '#b45309' },
   { key: 'autre',  label: 'Autres',           icon: '✉️', color: '#6b7280' },
 ];
+const EMAIL_STATUT_CHIPS = [
+  ['all', 'Tous'],
+  ['nouveau', 'Non lus'],
+  ['contacte', 'Contactés'],
+  ['devis_envoye', 'Devis envoyé'],
+  ['chantier_gagne', 'Gagnés'],
+  ['sans_suite', 'Sans suite'],
+  ['lu', 'Lus'],
+];
+
+let emailStatusFilter = 'all';
+let emailCategoryFilter = 'all';
+
 // Mots qui montrent une demande de travaux, de location ou un appel d'offres
 const EMAIL_JOB_WORDS = /curage|étang|etang|\bmare|bief|douve|berge|drague|dragage|travaux|chantier|devis|location|louer|\bloue\b|pelle|broyage|fauch|faucard|enrochement|aspiration|haie|appel d.offre|consultation|march[ée]s?\b|\bao\b|mémoire technique|présélection|lot \d|désenvas|hydrocurage|débroussaill/;
 // Fournisseurs, cabinets et organismes de comptabilité, facturation et administration
