@@ -227,8 +227,9 @@ def refs_of(head):
     return re.findall(r'<[^>]+>', (head.get('In-Reply-To') or '') + ' ' + (head.get('References') or ''))
 
 
-def find_thread_doc(session, project, refs, from_email, subject, when):
-    """Document existant du fil : d'abord par en-tête (In-Reply-To / References), sinon par expéditeur + objet."""
+def find_thread_doc(session, project, refs, from_email, subject, when, loose=False):
+    """Document existant du fil : d'abord par en-tête (In-Reply-To / References), puis par expéditeur + objet.
+    loose=True (réponses envoyées) : à défaut d'objet identique, le dernier mail reçu de ce correspondant dans les 90 jours."""
     for ref in refs:
         doc_id = doc_id_for(ref, '')
         if exists(session, project, doc_id):
@@ -244,20 +245,24 @@ def find_thread_doc(session, project, refs, from_email, subject, when):
                         json=query)
     resp.raise_for_status()
     wanted = normalize_subject(subject)
-    best, best_date = None, None
+    best, best_date = None, None          # même objet
+    loose_best, loose_date = None, None   # même correspondant seulement
     for item in resp.json():
         doc = item.get('document')
         if not doc:
             continue
         fields = doc['fields']
-        if normalize_subject(fields.get('subject', {}).get('stringValue', '')) != wanted:
-            continue
         ts = fields.get('date', {}).get('timestampValue', '')
         if not ts or parse_ts(ts) > when:
             continue
-        if best_date is None or parse_ts(ts) > best_date:
-            best, best_date = doc['name'].rsplit('/', 1)[-1], parse_ts(ts)
-    return best
+        name = doc['name'].rsplit('/', 1)[-1]
+        if normalize_subject(fields.get('subject', {}).get('stringValue', '')) == wanted:
+            if best_date is None or parse_ts(ts) > best_date:
+                best, best_date = name, parse_ts(ts)
+        if loose and (when - parse_ts(ts)).days <= 90:
+            if loose_date is None or parse_ts(ts) > loose_date:
+                loose_best, loose_date = name, parse_ts(ts)
+    return best or (loose_best if loose else None)
 
 
 def append_to_thread(session, project, doc_id, entry, when, from_me):
@@ -310,7 +315,7 @@ def sync_sent(imap, session, project):
         if not to_email or to_email == own or to_email.endswith('@' + OWN_DOMAIN):
             continue
         when = parse_date(head.get('Date'))
-        target = find_thread_doc(session, project, refs_of(head), to_email, header_text(head.get('Subject')), when)
+        target = find_thread_doc(session, project, refs_of(head), to_email, header_text(head.get('Subject')), when, loose=True)
         if not target:
             continue
         full = fetch_full(imap, num)
